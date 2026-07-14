@@ -31,6 +31,8 @@ out/
 
 # Docker
 docker-compose.override.yml
+docker-compose.yml
+
 
 # OS
 .DS_Store
