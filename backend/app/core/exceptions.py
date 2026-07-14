@@ -62,7 +62,7 @@ class ConflictError(AppException):
 class ValidationError(AppException):
     """Request payload failed business validation."""
 
-    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
     error_code = "VALIDATION_FAILED"
 
 
