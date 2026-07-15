@@ -1,0 +1,61 @@
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKEN REFERENCE
+   ═══════════════════════════════════════════════════════════════
+
+   This file documents the design tokens used throughout AutoTestAI.
+   Actual tokens are defined in globals.css via @theme.
+
+   COLOR PALETTE
+   ─────────────
+   Background:     #09090B (primary), #111827 (secondary)
+   Surface:        rgba(255,255,255,0.06)
+   Glass:          rgba(255,255,255,0.08)
+   Border:         rgba(255,255,255,0.10)
+   Accent Blue:    #3B82F6
+   Accent Purple:  #8B5CF6
+   Accent Cyan:    #06B6D4
+   Accent Pink:    #EC4899
+   Success:        #10B981
+   Warning:        #F59E0B
+   Danger:         #EF4444
+   Text Primary:   #F9FAFB
+   Text Secondary: #9CA3AF
+   Text Tertiary:  #6B7280
+   Text Muted:     #4B5563
+
+   TYPOGRAPHY SCALE
+   ────────────────
+   Hero:    3.5rem / 800
+   H1:      2.25rem / 700
+   H2:      1.5rem / 700
+   H3:      1.375rem / 600
+   Body:    1rem / 400
+   Small:   0.8125rem / 500
+   XS:      0.75rem / 500
+
+   SPACING (8px grid)
+   ──────────────────
+   0.5: 4px    1: 8px     1.5: 12px
+   2: 16px     2.5: 20px  3: 24px
+   4: 32px     5: 40px    6: 48px
+   8: 64px     10: 80px
+
+   RADIUS
+   ──────
+   sm: 8px   md: 12px   lg: 16px
+   xl: 20px  2xl: 24px  full: 9999px
+
+   MOTION
+   ──────
+   Fast: 150ms   Normal: 300ms   Slow: 500ms
+   Ease: cubic-bezier(0.4, 0, 0.2, 1)
+   Spring: type "spring", stiffness 300, damping 30
+
+   SHADOWS
+   ───────
+   Glow Blue:    0 0 20px rgba(59,130,246,0.15)
+   Glow Purple:  0 0 20px rgba(139,92,246,0.15)
+   Glow Success: 0 0 20px rgba(16,185,129,0.15)
+   Card Hover:   0 8px 32px rgba(0,0,0,0.3)
+
+   ═══════════════════════════════════════════════════════════════ */
