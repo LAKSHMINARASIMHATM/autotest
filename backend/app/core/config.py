@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: SecretStr = SecretStr("")
     ANTHROPIC_API_KEY: SecretStr = SecretStr("")
     GROQ_API_KEY: SecretStr = SecretStr("")
-    DEFAULT_LLM_MODEL: str = "llama-3.3-70b-specdec"
+    DEFAULT_LLM_MODEL: str = "llama-3.3-70b-versatile"
     DEFAULT_TEMPERATURE: float = 0.1
 
     # ── JWT ──────────────────────────────────────────────────────
