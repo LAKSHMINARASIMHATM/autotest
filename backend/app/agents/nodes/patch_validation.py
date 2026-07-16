@@ -1,4 +1,4 @@
-"""Patch Validation Agent — validates candidate patches by running tests."""
+"""Patch Validation Agent — validates candidate patches using PatchValidator sandbox."""
 
 from __future__ import annotations
 
@@ -9,31 +9,12 @@ from langchain_core.runnables import RunnableConfig
 
 from app.agents.base import BaseAgentNode
 from app.agents.state import AgentState, PatchValidation, PipelineStatus
+from app.repair.patch_validator import PatchValidator
 
 
 class PatchValidationAgent(BaseAgentNode):
     name = "patch_validation"
-    description = "Validates patches using compilation checks, regression testing, and verification"
-
-    SYSTEM_PROMPT = """You are the Patch Validation Agent of AutoTestAI.
-
-Your role is to run tests on a patched project and verify if the patch is valid.
-A valid patch must:
-1. Compile and parse without syntax errors.
-2. Make the previously failing test pass.
-3. Not break any previously passing tests (regression safety).
-4. Maintain or improve overall test coverage.
-
-Respond with JSON format:
-{
-    "patch_id": "<patch_id>",
-    "compilation_ok": true|false,
-    "failing_test_passes": true|false,
-    "regression_ok": true|false,
-    "coverage_maintained": true|false,
-    "verdict": "accepted|rejected|pending",
-    "reason": "<detailed validation rationale>"
-}"""
+    description = "Validates patches in Docker sandbox: compile → failing test → regression sweep"
 
     async def execute(
         self,
@@ -41,51 +22,62 @@ Respond with JSON format:
         config: RunnableConfig | None = None,
     ) -> dict[str, Any]:
         patches = state.get("patches", [])
+        localizations = state.get("bug_localizations", [])
+        project_ctx = state.get("project_context")
+        execution_result = state.get("execution_result")
 
         if not patches:
             return {"patch_validations": []}
 
-        patch = patches[0]
+        project_path = project_ctx.repo_path if project_ctx else ""
+        # Use first failing test from execution results, or generic default
+        failing_test = ""
+        if execution_result and execution_result.failures:
+            failing_test = execution_result.failures[0].get("node_id", "")
 
-        # Actual validation executes the patch in a sandboxed Docker runtime in Phase 8.
-        # This is the agent interface orchestrator.
-        user_prompt = f"""Validate patch {patch.id}:
-File: {patch.file_path}
-Strategy: {patch.strategy}
-Diff:
-{patch.diff}
+        validations = []
 
-Determine validation verdict as JSON."""
+        for patch in patches:
+            raw = await PatchValidator.validate(
+                patch_id=patch.id,
+                patch_diff=patch.diff,
+                file_path=patch.file_path,
+                project_path=project_path,
+                failing_test=failing_test,
+                run_id=execution_result.test_run_id if execution_result else "unknown",
+            )
 
-        response = await self.invoke_llm(self.SYSTEM_PROMPT, user_prompt)
+            validation = PatchValidation(
+                patch_id=raw["patch_id"],
+                compilation_ok=raw["compilation_ok"],
+                failing_test_passes=raw["failing_test_passes"],
+                regression_ok=raw["regression_ok"],
+                coverage_maintained=raw["coverage_maintained"],
+                verdict=raw["verdict"],
+                reason=raw["reason"],
+            )
+            validations.append(validation)
 
-        try:
-            data = json.loads(response)
-        except json.JSONDecodeError:
-            data = {}
+            # Stop at first accepted patch
+            if validation.verdict == "accepted":
+                break
 
-        validation = PatchValidation(
-            patch_id=data.get("patch_id", patch.id),
-            compilation_ok=data.get("compilation_ok", True),
-            failing_test_passes=data.get("failing_test_passes", True),
-            regression_ok=data.get("regression_ok", True),
-            coverage_maintained=data.get("coverage_maintained", True),
-            verdict=data.get("verdict", "accepted"),
-            reason=data.get("reason", "Patch validates successfully across regression suite"),
-        )
+        best = validations[-1] if validations else PatchValidation(verdict="rejected", reason="No patches to validate")
 
         explanation = self.build_explanation(
-            decision=f"Patch {validation.patch_id} validation verdict: {validation.verdict}",
-            reason=validation.reason,
-            confidence=0.92,
+            decision=f"Best patch verdict: {best.verdict}",
+            reason=best.reason,
+            confidence=0.93 if best.verdict == "accepted" else 0.60,
             evidence=[
-                f"Compilation: {validation.compilation_ok}",
-                f"Regression: {validation.regression_ok}",
+                f"Compilation: {best.compilation_ok}",
+                f"Failing test passes: {best.failing_test_passes}",
+                f"Regression OK: {best.regression_ok}",
             ],
         )
 
         return {
-            "patch_validations": [validation],
+            "patch_validations": validations,
             "status": PipelineStatus.VALIDATING,
             "explanations": [explanation],
         }
+

@@ -1,4 +1,4 @@
-"""Program Repair Agent — generates code patches/fixes for bugs."""
+"""Program Repair Agent — generates code patches/fixes for bugs using PatchEngine."""
 
 from __future__ import annotations
 
@@ -10,25 +10,12 @@ from langchain_core.runnables import RunnableConfig
 
 from app.agents.base import BaseAgentNode
 from app.agents.state import AgentState, Patch, PipelineStatus
+from app.repair.patch_engine import PatchEngine
 
 
 class ProgramRepairAgent(BaseAgentNode):
     name = "program_repair"
-    description = "Generates targeted candidate source code patches to repair identified bugs"
-
-    SYSTEM_PROMPT = """You are the Program Repair Agent of AutoTestAI.
-
-Your role is to write clean, minimal, syntax-valid source code patches to fix localized bugs.
-
-For each patch candidate, respond with JSON format:
-{
-    "bug_id": "<bug_id>",
-    "strategy": "minimal|refactor|safety_check",
-    "diff": "<unified diff of the patch or fixed code block>",
-    "file_path": "<relative/path/to/file.py>",
-    "description": "<detailed patch explanation>",
-    "confidence": <float between 0.0 and 1.0>
-}"""
+    description = "Generates multi-strategy candidate patches using PatchEngine + Groq LLM"
 
     async def execute(
         self,
@@ -44,43 +31,39 @@ For each patch candidate, respond with JSON format:
         loc = localizations[0]
         cause = causes[0] if causes else None
 
-        user_prompt = f"""Generate a program repair patch for:
-
-Bug ID: {loc.id}
-File Path: {loc.file_path}
-Method: {loc.method_name}
-Line: {loc.line_number}
-Error: {loc.error_message}
-Root Cause: {cause.why if cause else 'Unknown'}
-
-Provide your repair candidate as JSON."""
-
-        response = await self.invoke_llm(self.SYSTEM_PROMPT, user_prompt)
-
-        try:
-            data = json.loads(response)
-        except json.JSONDecodeError:
-            data = {}
-
-        patch = Patch(
-            id=str(uuid4())[:8],
-            bug_id=data.get("bug_id", loc.id),
-            strategy=data.get("strategy", "minimal"),
-            diff=data.get("diff", response),
-            file_path=data.get("file_path", loc.file_path),
-            description=data.get("description", "Auto-generated patch to resolve defect"),
-            confidence=data.get("confidence", 0.75),
+        # Call the real PatchEngine (Groq-backed, multi-strategy)
+        raw_patches = await PatchEngine.generate_patches(
+            bug_id=loc.id,
+            file_path=loc.file_path,
+            method_name=loc.method_name,
+            buggy_code=f"# line {loc.line_number} in {loc.file_path}",
+            error_message=loc.error_message,
+            root_cause=cause.why if cause else "Unknown root cause",
         )
 
+        patches = [
+            Patch(
+                id=p["id"],
+                bug_id=p["bug_id"],
+                strategy=p["strategy"],
+                diff=p["diff"],
+                file_path=p["file_path"],
+                description=p["description"],
+                confidence=p["confidence"],
+            )
+            for p in raw_patches
+        ]
+
         explanation = self.build_explanation(
-            decision=f"Generated program patch candidate {patch.id}",
-            reason=patch.description,
-            confidence=patch.confidence,
-            evidence=[f"Strategy: {patch.strategy}", f"File: {patch.file_path}"],
+            decision=f"Generated {len(patches)} patch candidates for bug {loc.id}",
+            reason=f"Used PatchEngine with strategies: {[p.strategy for p in patches]}",
+            confidence=max((p.confidence for p in patches), default=0.0),
+            evidence=[f"{p.strategy}: confidence={p.confidence}" for p in patches],
         )
 
         return {
-            "patches": [patch],
+            "patches": patches,
             "status": PipelineStatus.REPAIRING,
             "explanations": [explanation],
         }
+
