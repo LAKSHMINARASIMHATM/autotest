@@ -1,85 +1,123 @@
-# AutoTestAI — High-Level Design Document
+# AutoTestAI — High-Level Design (HLD)
 
 ## 1. System Overview
 
-AutoTestAI is an agentic multi-agent platform that autonomously performs software quality engineering. It ingests a software project, builds a knowledge graph of its structure, generates intelligent tests, executes them, localizes bugs, repairs code, validates patches, and continuously learns from outcomes.
-
-## 2. Architecture Style
-
-**Modular Monolith with Microservice-Ready Boundaries**
-
-Each domain (agents, knowledge, execution, evaluation) is a self-contained module with explicit interfaces. This enables deployment as a monolith for simplicity or decomposition into microservices for scale.
-
-## 3. System Layers
-
-| Layer | Technology | Responsibility |
-|-------|-----------|----------------|
-| Presentation | Next.js, React, Tailwind, Shadcn UI | Dashboard, agent visualization, KG explorer |
-| API Gateway | FastAPI | REST API, JWT auth, RBAC, rate limiting, SSE |
-| Agent Orchestration | LangGraph | 13-agent stateful workflow with conditional routing |
-| Knowledge | Neo4j + LlamaIndex + ChromaDB | Knowledge graph + hybrid RAG retrieval |
-| Memory | Redis + PostgreSQL + ChromaDB | Short-term working memory + long-term episodic memory |
-| Execution | Docker-in-Docker | Sandboxed test execution, patch application |
-| Evaluation | Custom metrics engine | Coverage, risk scoring, XAI traces, hallucination detection |
-| Data | PostgreSQL | Persistent relational storage for all entities |
-
-## 4. Agent Orchestration
-
-The 13 agents form a directed acyclic graph (with cycles for repair retries) orchestrated by LangGraph. Each agent:
-
-- Receives the shared `AgentState`
-- Performs its specialized task
-- Returns an updated state
-- Provides an XAI explanation for every decision
-
-**Key design principle**: Agents are stateless functions over a shared state. All persistence is handled by the memory layer. This makes agents testable, replaceable, and composable.
-
-## 5. Knowledge Retrieval: Hybrid RAG + KG
-
-The Retriever Agent uses two complementary strategies:
-
-1. **Dense Retrieval (RAG)**: LlamaIndex indexes source code, docs, requirements, and test history into ChromaDB. Semantic similarity search retrieves relevant context.
-
-2. **Graph Traversal (KG)**: Neo4j stores structural relationships. Cypher queries traverse the graph to find related entities (e.g., "what methods call this function?", "what requirements trace to this module?").
-
-The fusion of both strategies provides both semantic relevance and structural precision.
-
-## 6. Security Architecture
-
-- **Authentication**: JWT with refresh tokens
-- **Authorization**: Role-Based Access Control (Admin, Engineer, Viewer)
-- **Rate Limiting**: Token bucket per user
-- **Input Validation**: Pydantic models on all endpoints
-- **Audit Logging**: Every mutation logged with user, action, timestamp
-- **Sandbox Isolation**: Test execution in ephemeral Docker containers
-
-## 7. Deployment Architecture
+AutoTestAI is a **13-node agentic pipeline** that autonomously performs the full software quality engineering lifecycle:
 
 ```
-┌──────────────────────────────────────────────┐
-│                  Nginx Reverse Proxy          │
-├──────────────┬───────────────────────────────┤
-│  Frontend    │  Backend                       │
-│  (Next.js)   │  (FastAPI)                     │
-│  Port 3000   │  Port 8000                     │
-├──────────────┴───────────────────────────────┤
-│  PostgreSQL  │  Neo4j   │  ChromaDB  │ Redis │
-│  Port 5432   │  7474/7687│  Port 8001 │ 6379 │
-└──────────────┴───────────┴───────────┴───────┘
+Code Input → Knowledge Extraction → Test Generation → Execution → Bug Repair → Learning
 ```
 
-All services containerized via Docker Compose. Production-ready with health checks, restart policies, and volume mounts.
+---
 
-## 8. Scalability Considerations
+## 2. Component Architecture
 
-- **Horizontal**: Stateless API servers behind a load balancer
-- **Agent parallelism**: LangGraph supports parallel node execution for independent agents
-- **Async I/O**: FastAPI + async SQLAlchemy for non-blocking database operations
-- **Vector DB scaling**: ChromaDB supports sharding; migration path to Pinecone/Weaviate
-- **Graph DB scaling**: Neo4j Aura for managed scaling
+### 2.1 Frontend Layer
+- **Framework:** Next.js 16 (App Router) + TypeScript + Tailwind CSS 4
+- **Key Screens:** Dashboard, Agent Monitor, KG Explorer, XAI Trace Viewer
+- **State:** TanStack Query for async server state; Framer Motion for animations
+- **Data viz:** Recharts (coverage trend, bug distribution, patch strategy)
 
-## 9. Monitoring & Observability
+### 2.2 Backend API Layer
+- **Framework:** FastAPI 0.115 + Python 3.12
+- **Auth:** JWT Bearer tokens + RBAC (Admin / Engineer / Viewer)
+- **Routers:** `/auth` `/projects` `/agents` `/graph` `/rag` `/execution` `/repair` `/metrics`
+- **ODM:** Beanie (async MongoDB) via Motor driver
 
-- **Prometheus**: Metrics collection (request latency, agent execution time, queue depth)
-- **Grafana**: Dashboards for system health and agent performance
-- **Structured Logging**: JSON logs with correlation IDs for distributed tracing
+### 2.3 Agent Orchestration Layer
+- **Engine:** LangGraph StateGraph with `AgentState` TypedDict
+- **LLM:** Groq `llama-3.3-70b-versatile` (free tier)
+- **Nodes:** 13 specialized agents (see §3)
+- **Routing:** Conditional edges for failure-path repair loop
+
+### 2.4 Knowledge Layer
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| Vector Store | ChromaDB (remote HttpClient) | Dense semantic search |
+| Embeddings | HuggingFace Inference API (free) | Remote embedding generation |
+| Graph DB | Neo4j 5 | Structural code knowledge graph |
+| Indexing | LlamaIndex | Document chunking + retrieval |
+
+### 2.5 Execution Layer
+- **Sandbox:** Docker SDK (ephemeral containers with network isolation)
+- **Test Runners:** PyTest, Playwright, Newman
+- **Result Parsing:** JUnit XML, pytest-json-report, Cobertura coverage.xml
+- **Resource Limits:** 512MB RAM, 1 vCPU per container
+
+### 2.6 Repair Layer
+- **Patch Engine:** Groq LLM generating 4-strategy unified diff patches
+- **Patch Validator:** Apply → compile check → failing test → regression sweep
+- **Regression Checker:** Full test suite comparison against baseline
+
+### 2.7 Data Layer
+| Store | Technology | Data |
+|-------|-----------|------|
+| Primary DB | MongoDB Atlas | Users, Projects, Tests, Bugs, Patches |
+| Cache | Redis 7 | Sessions, rate limiting, agent state |
+| Vector Store | ChromaDB | Code embeddings |
+| Graph | Neo4j | Code structure graph |
+
+---
+
+## 3. Agent Pipeline
+
+```
+┌─────────┐    ┌────────────┐    ┌──────────────┐    ┌──────────┐
+│ Planner │───▶│ Requirement│───▶│ Architecture │───▶│ Retriever│
+└─────────┘    └────────────┘    └──────────────┘    └────┬─────┘
+                                                          │
+                                                          ▼
+┌──────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│ Test Strategy│───▶│ Test Generation  │───▶│   Verification   │
+└──────────────┘    └──────────────────┘    └────────┬─────────┘
+                                                     │
+                                                     ▼
+                                              ┌──────────┐
+                                              │ Execution│
+                                              └────┬─────┘
+                              ┌─────── pass ───────┘
+                              │               └───── fail ──────────┐
+                              ▼                                     ▼
+                         ┌──────────┐                    ┌─────────────────┐
+                         │ Learning │                    │ Bug Localization │
+                         └──────────┘                    └────────┬────────┘
+                                                                  ▼
+                                                         ┌──────────────┐
+                                                         │  Root Cause  │
+                                                         └──────┬───────┘
+                                                                ▼
+                                                      ┌──────────────────┐
+                                                      │ Program Repair   │◀── retry
+                                                      └────────┬─────────┘
+                                                               ▼
+                                                      ┌──────────────────┐
+                                                      │ Patch Validation  │
+                                                      └────────┬─────────┘
+                                                    accepted   │   rejected
+                                                      ▼              │
+                                               ┌──────────┐         │
+                                               │ Learning │         │
+                                               └──────────┘    (retry loop)
+```
+
+---
+
+## 4. Data Flow
+
+1. User submits a project via `/api/v1/projects`
+2. Frontend triggers `/api/v1/agents/trigger`
+3. Backend compiles the LangGraph StateGraph and invokes `ainvoke()`
+4. Each agent reads from and writes to `AgentState`
+5. List-accumulating fields merge safely across parallel writes
+6. Terminal state is `COMPLETE` or `ERROR`
+7. Frontend polls `/api/v1/metrics/dashboard/{project_id}` for real-time updates
+
+---
+
+## 5. Security Design
+
+- JWT tokens (HS256, 30-min access + 7-day refresh)
+- RBAC: Admin (full), Engineer (trigger, view), Viewer (read-only)
+- Docker sandbox: `network_mode=none`, memory + CPU limits
+- MongoDB queries via Beanie (type-safe, no raw injection risk)
+- All secrets in env vars, SecretStr in Pydantic config
