@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     APP_ENV: Literal["development", "staging", "production"] = "development"
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
-    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: str | list[str] = ["http://localhost:3000"]
 
     # ── MongoDB ──────────────────────────────────────────────────
     MONGODB_URL: str = "mongodb://localhost:27017"
@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     NEO4J_URI: str = "bolt://localhost:7687"
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: SecretStr = SecretStr("neo4j")
+    NEO4J_DATABASE: str = "neo4j"
 
     # ── ChromaDB ─────────────────────────────────────────────────
     CHROMA_HOST: str = "localhost"
@@ -48,6 +49,8 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: SecretStr = SecretStr("")
     ANTHROPIC_API_KEY: SecretStr = SecretStr("")
     GROQ_API_KEY: SecretStr = SecretStr("")
+    HUGGINGFACE_API_TOKEN: SecretStr = SecretStr("")
+    HF_MODEL: str = "mistralai/Mistral-7B-Instruct-v0.3"
     DEFAULT_LLM_MODEL: str = "llama-3.3-70b-versatile"
     DEFAULT_TEMPERATURE: float = 0.1
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.services.neo4j_service import Neo4jService
+from app.knowledge.graph.neo4j_service import Neo4jService
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)

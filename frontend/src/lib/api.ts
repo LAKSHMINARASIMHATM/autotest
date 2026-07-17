@@ -1,0 +1,238 @@
+/**
+ * api.ts — central fetch client for the AutoTestAI backend.
+ * All pages should import helpers from here — no direct fetch calls.
+ */
+
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+
+// First project id from the project list is stored here after first call
+let _cachedProjectId: string | null = null;
+
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { "Content-Type": "application/json", ...(options?.headers ?? {}) },
+    ...options,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText);
+    throw new Error(`API ${res.status}: ${text}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+// ─── Projects ────────────────────────────────────────────────────────────────
+
+export interface ProjectItem {
+  id: string;
+  name: string;
+  description: string;
+  repo_url: string;
+  language: string;
+  framework: string;
+  branch: string;
+  status: string;
+  total_files: number;
+  total_test_cases: number;
+  total_bugs_found: number;
+  total_patches_applied: number;
+  coverage_percentage: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectListResponse {
+  items: ProjectItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export async function listProjects(page = 1, pageSize = 20): Promise<ProjectListResponse> {
+  return request<ProjectListResponse>(`/projects?page=${page}&page_size=${pageSize}`);
+}
+
+/** Returns the first project id — used as a default when no project is selected. */
+export async function getDefaultProjectId(): Promise<string | null> {
+  if (_cachedProjectId) return _cachedProjectId;
+  try {
+    const res = await listProjects();
+    _cachedProjectId = res.items[0]?.id ?? null;
+    return _cachedProjectId;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Metrics ─────────────────────────────────────────────────────────────────
+
+export interface DashboardMetrics {
+  project_id: string;
+  total_test_cases: number;
+  total_runs: number;
+  latest_run: {
+    passed: number;
+    failed: number;
+    total: number;
+    pass_rate: number;
+    coverage_pct: number;
+  };
+  total_bugs: number;
+  total_patches: number;
+  patch_success_rate: number;
+  agents_executed: number;
+}
+
+export async function getDashboardMetrics(projectId: string): Promise<DashboardMetrics> {
+  return request<DashboardMetrics>(`/metrics/dashboard/${projectId}`);
+}
+
+export interface CoveragePoint {
+  run_id: string;
+  coverage: number;
+  passed: number;
+  failed: number;
+}
+
+export async function getCoverageTrend(projectId: string, limit = 10): Promise<CoveragePoint[]> {
+  return request<CoveragePoint[]>(`/metrics/coverage/${projectId}?limit=${limit}`);
+}
+
+export interface BugSeverityDist {
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
+export async function getBugSeverityDist(projectId: string): Promise<BugSeverityDist> {
+  return request<BugSeverityDist>(`/metrics/bugs/${projectId}/severity`);
+}
+
+export interface PatchStrategyBreakdown {
+  [strategy: string]: number;
+}
+
+export async function getPatchStrategyBreakdown(projectId: string): Promise<PatchStrategyBreakdown> {
+  return request<PatchStrategyBreakdown>(`/metrics/patches/${projectId}/strategies`);
+}
+
+// ─── Test Cases ──────────────────────────────────────────────────────────────
+
+export interface TestCaseItem {
+  id: string;
+  name: string;
+  file: string;
+  assertions: number;
+  confidence: number;
+  pass_rate: number;
+  code: string;
+  framework: string;
+}
+
+export async function getProjectTestCases(projectId: string): Promise<TestCaseItem[]> {
+  return request<TestCaseItem[]>(`/projects/${projectId}/test-cases`);
+}
+
+// ─── Bugs ────────────────────────────────────────────────────────────────────
+
+export interface BugItem {
+  id: string;
+  severity: "critical" | "high" | "medium" | "low";
+  file: string;
+  method: string;
+  line: number;
+  confidence: number;
+  status: string;
+  rootCause: string;
+  codeSnippet: string;
+  fixSuggestion: string;
+}
+
+export async function getProjectBugs(projectId: string): Promise<BugItem[]> {
+  return request<BugItem[]>(`/projects/${projectId}/bugs`);
+}
+
+// ─── Patches ─────────────────────────────────────────────────────────────────
+
+export interface PatchItem {
+  id: string;
+  bugId: string;
+  strategy: string;
+  status: string;
+  confidence: number;
+  file: string;
+  diff: string;
+  timestamp: string;
+}
+
+export async function getProjectPatches(projectId: string): Promise<PatchItem[]> {
+  return request<PatchItem[]>(`/projects/${projectId}/patches`);
+}
+
+// ─── Knowledge Graph / Cypher ────────────────────────────────────────────────
+
+export async function executeCypherQuery(query: string): Promise<Record<string, unknown>[]> {
+  return request<Record<string, unknown>[]>("/graph/query", {
+    method: "POST",
+    body: JSON.stringify({ query }),
+  });
+}
+
+// ─── GitHub Import ────────────────────────────────────────────────────────────
+
+export interface GitHubImportRequest {
+  repo_url: string;
+  name?: string;
+  branch?: string;
+  language?: string;
+  description?: string;
+  auto_run_agents?: boolean;
+}
+
+export interface GitHubImportResponse {
+  project_id: string;
+  name: string;
+  repo_url: string;
+  language: string;
+  framework: string;
+  total_files: number;
+  total_functions: number;
+  total_classes: number;
+  api_endpoints: { method: string; path: string }[];
+  session_id: string | null;
+  pipeline_status: string;
+}
+
+export async function importFromGitHub(payload: GitHubImportRequest): Promise<GitHubImportResponse> {
+  return request<GitHubImportResponse>("/projects/import/github", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+// ─── Agent Pipeline ──────────────────────────────────────────────────────────
+
+export interface PipelineStatusResponse {
+  session_id: string;
+  project_id: string;
+  status: string;
+  agents_run: string[];
+  test_cases_generated: number;
+  bugs_found: number;
+  patches_generated: number;
+}
+
+export async function triggerAgentPipeline(projectId: string, maxIterations = 2) {
+  return request<{ session_id: string; status: string; message: string }>("/agents/trigger", {
+    method: "POST",
+    body: JSON.stringify({ project_id: projectId, max_iterations: maxIterations }),
+  });
+}
+
+export async function getPipelineStatus(sessionId: string): Promise<PipelineStatusResponse> {
+  return request<PipelineStatusResponse>(`/agents/status/${sessionId}`);
+}
+
+export async function listPipelineSessions(): Promise<PipelineStatusResponse[]> {
+  return request<PipelineStatusResponse[]>("/agents/sessions");
+}

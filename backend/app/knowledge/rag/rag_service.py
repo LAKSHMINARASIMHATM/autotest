@@ -54,17 +54,17 @@ class HFInferenceEmbedding(BaseEmbedding):
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Generate embedding for document text asynchronously."""
-        return await self._aget_hf_embedding(text)
+        return await self._aget_text_embedding(text)
 
     def _get_hf_embedding(self, text: str) -> List[float]:
         """Synchronously calls Hugging Face API."""
         try:
             with httpx.Client() as client:
                 res = client.post(
-                    self._api_url,
-                    headers=self._headers,
-                    json={"inputs": [text], "options": {"wait_for_model": True}},
-                    timeout=30.0,
+                     self._api_url,
+                     headers=self._headers,
+                     json={"inputs": [text], "options": {"wait_for_model": True}},
+                     timeout=30.0,
                 )
                 res.raise_for_status()
                 result = res.json()

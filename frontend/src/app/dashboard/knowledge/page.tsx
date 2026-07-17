@@ -1,49 +1,52 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Database, Play, RefreshCw, Terminal, Search, HelpCircle, Layers, FileCode } from "lucide-react";
+import { Database, Play, RefreshCw, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { KnowledgeGraphExplorer } from "@/components/knowledge/graph-explorer";
+import { executeCypherQuery } from "@/lib/api";
 
-const queries = [
-  { name: "List REST Endpoints", query: "MATCH (p:Project)-[:EXPOSES_API]->(e) RETURN e.method, e.path LIMIT 5" },
-  { name: "Show Test to Method Traces", query: "MATCH (t:TestCase)-[:TESTS]->(m:Method) RETURN t.id, m.name" },
-  { name: "Find Localized Bugs", query: "MATCH (b:Bug)-[:LOCALIZED_IN]->(m:Method) RETURN b.severity, m.name" },
+const PRESET_QUERIES = [
+  {
+    name: "List REST Endpoints",
+    query: "MATCH (p:Project)-[:EXPOSES_API]->(e) RETURN e.method, e.path LIMIT 5",
+  },
+  {
+    name: "Test → Method Traces",
+    query: "MATCH (t:TestCase)-[:TESTS]->(m:Method) RETURN t.id, m.name",
+  },
+  {
+    name: "Find Localized Bugs",
+    query: "MATCH (b:Bug)-[:LOCALIZED_IN]->(m:Method) RETURN b.severity, m.name",
+  },
 ];
 
-const mockResults: Record<string, any> = {
-  "MATCH (p:Project)-[:EXPOSES_API]->(e) RETURN e.method, e.path LIMIT 5": [
-    { "e.method": "POST", "e.path": "/auth/login" },
-    { "e.method": "POST", "e.path": "/auth/register" },
-    { "e.method": "GET", "e.path": "/projects" },
-    { "e.method": "POST", "e.path": "/projects/{id}/analyze" },
-    { "e.method": "GET", "e.path": "/projects/{id}/requirements" },
-  ],
-  "MATCH (t:TestCase)-[:TESTS]->(m:Method) RETURN t.id, m.name": [
-    { "t.id": "tc_001", "m.name": "verify_password" },
-    { "t.id": "tc_002", "m.name": "create_access_token" },
-    { "t.id": "tc_003", "m.name": "get_project_by_id" },
-    { "t.id": "tc_004", "m.name": "run_analysis_pipeline" },
-  ],
-  "MATCH (b:Bug)-[:LOCALIZED_IN]->(m:Method) RETURN b.severity, m.name": [
-    { "b.severity": "critical", "m.name": "verify_password" },
-    { "b.severity": "high", "m.name": "create_access_token" },
-  ],
-};
-
 export default function KnowledgePage() {
-  const [cypher, setCypher] = useState(queries[0].query);
-  const [result, setResult] = useState<any>(mockResults[queries[0].query]);
+  const [cypher, setCypher] = useState(PRESET_QUERIES[0].query);
+  const [result, setResult] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const runQuery = () => {
+  const runQuery = async () => {
+    if (!cypher.trim()) return;
     setLoading(true);
-    setTimeout(() => {
-      setResult(mockResults[cypher] || [{ error: "No nodes matched this Cypher query or query syntax is generic." }]);
+    setError(null);
+    try {
+      const data = await executeCypherQuery(cypher);
+      setResult(data);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Query failed");
+      setResult(null);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
+  };
+
+  const handlePreset = (query: string) => {
+    setCypher(query);
+    setResult(null);
+    setError(null);
   };
 
   return (
@@ -54,11 +57,11 @@ export default function KnowledgePage() {
           <span className="gradient-text">Neo4j Knowledge</span> Graph
         </h1>
         <p className="text-sm text-[#6B7280] mt-1">
-          Explore structured code topology, entity relationships, and test coverage graphs.
+          Explore structured code topology, entity relationships, and test coverage graphs — powered by live Neo4j Aura.
         </p>
       </div>
 
-      {/* Main layout: left tree explorer, right cypher console */}
+      {/* Main layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Graph Tree */}
         <div className="lg:col-span-1">
@@ -73,16 +76,16 @@ export default function KnowledgePage() {
               <div className="flex items-center gap-2">
                 <Terminal className="w-5 h-5 text-[#8B5CF6]" />
                 <h3 className="text-[15px] font-semibold text-[#F9FAFB]">Cypher Console</h3>
+                <span className="text-[10px] bg-green-900/30 text-green-400 border border-green-700/30 px-2 py-0.5 rounded-full">
+                  Live Neo4j Aura
+                </span>
               </div>
               <div className="flex gap-2">
-                {queries.map((q, i) => (
+                {PRESET_QUERIES.map((q, i) => (
                   <Button
                     key={i}
                     variant="secondary"
-                    onClick={() => {
-                      setCypher(q.query);
-                      setResult(mockResults[q.query] || []);
-                    }}
+                    onClick={() => handlePreset(q.query)}
                     className="text-[11px] h-7 px-2.5 rounded-lg"
                   >
                     {q.name}
@@ -96,12 +99,13 @@ export default function KnowledgePage() {
                 value={cypher}
                 onChange={(e) => setCypher(e.target.value)}
                 rows={4}
+                placeholder="Enter a Cypher query…"
                 className="w-full font-mono text-xs bg-[#09090B] border border-[rgba(255,255,255,0.06)] rounded-xl p-4 text-[#F9FAFB] focus:outline-none focus:border-[#8B5CF6] resize-none"
               />
               <Button
                 size="sm"
                 onClick={runQuery}
-                disabled={loading}
+                disabled={loading || !cypher.trim()}
                 className="absolute right-3 bottom-4 bg-[#8B5CF6] hover:bg-[#7C3AED] gap-1 text-[11px] h-8"
               >
                 {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
@@ -120,8 +124,16 @@ export default function KnowledgePage() {
               <span className="text-[10px] bg-[rgba(255,255,255,0.06)] px-2 py-0.5 rounded text-[#6B7280]">JSON</span>
             </div>
 
+            {error && (
+              <div className="mb-4 bg-red-900/20 border border-red-700/30 text-red-400 text-xs px-3 py-2 rounded-xl font-mono">
+                {error}
+              </div>
+            )}
+
             <pre className="overflow-x-auto text-[11px] font-mono bg-[#09090B] border border-[rgba(255,255,255,0.06)] rounded-xl p-5 text-[#9CA3AF] max-h-[300px]">
-              {JSON.stringify(result, null, 2)}
+              {result === null
+                ? "// Run a query to see results from your live Neo4j Aura database."
+                : JSON.stringify(result, null, 2)}
             </pre>
           </GlassCard>
         </div>

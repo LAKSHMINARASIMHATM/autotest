@@ -73,7 +73,8 @@ class Neo4jService:
         assert cls._driver is not None
         parameters = parameters or {}
 
-        async with cls._driver.session() as session:
+        db_name = get_settings().NEO4J_DATABASE
+        async with cls._driver.session(database=db_name) as session:
             try:
                 result = await session.run(query, parameters)
                 records = []

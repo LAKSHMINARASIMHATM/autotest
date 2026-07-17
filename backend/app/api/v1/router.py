@@ -5,8 +5,8 @@ from fastapi import APIRouter
 from app.api.v1.endpoints.auth import router as auth_router
 from app.api.v1.endpoints.projects import router as projects_router
 from app.api.v1.endpoints.agents import router as agents_router
-from app.api.v1.endpoints.graph import router as graph_router
-from app.api.v1.endpoints.rag import router as rag_router
+from app.knowledge.graph.endpoints import router as graph_router
+from app.knowledge.rag.endpoints import router as rag_router
 from app.api.v1.endpoints.execution import router as execution_router
 from app.api.v1.endpoints.repair import router as repair_router
 from app.api.v1.endpoints.metrics import router as metrics_router

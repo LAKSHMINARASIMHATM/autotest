@@ -20,16 +20,21 @@ def create_app() -> FastAPI:
 
 ```python
 class Settings(BaseSettings):
-    DATABASE_URL: PostgresDsn
+    MONGODB_URL: str
+    MONGODB_DB_NAME: str
+    REDIS_URL: str
     NEO4J_URI: str
     NEO4J_USER: str
     NEO4J_PASSWORD: SecretStr
     CHROMA_HOST: str
-    REDIS_URL: RedisDsn
+    CHROMA_PORT: int
     OPENAI_API_KEY: SecretStr
+    ANTHROPIC_API_KEY: SecretStr
+    GROQ_API_KEY: SecretStr
     JWT_SECRET: SecretStr
     JWT_ALGORITHM: str = "HS256"
-    JWT_EXPIRY_MINUTES: int = 30
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     model_config = SettingsConfigDict(env_file=".env")
 ```
@@ -56,25 +61,28 @@ AppException (base)
 
 ## 3. Agent Node Interface
 
-Every agent node follows a uniform contract:
+Every agent node extends the abstract class `BaseAgentNode` and implements the `execute` method contract:
 
 ```python
-@dataclass
-class AgentNodeConfig:
+class BaseAgentNode(abc.ABC):
     name: str
-    llm_model: str = "gpt-4o"
-    temperature: float = 0.1
-    max_retries: int = 3
+    description: str
+    llm: BaseChatModel | None
 
-async def agent_node(state: AgentState, config: RunnableConfig) -> dict:
-    """
-    1. Extract relevant fields from state
-    2. Build prompt with retrieved context
-    3. Call LLM
-    4. Parse structured output
-    5. Generate XAI explanation
-    6. Return state update dict
-    """
+    async def __call__(
+        self,
+        state: AgentState,
+        config: RunnableConfig | None = None,
+    ) -> dict[str, Any]:
+        # Wraps execute() with error handling, logging, and tracing
+
+    @abc.abstractmethod
+    async def execute(
+        self,
+        state: AgentState,
+        config: RunnableConfig | None = None,
+    ) -> dict[str, Any]:
+        """Perform domain-specific agent logic and return state update dictionary."""
 ```
 
 ## 4. Knowledge Graph Operations
@@ -168,4 +176,28 @@ class Explanation(BaseModel):
     confidence: float                    # 0.0 - 1.0
     supporting_evidence: list[str]       # quoted passages
     alternative_considered: list[str]    # rejected alternatives
+
+
+## 9. Backend Directory Layout
+
+The backend application is structured around consolidated modules and clean domain boundaries:
+
+```
+app/
+├── agents/            # LangGraph agent definitions & orchestrator
+├── api/               # API router configurations
+│   └── v1/
+│       └── router.py  # Routes registry
+├── core/              # Global app settings, database pools, logging
+├── evaluation/        # Heuristics metrics & explanation tracing services
+├── execution/         # Isolated Docker runners and parsers
+├── knowledge/         # Consolidated knowledge base module
+│   ├── graph/         # Neo4j Service, Graph Builder, and graph endpoints
+│   └── rag/           # ChromaDB RAG Service and RAG endpoints
+├── memory/            # Redis cache connection pools
+├── models/            # ODM Beanie/Mongo database models
+├── repair/            # Code patch, validator, and regression checking
+├── schemas/           # Pydantic schemas for request/response payloads
+└── utils/             # Helper utility functions and decorators
+```
 ```

@@ -8,22 +8,38 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
+import firebase_admin
+from firebase_admin import auth
 
 from app.core.config import Settings, get_settings
 
+# Initialize Firebase Admin SDK if not already done
+try:
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app()
+except Exception:
+    pass
+
 # ── Password Hashing ────────────────────────────────────────────
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 
 def hash_password(plain: str) -> str:
     """Hash a plaintext password using bcrypt."""
-    return _pwd_context.hash(plain)
+    pw_bytes = plain.encode('utf-8')
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pw_bytes, salt).decode('utf-8')
 
 
 def verify_password(plain: str, hashed: str) -> bool:
     """Verify a plaintext password against a bcrypt hash."""
-    return _pwd_context.verify(plain, hashed)
+    pw_bytes = plain.encode('utf-8')
+    hash_bytes = hashed.encode('utf-8')
+    try:
+        return bcrypt.checkpw(pw_bytes, hash_bytes)
+    except Exception:
+        return False
 
 
 # ── Roles ────────────────────────────────────────────────────────
@@ -143,14 +159,67 @@ def decode_token(token: str, settings: Settings | None = None) -> TokenPayload:
 
 # ── FastAPI Dependencies ─────────────────────────────────────────
 
-_bearer_scheme = HTTPBearer()
+_bearer_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_current_user_payload(
-    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> TokenPayload:
-    """FastAPI dependency — extracts and validates the JWT from Authorization header."""
-    return decode_token(credentials.credentials)
+    """FastAPI dependency — extracts and validates the JWT/Firebase token."""
+    settings = get_settings()
+    
+    if credentials is not None:
+        token = credentials.credentials
+        try:
+            # Verify Firebase token
+            decoded_token = auth.verify_id_token(token)
+            email = decoded_token.get("email", "")
+            
+            # Retrieve or sync user in MongoDB
+            from app.models.user import User
+            user = await User.find_one(User.email == email)
+            if not user:
+                user = User(
+                    email=email,
+                    password_hash="",  # Firebase handles password security
+                    full_name=decoded_token.get("name", email.split("@")[0]),
+                    role=Role.ENGINEER,
+                    is_active=True
+                )
+                await user.insert()
+                
+            exp_val = decoded_token.get("exp", 0)
+            exp_dt = datetime.fromtimestamp(exp_val, UTC) if exp_val else datetime.now(UTC) + timedelta(hours=1)
+            
+            return TokenPayload(
+                sub=str(user.id),
+                role=user.role,
+                exp=exp_dt
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid or expired token: {e}",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            
+    # Dev fallback
+    if settings.APP_ENV == "development":
+        from app.models.user import User
+        # Find any user (like the seeded admin user)
+        user = await User.find_one({})
+        if user:
+            return TokenPayload(
+                sub=str(user.id),
+                role=user.role,
+                exp=datetime.now(UTC) + timedelta(days=1)
+            )
+            
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 class RequireRole:

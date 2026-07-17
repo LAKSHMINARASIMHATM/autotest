@@ -42,7 +42,11 @@ class MetricsService:
 
             passed = latest_run.passed if latest_run else 0
             failed = latest_run.failed if latest_run else 0
-            coverage = latest_run.coverage if latest_run else 0.0
+            coverage_data = latest_run.coverage if latest_run else 0.0
+            if isinstance(coverage_data, dict):
+                coverage = coverage_data.get("line_coverage_pct", coverage_data.get("coverage_pct", 0.0))
+            else:
+                coverage = float(coverage_data)
             total_in_run = passed + failed
 
             # Patch success rate
@@ -101,7 +105,12 @@ class MetricsService:
                 TestRun.project_id == project_id
             ).sort(-TestRun.created_at).limit(limit).to_list()
             return [
-                {"run_id": str(r.id)[:8], "coverage": r.coverage, "passed": r.passed, "failed": r.failed}
+                {
+                    "run_id": str(r.id)[:8],
+                    "coverage": r.coverage.get("line_coverage_pct", r.coverage.get("coverage_pct", 0.0)) if isinstance(r.coverage, dict) else float(r.coverage or 0.0),
+                    "passed": r.passed,
+                    "failed": r.failed
+                }
                 for r in reversed(runs)
             ]
         except Exception:
