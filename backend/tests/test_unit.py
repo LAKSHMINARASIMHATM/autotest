@@ -78,7 +78,7 @@ def test_result_parser_merge() -> None:
 
 def test_metrics_demo_mode() -> None:
     """MetricsService demo fallback returns valid structure."""
-    import os, sys
+    import os
     # Patch env vars before importing settings
     os.environ.setdefault("MONGODB_URL", "mongodb://localhost:27017")
     os.environ.setdefault("GROQ_API_KEY", "gsk_test")

@@ -3,15 +3,17 @@
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
+import firebase_admin
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-from pydantic import BaseModel
-import firebase_admin
 from firebase_admin import auth
+from jose import JWTError, jwt
+from pydantic import BaseModel
 
 from app.core.config import Settings, get_settings
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 # Initialize Firebase Admin SDK if not already done
 try:
@@ -167,54 +169,72 @@ async def get_current_user_payload(
 ) -> TokenPayload:
     """FastAPI dependency — extracts and validates the JWT/Firebase token."""
     settings = get_settings()
-    
+
     if credentials is not None:
         token = credentials.credentials
-        try:
-            # Verify Firebase token
-            decoded_token = auth.verify_id_token(token)
-            email = decoded_token.get("email", "")
-            
-            # Retrieve or sync user in MongoDB
-            from app.models.user import User
-            user = await User.find_one(User.email == email)
-            if not user:
+        if token and token not in ("undefined", "null", "none", ""):
+            try:
+                # Verify Firebase token
+                decoded_token = auth.verify_id_token(token)
+                email = decoded_token.get("email", "")
+
+                # Retrieve or sync user in MongoDB
+                from app.models.user import User
+                user = await User.find_one(User.email == email)
+                if not user:
+                    user = User(
+                        email=email,
+                        password_hash="",  # Firebase handles password security
+                        full_name=decoded_token.get("name", email.split("@")[0]),
+                        role=Role.ENGINEER,
+                        is_active=True
+                    )
+                    await user.insert()
+
+                exp_val = decoded_token.get("exp", 0)
+                exp_dt = datetime.fromtimestamp(exp_val, UTC) if exp_val else datetime.now(UTC) + timedelta(hours=1)
+
+                return TokenPayload(
+                    sub=str(user.id),
+                    role=user.role,
+                    exp=exp_dt
+                )
+            except Exception as e:
+                if settings.APP_ENV == "development":
+                    logger.warning("firebase_token_verification_failed_using_dev_fallback", error=str(e))
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail=f"Invalid or expired token: {e}",
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+
+    # Dev fallback
+    if settings.APP_ENV == "development":
+        from app.models.user import User
+        # Find any user
+        user = await User.find_one({})
+        if not user:
+            try:
                 user = User(
-                    email=email,
-                    password_hash="",  # Firebase handles password security
-                    full_name=decoded_token.get("name", email.split("@")[0]),
+                    email="dev@autotest.ai",
+                    password_hash="",
+                    full_name="Dev Engineer",
                     role=Role.ENGINEER,
                     is_active=True
                 )
                 await user.insert()
-                
-            exp_val = decoded_token.get("exp", 0)
-            exp_dt = datetime.fromtimestamp(exp_val, UTC) if exp_val else datetime.now(UTC) + timedelta(hours=1)
-            
-            return TokenPayload(
-                sub=str(user.id),
-                role=user.role,
-                exp=exp_dt
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid or expired token: {e}",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-            
-    # Dev fallback
-    if settings.APP_ENV == "development":
-        from app.models.user import User
-        # Find any user (like the seeded admin user)
-        user = await User.find_one({})
+                logger.info("dev_user_auto_seeded", email=user.email)
+            except Exception as seed_err:
+                logger.warning("user_auto_seed_failed", error=str(seed_err))
+
         if user:
             return TokenPayload(
                 sub=str(user.id),
                 role=user.role,
                 exp=datetime.now(UTC) + timedelta(days=1)
             )
-            
+
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Not authenticated",

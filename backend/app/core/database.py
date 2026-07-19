@@ -64,7 +64,27 @@ async def init_mongodb() -> None:
         AuditLog,
     ]
 
-    await init_beanie(database=_database, document_models=document_models)
+    from app.core.logging import get_logger
+    logger = get_logger(__name__)
+
+    try:
+        logger.info("mongodb_connecting", url=settings.MONGODB_URL)
+        # Use a 5-second server selection timeout to fail fast on DNS timeout
+        _client = AsyncIOMotorClient(settings.MONGODB_URL, serverSelectionTimeoutMS=5000)
+        _database = _client[settings.MONGODB_DB_NAME]
+        await init_beanie(database=_database, document_models=document_models)  # type: ignore[arg-type]
+        logger.info("mongodb_initialized_successfully")
+    except Exception as e:
+        fallback_url = "mongodb://127.0.0.1:27017"
+        logger.warning("mongodb_primary_failed_trying_local_fallback", error=str(e), fallback=fallback_url)
+        try:
+            _client = AsyncIOMotorClient(fallback_url, serverSelectionTimeoutMS=3000)
+            _database = _client[settings.MONGODB_DB_NAME]
+            await init_beanie(database=_database, document_models=document_models)  # type: ignore[arg-type]
+            logger.info("mongodb_initialized_local_fallback_success", url=fallback_url)
+        except Exception as fallback_err:
+            logger.error("mongodb_all_connection_attempts_failed", error=str(fallback_err))
+            raise fallback_err
 
 
 async def close_mongodb() -> None:

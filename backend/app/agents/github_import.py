@@ -15,7 +15,6 @@ import shutil
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 import git
 
@@ -152,7 +151,7 @@ def _extract_api_endpoints(files: list[CodeFile]) -> list[dict[str, str]]:
     return endpoints[:30]
 
 
-async def clone_and_scan(repo_url: str, branch: str = "main") -> RepoSummary:
+async def clone_and_scan(repo_url: str, branch: str | None = None) -> RepoSummary:
     """Clone a GitHub repo to a temp dir and extract its code structure."""
     # Normalise URL
     if not repo_url.startswith("http"):
@@ -160,9 +159,46 @@ async def clone_and_scan(repo_url: str, branch: str = "main") -> RepoSummary:
 
     tmpdir = tempfile.mkdtemp(prefix="autotest_")
     try:
-        logger.info("cloning_repo", url=repo_url, branch=branch)
-        git.Repo.clone_from(repo_url, tmpdir, branch=branch, depth=1)
-        logger.info("clone_complete", path=tmpdir)
+        # Merge LFS-skip flag into the full OS environment so PATH/HOME etc. are preserved.
+        clone_env = {**os.environ, "GIT_LFS_SKIP_SMUDGE": "1"}
+        clone_kwargs = {
+            "depth": 1,
+            "env": clone_env,
+            "multi_options": [
+                "-c filter.lfs.smudge=",
+                "-c filter.lfs.required=false",
+            ],
+            "allow_unsafe_options": True,
+        }
+        
+        repo = None
+        actual_branch = branch
+        
+        # Try to clone with the specified branch first (if any)
+        try:
+            if actual_branch:
+                logger.info("cloning_repo", url=repo_url, branch=actual_branch)
+                repo = git.Repo.clone_from(repo_url, tmpdir, branch=actual_branch, **clone_kwargs)
+        except git.GitCommandError:
+            logger.warning("specified_branch_not_found", url=repo_url, branch=actual_branch)
+            actual_branch = None  # Fall back to default branch
+            # Clean up the tmpdir since the failed clone left it there
+            shutil.rmtree(tmpdir, ignore_errors=True)
+            # Recreate the tmpdir
+            tmpdir = tempfile.mkdtemp(prefix="autotest_")
+        
+        # If no branch specified or failed, clone without branch (uses default)
+        if not repo:
+            logger.info("cloning_repo_default_branch", url=repo_url)
+            repo = git.Repo.clone_from(repo_url, tmpdir, **clone_kwargs)
+            # Get the actual default branch name
+            try:
+                actual_branch = repo.active_branch.name
+            except TypeError:
+                # If detached HEAD, try to get the branch from remote
+                actual_branch = "HEAD"
+        
+        logger.info("clone_complete", path=tmpdir, branch=actual_branch)
 
         repo_root = Path(tmpdir)
         code_files: list[CodeFile] = []
@@ -198,7 +234,7 @@ async def clone_and_scan(repo_url: str, branch: str = "main") -> RepoSummary:
 
         summary = RepoSummary(
             repo_url=repo_url,
-            branch=branch,
+            branch=actual_branch,
             language=language,
             framework=framework,
             total_files=len(code_files),

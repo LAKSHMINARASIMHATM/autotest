@@ -51,41 +51,63 @@ Respond with valid JSON in this exact schema:
         project_id = state.get("project_id", "")
         session_id = state.get("session_id", "")
 
+        # Real project context injected by the API when triggering the pipeline
+        repo_url   = state.get("repo_url", "")
+        language   = state.get("language", "")
+        framework  = state.get("framework", "")
+        repo_summary = state.get("repo_summary") or {}
+
+        # Build context string from repo scan data
+        files_info = ""
+        if isinstance(repo_summary, dict) and repo_summary.get("files"):
+            for f in repo_summary["files"][:15]:
+                files_info += f"\n  - {f.get('path','?')} ({f.get('language','?')}): {', '.join(f.get('functions', [])[:5])}"
+
         user_prompt = f"""Analyze this software project and create an execution plan.
 
 Project ID: {project_id}
-Session ID: {session_id}
+Repository: {repo_url or 'unknown'}
+Language: {language or repo_summary.get('language', 'unknown')}
+Framework: {framework or repo_summary.get('framework', 'unknown')}
+Total Files: {repo_summary.get('total_files', 'unknown')}
+Total Functions: {repo_summary.get('total_functions', 'unknown')}
+Total Classes: {repo_summary.get('total_classes', 'unknown')}
+API Endpoints: {len(repo_summary.get('api_endpoints', []))}
+
+Key source files:{files_info or ' (not available)'}
 
 Provide your analysis as JSON."""
 
         response = await self.invoke_llm(self.SYSTEM_PROMPT, user_prompt)
 
-        # Parse LLM response
+        # Parse LLM response — strip markdown fences first
         try:
-            data = json.loads(response)
+            data = json.loads(self.extract_json(response))
         except json.JSONDecodeError:
+            # Fallback: use whatever real data we have from the scan
             data = {
-                "name": "Unknown Project",
-                "language": "python",
-                "framework": "",
-                "total_files": 0,
-                "total_functions": 0,
-                "total_classes": 0,
-                "total_endpoints": 0,
+                "name": repo_url.rstrip("/").split("/")[-1] if repo_url else "Unknown Project",
+                "language": language or repo_summary.get("language", "python"),
+                "framework": framework or repo_summary.get("framework", ""),
+                "total_files": repo_summary.get("total_files", 0),
+                "total_functions": repo_summary.get("total_functions", 0),
+                "total_classes": repo_summary.get("total_classes", 0),
+                "total_endpoints": len(repo_summary.get("api_endpoints", [])),
                 "modules": [],
-                "plan_summary": response,
+                "plan_summary": response[:500],
             }
 
         project_context = ProjectContext(
             project_id=project_id,
             name=data.get("name", ""),
-            language=data.get("language", "python"),
-            framework=data.get("framework", ""),
-            total_files=data.get("total_files", 0),
-            total_functions=data.get("total_functions", 0),
-            total_classes=data.get("total_classes", 0),
-            total_endpoints=data.get("total_endpoints", 0),
+            language=data.get("language", language or "python"),
+            framework=data.get("framework", framework or ""),
+            total_files=data.get("total_files", repo_summary.get("total_files", 0)),
+            total_functions=data.get("total_functions", repo_summary.get("total_functions", 0)),
+            total_classes=data.get("total_classes", repo_summary.get("total_classes", 0)),
+            total_endpoints=data.get("total_endpoints", len(repo_summary.get("api_endpoints", []))),
             modules=data.get("modules", []),
+            repo_path=state.get("local_path", ""),
         )
 
         explanation = self.build_explanation(
@@ -100,3 +122,4 @@ Provide your analysis as JSON."""
             "status": PipelineStatus.ANALYZING,
             "explanations": [explanation],
         }
+

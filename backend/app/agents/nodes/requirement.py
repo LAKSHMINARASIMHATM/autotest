@@ -8,7 +8,7 @@ from typing import Any
 from langchain_core.runnables import RunnableConfig
 
 from app.agents.base import BaseAgentNode
-from app.agents.state import AgentState, PipelineStatus, Requirement
+from app.agents.state import AgentState, Requirement
 
 
 class RequirementAgent(BaseAgentNode):
@@ -65,7 +65,7 @@ Extract all functional and non-functional requirements as JSON."""
         response = await self.invoke_llm(self.SYSTEM_PROMPT, user_prompt)
 
         try:
-            data = json.loads(response)
+            data = json.loads(self.extract_json(response))
             if not isinstance(data, list):
                 data = [data]
         except json.JSONDecodeError:

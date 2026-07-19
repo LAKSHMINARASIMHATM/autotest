@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import time
 from collections.abc import Callable
 from typing import Any
-import functools
 
 from app.core.logging import get_logger
 

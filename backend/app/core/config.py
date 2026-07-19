@@ -46,11 +46,16 @@ class Settings(BaseSettings):
     CHROMA_PORT: int = 8001
 
     # ── LLM Providers ────────────────────────────────────────────
-    OPENAI_API_KEY: SecretStr = SecretStr("")
     ANTHROPIC_API_KEY: SecretStr = SecretStr("")
     GROQ_API_KEY: SecretStr = SecretStr("")
+    GROQ_API_KEY_1: SecretStr = SecretStr("")
+    GROQ_API_KEY_2: SecretStr = SecretStr("")
+    GROQ_API_KEY_3: SecretStr = SecretStr("")
+    GROQ_API_KEY_4: SecretStr = SecretStr("")
+    GROQ_API_KEY_5: SecretStr = SecretStr("")
     HUGGINGFACE_API_TOKEN: SecretStr = SecretStr("")
-    HF_MODEL: str = "mistralai/Mistral-7B-Instruct-v0.3"
+    HF_MODEL: str = "Qwen/Qwen2.5-7B-Instruct"
+
     DEFAULT_LLM_MODEL: str = "llama-3.3-70b-versatile"
     DEFAULT_TEMPERATURE: float = 0.1
 

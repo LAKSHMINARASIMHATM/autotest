@@ -9,10 +9,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.api.deps import get_current_user_id
+from app.core.logging import get_logger
 from app.repair.patch_engine import PatchEngine
 from app.repair.patch_validator import PatchValidator
 from app.repair.regression_checker import RegressionChecker
-from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -90,6 +90,42 @@ async def generate_patches(
             root_cause=payload.root_cause,
             strategies=payload.strategies or None,
         )
+
+        # Retrieve bug and persist the patches + update status
+        from beanie import PydanticObjectId
+        from app.models.bug_report import BugReport, BugStatus
+        from app.models.patch import Patch, PatchStrategy
+        from app.models.patch import PatchStatus as PS
+
+        try:
+            bug_id_obj = PydanticObjectId(payload.bug_id)
+            bug = await BugReport.get(bug_id_obj)
+            if bug:
+                # Save patches
+                for p in patches:
+                    strategy_str = str(p.get("strategy", "minimal")).upper()
+                    p_model = Patch(
+                        project_id=bug.project_id,
+                        bug_report_id=bug.id,
+                        strategy=getattr(PatchStrategy, strategy_str, PatchStrategy.MINIMAL),
+                        status=PS.CANDIDATE,
+                        diff=p.get("diff", ""),
+                        file_path=p.get("file_path", "unknown"),
+                        description=p.get("description", "Auto-generated patch"),
+                        confidence=p.get("confidence", 0.7),
+                    )
+                    await p_model.insert()
+
+                # Update bug status and suggestion
+                bug.status = BugStatus.PATCH_GENERATED
+                if not bug.explanation or not isinstance(bug.explanation, dict):
+                    bug.explanation = {}
+                if patches:
+                    bug.explanation["fix_suggestion"] = patches[0].get("diff", "")
+                await bug.save()
+        except Exception as db_err:
+            logger.warning("save_generated_patches_failed", error=str(db_err))
+
         return patches
     except Exception as e:
         logger.exception("patch_generate_error", error=str(e))

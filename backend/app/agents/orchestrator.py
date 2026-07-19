@@ -12,22 +12,22 @@ from __future__ import annotations
 from typing import Literal
 
 from langchain_core.language_models import BaseChatModel
-from langgraph.graph import StateGraph, END
+from langgraph.graph import END, StateGraph
 
-from app.agents.state import AgentState, PipelineStatus
-from app.agents.nodes.planner import PlannerAgent
-from app.agents.nodes.requirement import RequirementAgent
 from app.agents.nodes.architecture import ArchitectureAgent
-from app.agents.nodes.retriever import RetrieverAgent
-from app.agents.nodes.test_strategy import TestStrategyAgent
-from app.agents.nodes.test_generation import TestGenerationAgent
-from app.agents.nodes.verification import VerificationAgent
-from app.agents.nodes.execution import ExecutionAgent
 from app.agents.nodes.bug_localization import BugLocalizationAgent
-from app.agents.nodes.root_cause import RootCauseAgent
-from app.agents.nodes.program_repair import ProgramRepairAgent
-from app.agents.nodes.patch_validation import PatchValidationAgent
+from app.agents.nodes.execution import ExecutionAgent
 from app.agents.nodes.learning import LearningAgent
+from app.agents.nodes.patch_validation import PatchValidationAgent
+from app.agents.nodes.planner import PlannerAgent
+from app.agents.nodes.program_repair import ProgramRepairAgent
+from app.agents.nodes.requirement import RequirementAgent
+from app.agents.nodes.retriever import RetrieverAgent
+from app.agents.nodes.root_cause import RootCauseAgent
+from app.agents.nodes.test_generation import TestGenerationAgent
+from app.agents.nodes.test_strategy import TestStrategyAgent
+from app.agents.nodes.verification import VerificationAgent
+from app.agents.state import AgentState
 
 
 def route_after_execution(state: AgentState) -> Literal["bug_localization", "learning"]:
@@ -49,24 +49,37 @@ def route_after_patch_validation(state: AgentState) -> Literal["learning", "prog
     return "learning"
 
 
-def build_agent_graph(llm: BaseChatModel) -> StateGraph:
-    """Instantiates and compiles the LangGraph StateGraph with all 13 agents."""
+def build_agent_graph(llm: BaseChatModel | None = None) -> StateGraph:
+    """Instantiates the LangGraph StateGraph with all 13 agents.
+
+    All agents use Groq (llama-3.3-70b-versatile) for reliable execution.
+    HuggingFace is not used — it caused silent failures due to chat template
+    incompatibilities that bypassed the with_fallbacks() safety net.
+    """
+    from app.agents.llm_factory import get_best_llm, get_groq_llm
+
+    # Use the provided LLM or fall back to Groq → best available
+    try:
+        groq_llm = llm or get_groq_llm()
+    except Exception:
+        groq_llm = get_best_llm()
+
     workflow = StateGraph(AgentState)
 
-    # Initialize nodes
-    planner = PlannerAgent(llm)
-    requirement = RequirementAgent(llm)
-    architecture = ArchitectureAgent(llm)
-    retriever = RetrieverAgent(llm)
-    test_strategy = TestStrategyAgent(llm)
-    test_gen = TestGenerationAgent(llm)
-    verification = VerificationAgent(llm)
-    execution = ExecutionAgent(llm)
-    bug_loc = BugLocalizationAgent(llm)
-    root_cause = RootCauseAgent(llm)
-    repair = ProgramRepairAgent(llm)
-    patch_val = PatchValidationAgent(llm)
-    learning = LearningAgent(llm)
+    # All 13 agents use Groq for consistent, reliable execution
+    planner      = PlannerAgent(groq_llm)
+    requirement  = RequirementAgent(groq_llm)
+    architecture = ArchitectureAgent(groq_llm)
+    retriever    = RetrieverAgent(groq_llm)
+    test_strategy = TestStrategyAgent(groq_llm)
+    test_gen     = TestGenerationAgent(groq_llm)
+    verification = VerificationAgent(groq_llm)
+    execution    = ExecutionAgent(groq_llm)
+    bug_loc      = BugLocalizationAgent(groq_llm)
+    root_cause   = RootCauseAgent(groq_llm)
+    repair       = ProgramRepairAgent(groq_llm)
+    patch_val    = PatchValidationAgent(groq_llm)
+    learning     = LearningAgent(groq_llm)
 
     # Add nodes to graph
     workflow.add_node("planner", planner)

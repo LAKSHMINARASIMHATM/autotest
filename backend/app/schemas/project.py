@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field
 
 from app.models.project import ProjectStatus
 
-
 # ── Requests ─────────────────────────────────────────────────────
 
 
@@ -57,6 +56,7 @@ class ProjectResponse(BaseModel):
     total_bugs_found: int
     total_patches_applied: int
     coverage_percentage: float
+    local_path: str = ""
     created_at: datetime
     updated_at: datetime
 

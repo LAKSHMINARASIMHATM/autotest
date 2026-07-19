@@ -6,17 +6,17 @@ avoiding local processing overhead.
 
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 import chromadb
-from llama_index.core import Document, VectorStoreIndex, StorageContext
-from llama_index.core.embeddings import BaseEmbedding
+import httpx
+from llama_index.core import Document, VectorStoreIndex
 from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.embeddings import BaseEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
-import httpx
 
 logger = get_logger(__name__)
 
@@ -35,28 +35,28 @@ class HFInferenceEmbedding(BaseEmbedding):
         settings = get_settings()
         self._api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model_name}"
         # Fallback authorization if API key is present
-        huggingface_key = settings.OPENAI_API_KEY.get_secret_value()  # uses fallback config
+        huggingface_key = settings.HUGGINGFACE_API_TOKEN.get_secret_value()
         self._headers = {}
         if huggingface_key:
             self._headers["Authorization"] = f"Bearer {huggingface_key}"
 
-    def _get_query_embedding(self, query: str) -> List[float]:
+    def _get_query_embedding(self, query: str) -> list[float]:
         """Generate embedding for query string."""
         return self._get_hf_embedding(query)
 
-    def _get_text_embedding(self, text: str) -> List[float]:
+    def _get_text_embedding(self, text: str) -> list[float]:
         """Generate embedding for document text."""
         return self._get_hf_embedding(text)
 
-    async def _aget_query_embedding(self, query: str) -> List[float]:
+    async def _aget_query_embedding(self, query: str) -> list[float]:
         """Generate embedding for query string asynchronously."""
         return await self._aget_hf_embedding(query)
 
-    async def _aget_text_embedding(self, text: str) -> List[float]:
+    async def _aget_text_embedding(self, text: str) -> list[float]:
         """Generate embedding for document text asynchronously."""
-        return await self._aget_text_embedding(text)
+        return await self._aget_hf_embedding(text)
 
-    def _get_hf_embedding(self, text: str) -> List[float]:
+    def _get_hf_embedding(self, text: str) -> list[float]:
         """Synchronously calls Hugging Face API."""
         try:
             with httpx.Client() as client:
@@ -79,7 +79,7 @@ class HFInferenceEmbedding(BaseEmbedding):
             # Fallback to random/mock vector for resilience in case API limit reached
             return [0.0] * 384
 
-    async def _aget_hf_embedding(self, text: str) -> List[float]:
+    async def _aget_hf_embedding(self, text: str) -> list[float]:
         """Asynchronously calls Hugging Face API."""
         try:
             async with httpx.AsyncClient() as client:
@@ -105,11 +105,11 @@ class HFInferenceEmbedding(BaseEmbedding):
 class RAGService:
     """Manages indexing, embedding, and retrieval with a remote Chroma DB and LlamaIndex."""
 
-    _chroma_client: chromadb.HttpClient | None = None
+    _chroma_client: Any | None = None
     _embed_model: HFInferenceEmbedding | None = None
 
     @classmethod
-    def get_client(cls) -> chromadb.HttpClient:
+    def get_client(cls) -> Any:
         """Initialize the remote ChromaDB HTTP client."""
         if cls._chroma_client is None:
             settings = get_settings()
@@ -138,7 +138,6 @@ class RAGService:
         chroma_collection = client.get_or_create_collection(collection_name)
 
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-        storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
         doc = Document(
             text=content,
@@ -149,13 +148,13 @@ class RAGService:
         # Index document using LlamaIndex pipeline
         VectorStoreIndex.from_documents(
             [doc],
-            storage_context=storage_context,
+            vector_store=vector_store,
             embed_model=embed,
         )
         logger.info("rag_document_indexed", project_id=project_id, file_path=file_path)
 
     @classmethod
-    async def retrieve_context(cls, project_id: str, query: str, limit: int = 5) -> List[dict[str, Any]]:
+    async def retrieve_context(cls, project_id: str, query: str, limit: int = 5) -> list[dict[str, Any]]:
         """Perform semantic search query against the remote ChromaDB collection."""
         client = cls.get_client()
         embed = cls.get_embed_model()
@@ -164,7 +163,6 @@ class RAGService:
         chroma_collection = client.get_or_create_collection(collection_name)
 
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-        storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
         index = VectorStoreIndex.from_vector_store(
             vector_store=vector_store,
@@ -177,7 +175,7 @@ class RAGService:
         results = []
         for node in nodes:
             results.append({
-                "content": node.node.text,
+                "content": node.node.get_content(),
                 "score": node.score or 0.0,
                 "metadata": node.node.metadata,
             })

@@ -8,9 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.execution.sandbox import DockerSandbox
-from app.execution.runners.pytest_runner import PytestRunner
 from app.core.logging import get_logger
+from app.execution.runners.pytest_runner import PytestRunner
 
 logger = get_logger(__name__)
 

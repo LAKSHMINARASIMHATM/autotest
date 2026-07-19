@@ -36,7 +36,7 @@ class ResultParser:
                         failures.append({
                             "node_id": f"{case.get('classname', '')}.{case.get('name', '')}",
                             "outcome": "failed" if failure_el is not None else "error",
-                            "longrepr": el.text or el.get("message", ""),
+                            "longrepr": (el.text or "") + (el.get("message") or ""),
                         })
 
             passed = total - failed - errors

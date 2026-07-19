@@ -180,6 +180,7 @@ def _project_to_response(project: Project) -> ProjectResponse:
         total_bugs_found=project.total_bugs_found,
         total_patches_applied=project.total_patches_applied,
         coverage_percentage=project.coverage_percentage,
+        local_path=project.local_path or "",
         created_at=project.created_at,
         updated_at=project.updated_at,
     )

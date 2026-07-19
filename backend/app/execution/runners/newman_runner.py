@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from app.execution.sandbox import DockerSandbox, SandboxResult
 from app.core.logging import get_logger
+from app.execution.sandbox import DockerSandbox, SandboxResult
 
 logger = get_logger(__name__)
 
@@ -46,19 +46,19 @@ class NewmanRunner:
                 env_args = ["--environment", f"/etc/newman/{environment_path.split('/')[-1]}"]
 
             collection_file = collection_path.split("/")[-1]
-            reporter_args = ["--reporters", "json", "--reporter-json-export", "/tmp/newman_report.json"]
+            reporter_args = ["--reporters", "json", "--reporter-json-export", "newman_report.json"]
 
             cmd = [
                 "newman", "run",
                 f"/etc/newman/{collection_file}",
                 "--color", "off",
-                f"--env-var", f"baseUrl={base_url}",
+                "--env-var", f"baseUrl={base_url}",
             ] + env_args + reporter_args
 
             result: SandboxResult = await sb.exec(cmd)
             logs = result.stdout + "\n" + result.stderr
 
-            report_result = await sb.exec(["cat", "/tmp/newman_report.json"])
+            report_result = await sb.exec(["cat", "newman_report.json"])
             summary = cls._parse_report(report_result.stdout)
             summary["logs"] = logs
 

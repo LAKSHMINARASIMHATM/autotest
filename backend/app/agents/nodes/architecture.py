@@ -57,7 +57,7 @@ Build the architecture graphs as JSON."""
         response = await self.invoke_llm(self.SYSTEM_PROMPT, user_prompt)
 
         try:
-            data = json.loads(response)
+            data = json.loads(self.extract_json(response))
         except json.JSONDecodeError:
             data = {}
 

@@ -1,12 +1,8 @@
-"""LLM Factory — selects the best available LLM provider in priority order.
+"""LLM Factory — Groq is first choice, with HuggingFace Inference API as fallback.
 
 Priority:
-1. Groq (fast free inference, llama-3.3-70b-versatile)
-2. HuggingFace Inference API (free, Mistral-7B or configurable)
-3. OpenAI (paid fallback)
-
-Usage:
-    llm = get_best_llm()
+1. Groq (llama-3.3-70b-versatile)
+2. HuggingFace Inference API (Mistral-7B)
 """
 from __future__ import annotations
 
@@ -18,71 +14,87 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 
 
-def get_best_llm() -> BaseChatModel:
-    """Return the best available LLM based on configured API keys."""
+def get_huggingface_llm() -> BaseChatModel:
+    """Return a HuggingFace ChatModel (raises if token is missing/invalid)."""
+    settings = get_settings()
+    hf_token = settings.HUGGINGFACE_API_TOKEN.get_secret_value() if settings.HUGGINGFACE_API_TOKEN else ""
+    if not hf_token or hf_token.startswith("hf_xxx") or hf_token == "":
+        raise RuntimeError("HUGGINGFACE_API_TOKEN is not set")
+
+    from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+    hf_model = settings.HF_MODEL or "mistralai/Mistral-7B-Instruct-v0.3"
+    logger.info("llm_selected", provider="huggingface", model=hf_model)
+
+    endpoint = HuggingFaceEndpoint(
+        repo_id=hf_model,
+        huggingfacehub_api_token=hf_token,
+        temperature=settings.DEFAULT_TEMPERATURE,
+        max_new_tokens=2048,
+        task="text-generation",
+    )
+    return ChatHuggingFace(llm=endpoint)
+
+
+def get_groq_llm() -> BaseChatModel:
+    """Return a Groq ChatModel with automatic rate-limit key rotation (GROQ_API_KEY_1 to 5)."""
     settings = get_settings()
 
-    # 1. Groq — fastest, most reliable free option
-    groq_key = settings.GROQ_API_KEY.get_secret_value() if settings.GROQ_API_KEY else ""
-    if groq_key and not groq_key.startswith("gsk_Kk"):
-        try:
-            from langchain_groq import ChatGroq
-            logger.info("llm_selected", provider="groq", model=settings.DEFAULT_LLM_MODEL)
-            return ChatGroq(
+    raw_keys = [
+        settings.GROQ_API_KEY_1.get_secret_value() if settings.GROQ_API_KEY_1 else "",
+        settings.GROQ_API_KEY_2.get_secret_value() if settings.GROQ_API_KEY_2 else "",
+        settings.GROQ_API_KEY_3.get_secret_value() if settings.GROQ_API_KEY_3 else "",
+        settings.GROQ_API_KEY_4.get_secret_value() if settings.GROQ_API_KEY_4 else "",
+        settings.GROQ_API_KEY_5.get_secret_value() if settings.GROQ_API_KEY_5 else "",
+        settings.GROQ_API_KEY.get_secret_value() if settings.GROQ_API_KEY else "",
+    ]
+
+    # Filter out empty or placeholder keys, preserving order
+    valid_keys = []
+    for k in raw_keys:
+        if k and not k.startswith("gsk_placeholder") and k not in valid_keys:
+            valid_keys.append(k)
+
+    if not valid_keys:
+        logger.warning("no_valid_groq_keys_found_falling_back_to_hf")
+        return get_huggingface_llm()
+
+    try:
+        from langchain_groq import ChatGroq
+        logger.info("llm_selected", provider="groq_rotating", keys_count=len(valid_keys), model=settings.DEFAULT_LLM_MODEL)
+
+        models = [
+            ChatGroq(
                 model=settings.DEFAULT_LLM_MODEL,
                 temperature=settings.DEFAULT_TEMPERATURE,
-                api_key=settings.GROQ_API_KEY,
+                api_key=k,
             )
-        except Exception as e:
-            logger.warning("groq_llm_failed", error=str(e))
+            for k in valid_keys
+        ]
 
-    # 2. Groq with any valid key
-    if groq_key:
+        # Add HuggingFace as final fallback if available
         try:
-            from langchain_groq import ChatGroq
-            logger.info("llm_selected", provider="groq_fallback", model=settings.DEFAULT_LLM_MODEL)
-            return ChatGroq(
-                model=settings.DEFAULT_LLM_MODEL,
-                temperature=settings.DEFAULT_TEMPERATURE,
-                api_key=settings.GROQ_API_KEY,
-            )
-        except Exception as e:
-            logger.warning("groq_fallback_failed", error=str(e))
+            hf_model = get_huggingface_llm()
+            fallbacks = models[1:] + [hf_model]
+        except Exception:
+            fallbacks = models[1:]
 
-    # 3. HuggingFace Inference API
-    hf_token = settings.HUGGINGFACE_API_TOKEN.get_secret_value() if settings.HUGGINGFACE_API_TOKEN else ""
-    if hf_token and not hf_token.startswith("hf_xxx"):
+        if not fallbacks:
+            return models[0]
+        return models[0].with_fallbacks(fallbacks)
+
+    except Exception as e:
+        logger.warning("groq_llm_failed_falling_back_to_hf", error=str(e))
+        return get_huggingface_llm()
+
+
+def get_best_llm() -> BaseChatModel:
+    """Return the best available LLM — Groq (with rotation) → HuggingFace."""
+    try:
+        return get_groq_llm()
+    except Exception as groq_err:
+        logger.warning("groq_llm_unavailable_trying_hf", error=str(groq_err))
         try:
-            from langchain_huggingface import HuggingFaceEndpoint
-            from langchain_huggingface import ChatHuggingFace
-            hf_model = settings.HF_MODEL or "mistralai/Mistral-7B-Instruct-v0.3"
-            logger.info("llm_selected", provider="huggingface", model=hf_model)
-            endpoint = HuggingFaceEndpoint(
-                repo_id=hf_model,
-                huggingfacehub_api_token=hf_token,
-                temperature=settings.DEFAULT_TEMPERATURE,
-                max_new_tokens=2048,
-                task="text-generation",
-            )
-            return ChatHuggingFace(llm=endpoint)
-        except Exception as e:
-            logger.warning("huggingface_llm_failed", error=str(e))
-
-    # 4. OpenAI
-    openai_key = settings.OPENAI_API_KEY.get_secret_value() if settings.OPENAI_API_KEY else ""
-    if openai_key and not openai_key.startswith("sk-..."):
-        try:
-            from langchain_openai import ChatOpenAI
-            logger.info("llm_selected", provider="openai", model="gpt-4o-mini")
-            return ChatOpenAI(model="gpt-4o-mini", temperature=0, api_key=settings.OPENAI_API_KEY)
-        except Exception as e:
-            logger.warning("openai_llm_failed", error=str(e))
-
-    # 5. Last resort — Groq with whatever key we have
-    from langchain_groq import ChatGroq
-    logger.warning("llm_selected", provider="groq_last_resort")
-    return ChatGroq(
-        model=settings.DEFAULT_LLM_MODEL,
-        temperature=settings.DEFAULT_TEMPERATURE,
-        api_key=settings.GROQ_API_KEY,
-    )
+            return get_huggingface_llm()
+        except Exception as hf_err:
+            logger.error("all_llm_providers_failed", error=str(hf_err))
+            raise hf_err

@@ -4,7 +4,6 @@ from pydantic import BaseModel, EmailStr, Field
 
 from app.core.security import Role
 
-
 # ── Requests ─────────────────────────────────────────────────────
 
 

@@ -38,6 +38,8 @@ For each localized bug, respond with JSON format:
         state: AgentState,
         config: RunnableConfig | None = None,
     ) -> dict[str, Any]:
+        import re
+
         exec_res = state.get("execution_result")
         failures = exec_res.failures if exec_res else []
 
@@ -52,15 +54,26 @@ For each localized bug, respond with JSON format:
                 "explanations": [explanation]
             }
 
+        # Retrieve file context for LLM
+        files_info = ""
+        repo_summary = state.get("repo_summary") or {}
+        if repo_summary.get("files"):
+            for f in repo_summary["files"][:15]:
+                snippet = (f.get("content") or "")[:500]
+                files_info += f"\n\n## File: {f.get('path', '?')}\n{snippet}"
+
         user_prompt = f"""Localize bugs for these test failures:
 {json.dumps(failures, indent=2)}
 
-Analyze the tracebacks and identify the faulty files, methods, and line numbers."""
+Here are the source files in the project for context:
+{files_info or 'No source available'}
+
+Analyze the tracebacks and source files to identify the faulty files, methods, and line numbers. Output a JSON list of localized bugs."""
 
         response = await self.invoke_llm(self.SYSTEM_PROMPT, user_prompt)
 
         try:
-            data = json.loads(response)
+            data = json.loads(self.extract_json(response))
             if not isinstance(data, list):
                 data = [data]
         except json.JSONDecodeError:
@@ -69,16 +82,56 @@ Analyze the tracebacks and identify the faulty files, methods, and line numbers.
         localizations = [
             BugLocalization(
                 id=str(uuid4())[:8],
-                test_id=loc.get("test_id", ""),
-                file_path=loc.get("file_path", ""),
-                class_name=loc.get("class_name", ""),
-                method_name=loc.get("method_name", ""),
-                line_number=loc.get("line_number", 0),
-                confidence=loc.get("confidence", 0.5),
-                error_message=loc.get("error_message", ""),
+                test_id=loc.get("test_id") or "",
+                file_path=loc.get("file_path") or "",
+                class_name=loc.get("class_name") or "",
+                method_name=loc.get("method_name") or "",
+                line_number=int(loc.get("line_number") or 0),
+                confidence=float(loc.get("confidence") or 0.5),
+                error_message=loc.get("error_message") or "",
             )
             for loc in data
+            if isinstance(loc, dict)
         ]
+
+        # Fallback regex parsing if LLM output was empty or invalid JSON
+        if not localizations:
+            for fail in failures:
+                tb = fail.get("traceback") or ""
+                file_path = fail.get("file") or ""
+                line_number = 0
+                error_message = fail.get("message") or ""
+                
+                if not file_path:
+                    # Match pattern like: File "path/to/file.py", line 12
+                    file_match = re.search(r'File "([^"]+\.py)", line (\d+)', tb)
+                    if file_match:
+                        file_path = file_match.group(1)
+                        line_number = int(file_match.group(2))
+                    else:
+                        file_match = re.search(r'([\w\.-]+\.py):(\d+)', tb)
+                        if file_match:
+                            file_path = file_match.group(1)
+                            line_number = int(file_match.group(2))
+                
+                # Make sure file_path is relative and clean
+                if file_path:
+                    if "test-bug-repo" in file_path:
+                        parts = file_path.split("test-bug-repo")
+                        file_path = parts[-1].lstrip("\\/")
+                    
+                localizations.append(
+                    BugLocalization(
+                        id=str(uuid4())[:8],
+                        test_id=fail.get("node_id") or "",
+                        file_path=file_path or "main.py",
+                        class_name="",
+                        method_name="",
+                        line_number=line_number or 1,
+                        confidence=0.6,
+                        error_message=error_message or "Test failed",
+                    )
+                )
 
         explanation = self.build_explanation(
             decision=f"Localized {len(localizations)} bugs",

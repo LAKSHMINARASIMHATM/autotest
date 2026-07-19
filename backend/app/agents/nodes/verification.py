@@ -66,7 +66,7 @@ Check each test for syntax, logic, traceability, and hallucination. Respond as J
         response = await self.invoke_llm(self.SYSTEM_PROMPT, user_prompt)
 
         try:
-            data = json.loads(response)
+            data = json.loads(self.extract_json(response))
         except json.JSONDecodeError:
             data = {"total_verified": len(tests), "passed": len(tests), "rejected": 0}
 

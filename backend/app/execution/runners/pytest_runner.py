@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from app.execution.sandbox import DockerSandbox, SandboxResult
 from app.core.logging import get_logger
+from app.execution.sandbox import DockerSandbox, SandboxResult
 
 logger = get_logger(__name__)
 
@@ -55,16 +55,15 @@ class PytestRunner:
             # Build test file arguments
             test_args = test_files if test_files else ["."]
 
-            # Run pytest with JUnit XML + coverage
             pytest_cmd = [
                 "python", "-m", "pytest",
                 "--tb=short",
                 "--quiet",
                 "--json-report",
-                "--json-report-file=/tmp/report.json",
-                f"--junitxml=/tmp/junit.xml",
+                "--json-report-file=report.json",
+                "--junitxml=junit.xml",
                 "--cov=.",
-                "--cov-report=xml:/tmp/coverage.xml",
+                "--cov-report=xml:coverage.xml",
                 "--cov-report=term-missing",
             ] + test_args
 
@@ -72,7 +71,7 @@ class PytestRunner:
             logs = result.stdout + "\n" + result.stderr
 
             # Parse JSON report for structured results
-            report_result = await sb.exec(["cat", "/tmp/report.json"])
+            report_result = await sb.exec(["cat", "report.json"])
             summary = cls._parse_json_report(report_result.stdout)
             summary["logs"] = logs
             summary["exit_code"] = result.exit_code

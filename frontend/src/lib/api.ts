@@ -36,6 +36,7 @@ export interface ProjectItem {
   total_bugs_found: number;
   total_patches_applied: number;
   coverage_percentage: number;
+  local_path?: string;
   created_at: string;
   updated_at: string;
 }
@@ -169,6 +170,23 @@ export async function getProjectPatches(projectId: string): Promise<PatchItem[]>
   return request<PatchItem[]>(`/projects/${projectId}/patches`);
 }
 
+export interface GeneratePatchRequest {
+  bug_id: string;
+  file_path: string;
+  method_name: string;
+  buggy_code: string;
+  error_message: string;
+  root_cause: string;
+  strategies?: string[];
+}
+
+export async function generatePatches(payload: GeneratePatchRequest): Promise<PatchItem[]> {
+  return request<PatchItem[]>("/repair/generate", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 // ─── Knowledge Graph / Cypher ────────────────────────────────────────────────
 
 export async function executeCypherQuery(query: string): Promise<Record<string, unknown>[]> {
@@ -229,6 +247,14 @@ export async function triggerAgentPipeline(projectId: string, maxIterations = 2)
   });
 }
 
+/** Fast 5-agent pipeline: Planner→Requirement→Architecture→TestStrategy→TestGeneration only. */
+export async function generateTests(projectId: string) {
+  return request<{ session_id: string; status: string; message: string }>(
+    `/agents/generate-tests/${projectId}`,
+    { method: "POST" }
+  );
+}
+
 export async function getPipelineStatus(sessionId: string): Promise<PipelineStatusResponse> {
   return request<PipelineStatusResponse>(`/agents/status/${sessionId}`);
 }
@@ -236,3 +262,60 @@ export async function getPipelineStatus(sessionId: string): Promise<PipelineStat
 export async function listPipelineSessions(): Promise<PipelineStatusResponse[]> {
   return request<PipelineStatusResponse[]>("/agents/sessions");
 }
+
+export interface ExecuteTestsResponse {
+  run_id: string;
+  framework: string;
+  passed: number;
+  failed: number;
+  errors: number;
+  total: number;
+  duration_ms: number;
+  coverage_pct: number;
+  failures: { node_id: string; longrepr?: string; name?: string; message?: string }[];
+  logs: string;
+}
+
+export async function executeTests(
+  projectId: string,
+  framework = "pytest",
+  projectPath = ""
+): Promise<ExecuteTestsResponse> {
+  return request<ExecuteTestsResponse>("/execution/run", {
+    method: "POST",
+    body: JSON.stringify({
+      project_id: projectId,
+      framework,
+      project_path: projectPath,
+    }),
+  });
+}
+
+export interface RegressionResponse {
+  ok: boolean;
+  passed: number;
+  failed: number;
+  delta: number;
+  message: string;
+  logs: string;
+}
+
+export async function runRegression(
+  projectPath: string,
+  baselinePassed = 0
+): Promise<RegressionResponse> {
+  return request<RegressionResponse>("/repair/regression", {
+    method: "POST",
+    body: JSON.stringify({
+      project_path: projectPath,
+      baseline_passed: baselinePassed,
+    }),
+  });
+}
+
+export async function scanBugs(projectId: string): Promise<{ status: string; message: string }> {
+  return request<{ status: string; message: string }>(`/projects/${projectId}/scan-bugs`, {
+    method: "POST",
+  });
+}
+

@@ -33,7 +33,7 @@ class BugReport(BaseDocument):
     """
 
     project_id: PydanticObjectId
-    test_result_id: PydanticObjectId
+    test_result_id: PydanticObjectId | None = None
     file_id: PydanticObjectId | None = None
     severity: BugSeverity
     status: BugStatus = Field(default=BugStatus.DETECTED)

@@ -7,7 +7,7 @@ from typing import Any
 from langchain_core.runnables import RunnableConfig
 
 from app.agents.base import BaseAgentNode
-from app.agents.state import AgentState, PipelineStatus, RetrievedDoc, KGTriple
+from app.agents.state import AgentState, KGTriple, PipelineStatus, RetrievedDoc
 
 
 class RetrieverAgent(BaseAgentNode):

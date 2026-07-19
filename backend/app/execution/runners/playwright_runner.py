@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from app.execution.sandbox import DockerSandbox, SandboxResult
 from app.core.logging import get_logger
+from app.execution.sandbox import DockerSandbox, SandboxResult
 
 logger = get_logger(__name__)
 
@@ -49,14 +49,14 @@ class PlaywrightRunner:
                 "python", "-m", "pytest",
                 "--tb=short",
                 "--json-report",
-                "--json-report-file=/tmp/pw_report.json",
+                "--json-report-file=pw_report.json",
                 f"--base-url={base_url}",
             ] + test_args
 
             result: SandboxResult = await sb.exec(cmd)
             logs = result.stdout + "\n" + result.stderr
 
-            report_result = await sb.exec(["cat", "/tmp/pw_report.json"])
+            report_result = await sb.exec(["cat", "pw_report.json"])
             summary = cls._parse_report(report_result.stdout)
             summary["logs"] = logs
 

@@ -49,6 +49,7 @@ async def get_isolated_functions(
 
 
 from pydantic import BaseModel
+
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -71,7 +72,7 @@ async def execute_cypher_query(
     except Exception as e:
         logger.warning("neo4j_query_failed_falling_back_to_mongo", error=str(e))
         q = request.query.upper()
-        
+
         # 1. MATCH (p:Project)-[:EXPOSES_API]->(e)
         if "EXPOSES_API" in q:
             return [
@@ -81,7 +82,7 @@ async def execute_cypher_query(
                 { "e.method": "POST", "e.path": "/projects/{id}/analyze" },
                 { "e.method": "GET", "e.path": "/projects/{id}/requirements" },
             ]
-            
+
         # 2. MATCH (t:TestCase)-[:TESTS]->(m:Method)
         elif "TESTS" in q or "TESTCASE" in q:
             from app.models.test_case import TestCase
@@ -90,7 +91,7 @@ async def execute_cypher_query(
                 { "t.id": str(tc.id)[:8], "m.name": tc.name.replace("test_", "") }
                 for tc in test_cases
             ]
-            
+
         # 3. MATCH (b:Bug)-[:LOCALIZED_IN]->(m:Method)
         elif "BUG" in q or "LOCALIZED_IN" in q:
             from app.models.bug_report import BugReport
@@ -99,5 +100,5 @@ async def execute_cypher_query(
                 { "b.severity": b.severity, "m.name": b.method_name or "verify_password" }
                 for b in bugs
             ]
-            
+
         return [{"error": f"Neo4j Query failed: {str(e)}. Fallback did not match query template."}]

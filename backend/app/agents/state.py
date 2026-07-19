@@ -7,14 +7,12 @@ agent writes merge correctly.
 
 from __future__ import annotations
 
-from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 
+from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
-from langchain_core.messages import BaseMessage
-
 
 # ── Sub-Schemas ──────────────────────────────────────────────────
 
@@ -94,9 +92,25 @@ class GeneratedTest(BaseModel):
     framework: str = "pytest"
     code: str = ""
     target_entity: str = ""
-    requirement_id: str = ""
+    requirement_id: str = ""   # LLM often returns None; coerced to "" below
     description: str = ""
     confidence: float = 0.0
+
+    @classmethod
+    def from_llm(cls, data: dict, index: int) -> GeneratedTest:
+        """Safely construct from LLM output, coercing None fields to defaults."""
+        from uuid import uuid4
+        return cls(
+            id=str(uuid4())[:8],
+            name=data.get("name") or f"test_{index}",
+            test_type=data.get("test_type") or "unit",
+            framework=data.get("framework") or "pytest",
+            code=data.get("code") or "",
+            target_entity=data.get("target_entity") or "",
+            requirement_id=data.get("requirement_id") or "",  # None → ""
+            description=data.get("description") or "",
+            confidence=float(data.get("confidence") or 0.5),
+        )
 
 
 class VerificationResult(BaseModel):
@@ -261,3 +275,12 @@ class AgentState(TypedDict, total=False):
     max_iterations: int
     status: PipelineStatus
     error: str
+
+    # ── Injected by API on pipeline start (real code context) ───────────────
+    # These flow from the API layer into the Planner and downstream agents.
+    repo_url: str               # e.g. https://github.com/user/repo
+    language: str               # primary language detected from scan
+    framework: str              # primary framework (FastAPI, React, etc.)
+    local_path: str             # local path to cloned repo (if any)
+    repo_summary: dict          # full scan result: files, functions, api_endpoints, etc.
+

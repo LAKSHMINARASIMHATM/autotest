@@ -12,13 +12,12 @@ buggy code, stack trace, root cause summary, and produces a unified diff patch.
 
 from __future__ import annotations
 
-import json
 import re
 from typing import Any
 from uuid import uuid4
 
-from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_groq import ChatGroq
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -114,7 +113,12 @@ Generate a {strategy} unified diff patch to fix this bug."""
                     SystemMessage(content=SYSTEM_PROMPT),
                     HumanMessage(content=user_prompt),
                 ])
-                diff = response.content.strip()
+                content = response.content
+                if isinstance(content, list):
+                    # Handle list case (usually message parts)
+                    diff = "".join(str(part) for part in content).strip()
+                else:
+                    diff = content.strip()
 
                 # Strip markdown fences if model wraps anyway
                 diff = re.sub(r"```(?:diff|python)?\n?", "", diff).strip("`").strip()

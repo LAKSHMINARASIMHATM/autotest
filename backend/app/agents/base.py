@@ -5,11 +5,13 @@ Provides:
 - XAI explanation generation
 - Audit trail logging
 - LLM invocation helper with retry
+- JSON extraction helper that strips markdown fences
 """
 
 from __future__ import annotations
 
 import abc
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -151,4 +153,52 @@ class BaseAgentNode(abc.ABC):
             HumanMessage(content=user_prompt),
         ]
         response = await self.llm.ainvoke(messages, **kwargs)
-        return response.content if hasattr(response, "content") else str(response)
+        if hasattr(response, "content"):
+            content = response.content
+            if isinstance(content, list):
+                return "".join(str(part) for part in content)
+            return content
+        return str(response)
+
+    @staticmethod
+    def extract_json(text: str) -> str:
+        """Strip markdown code fences and return raw JSON text, finding valid JSON even with surrounding text.
+
+        LLMs often wrap JSON in ```json ... ``` blocks or write text before/after JSON.
+        This finds the first valid JSON object/array and returns that.
+        """
+        text = text.strip()
+        # First try to find a ```json ... ``` block
+        match = re.search(r"```(?:json)?\s*([\s\S]+?)\s*```", text)
+        candidate = match.group(1).strip() if match else text
+
+        # Try to find first '{' or '['
+        start = -1
+        for i, c in enumerate(candidate):
+            if c in ('{', '['):
+                start = i
+                break
+
+        if start == -1:
+            return candidate
+
+        # Find matching closing bracket using stack to handle nested structures
+        stack = []
+        end = -1
+        open_brace = candidate[start]
+        close_brace = '}' if open_brace == '{' else ']'
+
+        for i in range(start, len(candidate)):
+            c = candidate[i]
+            if c == open_brace:
+                stack.append(c)
+            elif c == close_brace:
+                stack.pop()
+                if not stack:
+                    end = i + 1
+                    break
+
+        if end != -1:
+            return candidate[start:end].strip()
+
+        return candidate

@@ -5,7 +5,7 @@ import { AlertCircle, FileSearch, RefreshCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { getProjectBugs, getDefaultProjectId, type BugItem } from "@/lib/api";
+import { getProjectBugs, getDefaultProjectId, generatePatches, scanBugs, type BugItem } from "@/lib/api";
 
 export default function BugsPage() {
   const [bugs, setBugs] = useState<BugItem[]>([]);
@@ -13,6 +13,7 @@ export default function BugsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [repairing, setRepairing] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -32,29 +33,79 @@ export default function BugsPage() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const handleHuggingFaceScan = async () => {
+    setScanning(true);
+    setError(null);
+    try {
+      const pid = await getDefaultProjectId();
+      if (!pid) throw new Error("No projects found.");
+      await scanBugs(pid);
+      alert("Hugging Face static scan started successfully in the background! The bug list will refresh in a few seconds.");
+      setTimeout(async () => {
+        try {
+          const data = await getProjectBugs(pid);
+          setBugs(data);
+          if (data.length > 0 && !selectedBug) setSelectedBug(data[0]);
+        } catch { /* ignore */ }
+        setScanning(false);
+      }, 7000);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to start HuggingFace scan");
+      setScanning(false);
+    }
+  };
+
   const repairBug = async () => {
+    if (!selectedBug) return;
     setRepairing(true);
-    // Optimistic UI update
-    setTimeout(() => {
-      if (selectedBug) {
-        const updated = { ...selectedBug, status: "patch_generated" };
+    setError(null);
+    try {
+      const generated = await generatePatches({
+        bug_id: selectedBug.id,
+        file_path: selectedBug.file,
+        method_name: selectedBug.method || "",
+        buggy_code: selectedBug.codeSnippet || "",
+        error_message: selectedBug.rootCause || "",
+        root_cause: selectedBug.rootCause || "",
+      });
+      if (generated && generated.length > 0) {
+        const updated = {
+          ...selectedBug,
+          status: "patch_generated",
+          fixSuggestion: generated[0].diff,
+        };
         setSelectedBug(updated);
         setBugs((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+      } else {
+        setError("Repair completed, but no patches could be generated for this bug.");
       }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to trigger auto-repair");
+    } finally {
       setRepairing(false);
-    }, 1500);
+    }
   };
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto min-h-screen pb-12">
       {/* Header */}
-      <div>
-        <h1 className="text-[28px] font-bold tracking-tight">
-          <span className="gradient-text">Bug</span> Intelligence Tracker
-        </h1>
-        <p className="text-sm text-[#6B7280] mt-1">
-          Review localized faults, call stack analyses, and root-cause explanations.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-[28px] font-bold tracking-tight">
+            <span className="gradient-text">Bug</span> Intelligence Tracker
+          </h1>
+          <p className="text-sm text-[#6B7280] mt-1">
+            Review localized faults, call stack analyses, and root-cause explanations.
+          </p>
+        </div>
+        <Button
+          onClick={handleHuggingFaceScan}
+          disabled={scanning}
+          className="gap-2 text-[13px] font-semibold bg-[#3B82F6] hover:bg-[#2563EB]"
+        >
+          <RefreshCw className={`w-4 h-4 ${scanning ? "animate-spin" : ""}`} />
+          {scanning ? "Scanning Codebase…" : "Scan with HuggingFace"}
+        </Button>
       </div>
 
       {error && (

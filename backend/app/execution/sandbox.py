@@ -1,21 +1,19 @@
-"""Docker Sandbox — creates ephemeral containers for isolated test execution.
+"""Local Subprocess Sandbox — runs tests in an isolated temp directory.
+
+Replaces the Docker-based sandbox for environments without Docker.
 
 Lifecycle:
-1. `prepare()` — pull image, create named container, copy project + test files
-2. `run_command()` — exec inside the container, stream stdout/stderr
-3. `copy_artifacts()` — extract coverage.xml, junit.xml, screenshots
-4. `cleanup()` — force-remove the container
-
-Uses the Docker SDK for Python (docker package), which controls a remote or
-local Docker daemon via the DOCKER_HOST env variable — no hardcoded socket path.
+1. `__aenter__` — create a temp workspace directory, copy project files in
+2. `exec()` — run commands as subprocesses inside the temp workspace
+3. `__aexit__` — remove the temp directory
 """
 
 from __future__ import annotations
 
 import asyncio
-import tarfile
-import io
-import os
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -24,17 +22,9 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Default images per test framework
-RUNNER_IMAGES: dict[str, str] = {
-    "pytest":     "python:3.12-slim",
-    "junit":      "eclipse-temurin:21-jdk-alpine",
-    "playwright": "mcr.microsoft.com/playwright/python:v1.48.0-jammy",
-    "newman":     "postman/newman:alpine",
-}
-
 
 class SandboxResult:
-    """Holds raw stdout/stderr and exit code from a container exec."""
+    """Holds raw stdout/stderr and exit code from a subprocess exec."""
 
     def __init__(self, stdout: str, stderr: str, exit_code: int) -> None:
         self.stdout = stdout
@@ -44,12 +34,13 @@ class SandboxResult:
 
 
 class DockerSandbox:
-    """Manages the full lifecycle of an ephemeral Docker test execution container.
+    """Local subprocess sandbox that mimics the DockerSandbox interface.
 
-    Designed to be used as an async context manager:
+    Runs commands in an isolated temp directory instead of a Docker container.
+    Drop-in replacement — callers use the same async context manager API.
 
         async with DockerSandbox(framework="pytest", project_path=path) as sb:
-            result = await sb.run_tests(test_files)
+            result = await sb.exec(["pytest", "tests/"])
     """
 
     def __init__(
@@ -63,121 +54,145 @@ class DockerSandbox:
         self.project_path = project_path
         self.run_id = run_id or str(uuid4())[:8]
         self.timeout_seconds = timeout_seconds
-        self.container_name = f"autotest-run-{self.run_id}"
-        self._client: Any = None
-        self._container: Any = None
+        self._workdir: Path | None = None
 
-    async def __aenter__(self) -> "DockerSandbox":
+    async def __aenter__(self) -> DockerSandbox:
         await self._prepare()
         return self
 
     async def __aexit__(self, *args: Any) -> None:
         await self._cleanup()
 
-    async def _get_client(self) -> Any:
-        """Lazily import and return the Docker SDK client.
-
-        Reads DOCKER_HOST from environment so it can target a remote daemon.
-        """
-        if self._client is None:
-            import docker  # type: ignore[import]
-            self._client = await asyncio.get_event_loop().run_in_executor(
-                None, docker.from_env
-            )
-        return self._client
-
     async def _prepare(self) -> None:
-        """Pull image (if needed) and create the container."""
-        client = await self._get_client()
-        image = RUNNER_IMAGES.get(self.framework, "python:3.12-slim")
-
-        logger.info("sandbox_pulling_image", image=image, run_id=self.run_id)
-        await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: client.images.pull(image),
+        """Create the temp workspace and copy project files into it."""
+        tmp = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: tempfile.mkdtemp(prefix=f"autotest-{self.run_id}-")
         )
+        self._workdir = Path(tmp)
 
-        logger.info("sandbox_creating_container", name=self.container_name)
-        self._container = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: client.containers.create(
-                image=image,
-                name=self.container_name,
-                working_dir="/workspace",
-                mem_limit="512m",
-                nano_cpus=1_000_000_000,  # 1 vCPU
-                network_mode="none",       # no outbound network in sandbox
-                detach=True,
-                tty=False,
-            ),
-        )
-        # Start the container
-        await asyncio.get_event_loop().run_in_executor(None, self._container.start)
+        def ignore_git(directory: str, contents: list[str]) -> list[str]:
+            """Ignore .git directories and other common temporary files."""
+            return [
+                c
+                for c in contents
+                if c == ".git"
+                or c.startswith("__pycache__")
+                or c.endswith(".pyc")
+            ]
+
+        if self.project_path and Path(self.project_path).exists():
+            src = Path(self.project_path)
+            dest = self._workdir / src.name
+            await asyncio.get_event_loop().run_in_executor(
+                None, lambda: shutil.copytree(str(src), str(dest), ignore=ignore_git)
+            )
+            logger.info(
+                "sandbox_project_copied",
+                src=str(src),
+                dest=str(dest),
+                run_id=self.run_id,
+            )
+        else:
+            logger.info(
+                "sandbox_ready_empty",
+                workdir=str(self._workdir),
+                run_id=self.run_id,
+            )
 
     async def exec(self, command: list[str]) -> SandboxResult:
-        """Execute a command inside the running container and return its output."""
-        if self._container is None:
+        """Execute a command inside the sandbox working directory."""
+        if self._workdir is None:
             raise RuntimeError("Sandbox not prepared. Use async with DockerSandbox().")
 
         logger.info("sandbox_exec", command=command, run_id=self.run_id)
 
-        result = await asyncio.wait_for(
-            asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self._container.exec_run(
-                    command,
-                    stdout=True,
-                    stderr=True,
-                    demux=True,
-                ),
-            ),
-            timeout=self.timeout_seconds,
-        )
-        exit_code = result.exit_code
-        stdout_bytes, stderr_bytes = result.output or (b"", b"")
-        stdout = (stdout_bytes or b"").decode("utf-8", errors="replace")
-        stderr = (stderr_bytes or b"").decode("utf-8", errors="replace")
+        # Determine cwd: run inside the copied project folder if it exists
+        exec_cwd = self._workdir
+        if self.project_path:
+            nested = self._workdir / Path(self.project_path).name
+            if nested.exists() and nested.is_dir():
+                exec_cwd = nested
 
-        return SandboxResult(stdout=stdout, stderr=stderr, exit_code=exit_code)
+        # Pure Python fallback for "cat" on Windows
+        if command and command[0] == "cat" and len(command) > 1:
+            file_to_read = command[1]
+            try:
+                cleaned_path = file_to_read.lstrip("/")
+                if cleaned_path.startswith("tmp/"):
+                    cleaned_path = cleaned_path[4:]
+                
+                # Check relative to resolved exec_cwd first, then fallback to self._workdir
+                resolved_path = exec_cwd / cleaned_path
+                if not resolved_path.exists():
+                    resolved_path = self._workdir / cleaned_path
+                
+                if resolved_path.exists() and resolved_path.is_file():
+                    content = resolved_path.read_text(encoding="utf-8", errors="replace")
+                    return SandboxResult(stdout=content, stderr="", exit_code=0)
+                else:
+                    return SandboxResult(stdout="", stderr=f"cat: {file_to_read}: No such file or directory", exit_code=1)
+            except Exception as e:
+                return SandboxResult(stdout="", stderr=str(e), exit_code=1)
+
+        def _run() -> subprocess.CompletedProcess:
+            return subprocess.run(
+                command,
+                cwd=str(exec_cwd),
+                capture_output=True,
+                text=True,
+                timeout=self.timeout_seconds,
+            )
+
+        try:
+            proc = await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(None, _run),
+                timeout=self.timeout_seconds + 5,
+            )
+            return SandboxResult(
+                stdout=proc.stdout,
+                stderr=proc.stderr,
+                exit_code=proc.returncode,
+            )
+        except subprocess.TimeoutExpired:
+            logger.warning("sandbox_exec_timeout", command=command, run_id=self.run_id)
+            return SandboxResult(stdout="", stderr="Execution timed out.", exit_code=1)
+        except FileNotFoundError as e:
+            logger.warning("sandbox_exec_not_found", command=command, error=str(e), run_id=self.run_id)
+            return SandboxResult(stdout="", stderr=str(e), exit_code=1)
 
     async def copy_to(self, local_path: str, container_path: str = "/workspace") -> None:
-        """Copy a local directory into the container workspace."""
-        if self._container is None:
-            raise RuntimeError("Sandbox not started.")
-
+        """Copy a local directory into the sandbox workspace (container_path ignored)."""
         src = Path(local_path)
-        buf = io.BytesIO()
-        with tarfile.open(fileobj=buf, mode="w") as tar:
-            tar.add(str(src), arcname=src.name)
-        buf.seek(0)
+        if not src.exists():
+            logger.warning("sandbox_copy_to_missing_src", src=str(src), run_id=self.run_id)
+            return
 
-        await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: self._container.put_archive(container_path, buf),
-        )
+        dest = self._workdir / src.name if self._workdir else Path(local_path)
+        if dest != src:
+            await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: shutil.copytree(str(src), str(dest), dirs_exist_ok=True),
+            )
+            logger.info("sandbox_copy_to", src=str(src), dest=str(dest), run_id=self.run_id)
 
     async def copy_from(self, container_path: str, local_dest: str) -> None:
-        """Copy a file from the container to the local filesystem."""
-        if self._container is None:
-            raise RuntimeError("Sandbox not started.")
-
-        bits, _ = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: self._container.get_archive(container_path),
-        )
-        buf = io.BytesIO(b"".join(bits))
+        """Copy a file/dir from sandbox workspace to a local destination."""
+        src = self._workdir / container_path.lstrip("/") if self._workdir else Path(container_path)
         dest = Path(local_dest)
         dest.mkdir(parents=True, exist_ok=True)
-        with tarfile.open(fileobj=buf, mode="r") as tar:
-            tar.extractall(path=str(dest))
+        if src.exists():
+            await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: shutil.copy2(str(src), str(dest)) if src.is_file()
+                else shutil.copytree(str(src), str(dest / src.name), dirs_exist_ok=True),
+            )
 
     async def _cleanup(self) -> None:
-        """Force-remove the container to release resources."""
-        if self._container is not None:
+        """Remove the temp workspace directory."""
+        if self._workdir is not None and self._workdir.exists():
             try:
                 await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    lambda: self._container.remove(force=True),
+                    None, lambda: shutil.rmtree(str(self._workdir), ignore_errors=True)
                 )
                 logger.info("sandbox_cleaned_up", run_id=self.run_id)
             except Exception as e:

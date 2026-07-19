@@ -7,6 +7,7 @@ Every log entry includes a correlation_id for distributed tracing.
 import logging
 import sys
 from contextvars import ContextVar
+from typing import Any
 from uuid import uuid4
 
 import structlog
@@ -32,10 +33,10 @@ def set_correlation_id(cid: str | None = None) -> str:
 
 
 def _add_correlation_id(
-    logger: logging.Logger,
+    logger: Any,
     method_name: str,
-    event_dict: dict,
-) -> dict:
+    event_dict: Any,
+) -> Any:
     """Structlog processor that injects the correlation_id into every log event."""
     cid = correlation_id_var.get("")
     if cid:
@@ -44,10 +45,10 @@ def _add_correlation_id(
 
 
 def _add_app_context(
-    logger: logging.Logger,
+    logger: Any,
     method_name: str,
-    event_dict: dict,
-) -> dict:
+    event_dict: Any,
+) -> Any:
     """Structlog processor that injects app name and version."""
     settings = get_settings()
     event_dict["app"] = settings.APP_NAME
@@ -65,7 +66,7 @@ def setup_logging() -> None:
     settings = get_settings()
     is_prod = settings.is_production
 
-    shared_processors: list[structlog.types.Processor] = [
+    shared_processors: list[Any] = [
         structlog.contextvars.merge_contextvars,
         _add_correlation_id,
         _add_app_context,
@@ -76,6 +77,7 @@ def setup_logging() -> None:
         structlog.processors.UnicodeDecoder(),
     ]
 
+    renderer: Any
     if is_prod:
         renderer = structlog.processors.JSONRenderer()
     else:
