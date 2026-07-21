@@ -228,6 +228,18 @@ export async function importFromGitHub(payload: GitHubImportRequest): Promise<Gi
   });
 }
 
+export async function importFromZip(formData: FormData): Promise<GitHubImportResponse> {
+  const res = await fetch(`${BASE}/projects/import/zip`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText);
+    throw new Error(`API ${res.status}: ${text}`);
+  }
+  return res.json() as Promise<GitHubImportResponse>;
+}
+
 // ─── Agent Pipeline ──────────────────────────────────────────────────────────
 
 export interface PipelineStatusResponse {

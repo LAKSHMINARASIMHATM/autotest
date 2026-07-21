@@ -12,18 +12,21 @@ import {
   Layers,
   Search,
   Workflow,
+  Folder,
 } from "lucide-react";
 import { useState } from "react";
 
 interface KGNode {
   id: string;
   label: string;
-  type: "project" | "module" | "class" | "function" | "api" | "table" | "requirement" | "test";
+  type: "project" | "module" | "class" | "function" | "api" | "table" | "requirement" | "test" | "folder" | "file";
   children?: KGNode[];
 }
 
 const nodeIcons: Record<string, React.ElementType> = {
   project: FolderTree,
+  folder: Folder,
+  file: FileCode,
   module: Layers,
   class: FileCode,
   function: Workflow,
@@ -35,6 +38,8 @@ const nodeIcons: Record<string, React.ElementType> = {
 
 const nodeColors: Record<string, { bg: string; text: string; border: string }> = {
   project: { bg: "bg-[#3B82F6]/10", text: "text-[#3B82F6]", border: "border-[#3B82F6]/20" },
+  folder: { bg: "bg-[#3B82F6]/10", text: "text-[#3B82F6]", border: "border-[#3B82F6]/20" },
+  file: { bg: "bg-[#06B6D4]/10", text: "text-[#06B6D4]", border: "border-[#06B6D4]/20" },
   module: { bg: "bg-[#8B5CF6]/10", text: "text-[#8B5CF6]", border: "border-[#8B5CF6]/20" },
   class: { bg: "bg-[#06B6D4]/10", text: "text-[#06B6D4]", border: "border-[#06B6D4]/20" },
   function: { bg: "bg-[#10B981]/10", text: "text-[#10B981]", border: "border-[#10B981]/20" },
@@ -44,48 +49,8 @@ const nodeColors: Record<string, { bg: string; text: string; border: string }> =
   test: { bg: "bg-[#10B981]/10", text: "text-[#10B981]", border: "border-[#10B981]/20" },
 };
 
-const sampleGraph: KGNode[] = [
-  {
-    id: "p1",
-    label: "AutoTestAI",
-    type: "project",
-    children: [
-      {
-        id: "m1",
-        label: "app.core",
-        type: "module",
-        children: [
-          { id: "c1", label: "Settings", type: "class" },
-          { id: "c2", label: "Security", type: "class" },
-          { id: "f1", label: "create_access_token()", type: "function" },
-          { id: "f2", label: "verify_password()", type: "function" },
-        ],
-      },
-      {
-        id: "m2",
-        label: "app.api",
-        type: "module",
-        children: [
-          { id: "a1", label: "POST /auth/login", type: "api" },
-          { id: "a2", label: "POST /auth/register", type: "api" },
-          { id: "a3", label: "GET /projects", type: "api" },
-          { id: "a4", label: "POST /projects/{id}/analyze", type: "api" },
-        ],
-      },
-      {
-        id: "m3",
-        label: "app.models",
-        type: "module",
-        children: [
-          { id: "t1", label: "users", type: "table" },
-          { id: "t2", label: "projects", type: "table" },
-          { id: "t3", label: "test_cases", type: "table" },
-          { id: "t4", label: "bug_reports", type: "table" },
-        ],
-      },
-    ],
-  },
-];
+import { useEffect, type ElementType } from "react";
+import { getDefaultProjectId } from "@/lib/api";
 
 function TreeNode({ node, depth = 0 }: { node: KGNode; depth?: number }) {
   const [expanded, setExpanded] = useState(depth < 2);
@@ -97,7 +62,7 @@ function TreeNode({ node, depth = 0 }: { node: KGNode; depth?: number }) {
     <motion.div
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.25, delay: depth * 0.03 }}
+      transition={{ duration: 0.25, delay: Math.min(depth * 0.03, 0.3) }}
     >
       <button
         onClick={() => hasChildren && setExpanded(!expanded)}
@@ -147,18 +112,62 @@ function TreeNode({ node, depth = 0 }: { node: KGNode; depth?: number }) {
  * Interactive Knowledge Graph tree explorer.
  * Expandable/collapsible with color-coded node types.
  */
-export function KnowledgeGraphExplorer({ className }: { className?: string }) {
+export function KnowledgeGraphExplorer({ projectId, className }: { projectId?: string; className?: string }) {
+  const [graphData, setGraphData] = useState<KGNode[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        let activeProjId = projectId;
+        if (!activeProjId) {
+          activeProjId = (await getDefaultProjectId()) || "";
+        }
+        if (!activeProjId) {
+          if (active) {
+            setGraphData([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+        const res = await fetch(`${apiUrl}/graph/projects/${activeProjId}/tree`);
+        if (!res.ok) {
+          throw new Error(`Failed to load graph tree: ${res.statusText}`);
+        }
+        const data = await res.json();
+        if (active) {
+          setGraphData(data);
+        }
+      } catch (err: unknown) {
+        if (active) {
+          setError(err instanceof Error ? err.message : "Failed to load graph data");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+    return () => {
+      active = false;
+    };
+  }, [projectId]);
+
   return (
-    <GlassCard className={cn("p-5", className)}>
+    <GlassCard className={cn("p-5 flex flex-col h-full", className)}>
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-[15px] font-semibold text-[#F9FAFB]">Knowledge Graph</h3>
-          <p className="text-xs text-[#6B7280] mt-0.5">Project structure • Neo4j</p>
+          <p className="text-xs text-[#6B7280] mt-0.5">Project structure • Live Data</p>
         </div>
-        <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-[11px] text-[#9CA3AF] hover:text-[#F9FAFB] transition-colors">
-          <Search className="w-3 h-3" />
-          Search nodes
-        </button>
       </div>
 
       {/* Legend */}
@@ -171,9 +180,25 @@ export function KnowledgeGraphExplorer({ className }: { className?: string }) {
         ))}
       </div>
 
-      {/* Tree */}
-      <div className="max-h-[400px] overflow-y-auto space-y-0.5">
-        {sampleGraph.map((node) => (
+      {/* Tree content */}
+      <div className="flex-1 overflow-y-auto space-y-0.5 min-h-[300px]">
+        {loading && (
+          <div className="flex flex-col items-center justify-center h-full py-20 text-[#9CA3AF] gap-2 text-xs">
+            <div className="w-5 h-5 border-2 border-t-transparent border-[#8B5CF6] rounded-full animate-spin" />
+            Loading project graph...
+          </div>
+        )}
+        {error && (
+          <div className="text-red-400 text-xs py-10 text-center font-mono">
+            {error}
+          </div>
+        )}
+        {!loading && !error && graphData.length === 0 && (
+          <div className="flex items-center justify-center h-full py-20 text-[#6B7280] text-xs">
+            No project structure loaded. Import a project first.
+          </div>
+        )}
+        {!loading && !error && graphData.map((node) => (
           <TreeNode key={node.id} node={node} />
         ))}
       </div>

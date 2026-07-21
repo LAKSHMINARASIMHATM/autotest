@@ -50,11 +50,29 @@ class PipelineStatusResponse(BaseModel):
 
 async def _save_test_cases(project, generated_tests: list) -> int:
     from app.models.test_case import TestCase, TestFramework, TestType
+    from app.models.code_entity import CodeEntity
     count = 0
     for t in generated_tests:
         try:
+            # Simple heuristic to find targeted CodeEntity
+            target_entity_id = None
+            func_name_guess = t.name.replace("test_", "")
+            ent = await CodeEntity.find_one(
+                CodeEntity.project_id == project.id,
+                CodeEntity.name == func_name_guess
+            )
+            if not ent:
+                ent = await CodeEntity.find_one(
+                    CodeEntity.project_id == project.id,
+                    CodeEntity.name == func_name_guess.lower()
+                )
+            if ent:
+                target_entity_id = ent.id
+
             tc = TestCase(
                 project_id=project.id,
+                requirement_id=None,
+                target_entity_id=target_entity_id,
                 test_type=getattr(TestType, str(t.test_type).upper(), TestType.UNIT),
                 framework=getattr(TestFramework, str(t.framework).upper(), TestFramework.PYTEST),
                 name=t.name,
@@ -101,6 +119,7 @@ def _get_code_snippet(project_path: str, file_path: str, line_number: int) -> st
 
 async def _save_bugs(project, bug_localizations: list, root_causes: list = [], patches: list = [], project_path: str = "") -> int:
     from app.models.bug_report import BugReport, BugSeverity, BugStatus
+    from app.models.source_file import SourceFile
     count = 0
     for b in bug_localizations:
         try:
@@ -120,12 +139,18 @@ async def _save_bugs(project, bug_localizations: list, root_causes: list = [], p
             # Get code snippet from filesystem
             code_snippet = _get_code_snippet(project_path, getattr(b, "file_path", ""), getattr(b, "line_number", 0))
             
+            # Find matching SourceFile to set file_id
+            file_path = getattr(b, "file_path", "unknown")
+            sf = await SourceFile.find_one(SourceFile.project_id == project.id, SourceFile.path == file_path)
+            file_id = sf.id if sf else None
+
             bug = BugReport(
                 project_id=project.id,
                 test_result_id=None,
+                file_id=file_id,
                 severity=sev,
                 status=BugStatus.LOCALIZED,
-                file_path=getattr(b, "file_path", "unknown"),
+                file_path=file_path,
                 class_name=getattr(b, "class_name", ""),
                 method_name=getattr(b, "method_name", ""),
                 line_number=getattr(b, "line_number", 0),

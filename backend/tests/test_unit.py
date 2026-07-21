@@ -109,3 +109,42 @@ def test_patch_engine_confidence() -> None:
     diff_large = "\n".join([f"+    line_{i}" for i in range(50)])
     conf_large = PatchEngine._estimate_confidence(diff_large, "refactor")
     assert conf_large < 0.85  # penalised for large diff
+
+
+def test_neo4j_serialization() -> None:
+    """Test serialize_neo4j_value converts mock Neo4j objects into serializable dicts."""
+    import os
+    os.environ.setdefault("GROQ_API_KEY", "gsk_test")
+    os.environ.setdefault("MONGODB_URL", "mongodb://localhost:27017")
+    os.environ.setdefault("NEO4J_PASSWORD", "test")
+    os.environ.setdefault("JWT_SECRET", "test-secret")
+
+    from unittest.mock import MagicMock
+    from neo4j.graph import Node, Relationship
+    from app.knowledge.graph.neo4j_service import serialize_neo4j_value
+
+    node = MagicMock(spec=Node)
+    node.element_id = "node-1"
+    node.labels = {"Function"}
+    node.items.return_value = [("name", "verify_password"), ("signature", "verify_password()")]
+
+    rel = MagicMock(spec=Relationship)
+    rel.element_id = "rel-1"
+    rel.type = "TESTS"
+    rel.start_node = MagicMock(spec=Node)
+    rel.start_node.element_id = "node-2"
+    rel.end_node = MagicMock(spec=Node)
+    rel.end_node.element_id = "node-1"
+    rel.items.return_value = [("weight", 0.9)]
+
+    res_node = serialize_neo4j_value(node)
+    assert res_node["id"] == "node-1"
+    assert "Function" in res_node["labels"]
+    assert res_node["properties"]["name"] == "verify_password"
+
+    res_rel = serialize_neo4j_value(rel)
+    assert res_rel["id"] == "rel-1"
+    assert res_rel["type"] == "TESTS"
+    assert res_rel["start_node_id"] == "node-2"
+    assert res_rel["end_node_id"] == "node-1"
+    assert res_rel["properties"]["weight"] == 0.9

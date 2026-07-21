@@ -9,10 +9,13 @@ Steps:
 from __future__ import annotations
 
 import ast
+import io
 import os
 import re
 import shutil
 import tempfile
+import urllib.request
+import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -151,14 +154,95 @@ def _extract_api_endpoints(files: list[CodeFile]) -> list[dict[str, str]]:
     return endpoints[:30]
 
 
+def scan_directory(dir_path: str, repo_url: str = "", branch: str = "") -> RepoSummary:
+    """Scan a local directory for code structure."""
+    repo_root = Path(dir_path)
+    code_files: list[CodeFile] = []
+    count = 0
+
+    for root, dirs, files in os.walk(dir_path):
+        # Skip hidden dirs, node_modules, __pycache__, .venv
+        dirs[:] = [
+            d for d in dirs
+            if not d.startswith(".") and d not in {"node_modules", "__pycache__", ".venv", "dist", "build", ".next"}
+        ]
+        for fname in files:
+            if count >= MAX_FILES:
+                break
+            fpath = Path(root) / fname
+            if fpath.suffix.lower() not in SUPPORTED_EXTENSIONS:
+                continue
+            if fpath.stat().st_size > MAX_FILE_SIZE:
+                continue
+            rel = str(fpath.relative_to(repo_root))
+
+            if fpath.suffix == ".py":
+                code_files.append(_parse_python_file(fpath, rel))
+            elif fpath.suffix in {".ts", ".tsx", ".js", ".jsx"}:
+                code_files.append(_parse_js_ts_file(fpath, rel))
+            else:
+                code_files.append(CodeFile(path=rel, language=fpath.suffix.lstrip(".")))
+            count += 1
+
+    language = _detect_language(code_files)
+    framework = _detect_framework(code_files, repo_root)
+    endpoints = _extract_api_endpoints(code_files)
+
+    summary = RepoSummary(
+        repo_url=repo_url,
+        branch=branch or "main",
+        language=language,
+        framework=framework,
+        total_files=len(code_files),
+        total_functions=sum(len(f.functions) for f in code_files),
+        total_classes=sum(len(f.classes) for f in code_files),
+        files=code_files,
+        api_endpoints=endpoints,
+        local_path=dir_path,
+    )
+    logger.info(
+        "scan_complete",
+        files=summary.total_files,
+        functions=summary.total_functions,
+        classes=summary.total_classes,
+        endpoints=len(endpoints),
+    )
+    return summary
+
+
 async def clone_and_scan(repo_url: str, branch: str | None = None) -> RepoSummary:
-    """Clone a GitHub repo to a temp dir and extract its code structure."""
+    """Clone a GitHub repo (or download a ZIP url) to a temp dir and extract its code structure."""
     # Normalise URL
     if not repo_url.startswith("http"):
         repo_url = "https://" + repo_url
 
     tmpdir = tempfile.mkdtemp(prefix="autotest_")
     try:
+        # Check if this is a ZIP download URL
+        if repo_url.endswith(".zip") or "zip" in repo_url.lower() or "archive" in repo_url.lower():
+            logger.info("downloading_zip_url", url=repo_url)
+            req = urllib.request.Request(
+                repo_url,
+                headers={"User-Agent": "Mozilla/5.0"}
+            )
+            with urllib.request.urlopen(req) as response:
+                zip_data = response.read()
+
+            with zipfile.ZipFile(io.BytesIO(zip_data)) as z:
+                z.extractall(tmpdir)
+
+            # Collapse single root folder if present
+            subdirs = [d for d in os.listdir(tmpdir) if os.path.isdir(os.path.join(tmpdir, d))]
+            all_items = os.listdir(tmpdir)
+            if len(all_items) == 1 and len(subdirs) == 1:
+                subdir_path = os.path.join(tmpdir, subdirs[0])
+                for item in os.listdir(subdir_path):
+                    shutil.move(os.path.join(subdir_path, item), tmpdir)
+                os.rmdir(subdir_path)
+
+            return scan_directory(tmpdir, repo_url, branch or "main")
+
+        # Otherwise, clone via Git
         # Merge LFS-skip flag into the full OS environment so PATH/HOME etc. are preserved.
         clone_env = {**os.environ, "GIT_LFS_SKIP_SMUDGE": "1"}
         clone_kwargs = {
@@ -199,59 +283,7 @@ async def clone_and_scan(repo_url: str, branch: str | None = None) -> RepoSummar
                 actual_branch = "HEAD"
         
         logger.info("clone_complete", path=tmpdir, branch=actual_branch)
-
-        repo_root = Path(tmpdir)
-        code_files: list[CodeFile] = []
-        count = 0
-
-        for root, dirs, files in os.walk(tmpdir):
-            # Skip hidden dirs, node_modules, __pycache__, .venv
-            dirs[:] = [
-                d for d in dirs
-                if not d.startswith(".") and d not in {"node_modules", "__pycache__", ".venv", "dist", "build", ".next"}
-            ]
-            for fname in files:
-                if count >= MAX_FILES:
-                    break
-                fpath = Path(root) / fname
-                if fpath.suffix.lower() not in SUPPORTED_EXTENSIONS:
-                    continue
-                if fpath.stat().st_size > MAX_FILE_SIZE:
-                    continue
-                rel = str(fpath.relative_to(repo_root))
-
-                if fpath.suffix == ".py":
-                    code_files.append(_parse_python_file(fpath, rel))
-                elif fpath.suffix in {".ts", ".tsx", ".js", ".jsx"}:
-                    code_files.append(_parse_js_ts_file(fpath, rel))
-                else:
-                    code_files.append(CodeFile(path=rel, language=fpath.suffix.lstrip(".")))
-                count += 1
-
-        language = _detect_language(code_files)
-        framework = _detect_framework(code_files, repo_root)
-        endpoints = _extract_api_endpoints(code_files)
-
-        summary = RepoSummary(
-            repo_url=repo_url,
-            branch=actual_branch,
-            language=language,
-            framework=framework,
-            total_files=len(code_files),
-            total_functions=sum(len(f.functions) for f in code_files),
-            total_classes=sum(len(f.classes) for f in code_files),
-            files=code_files,
-            api_endpoints=endpoints,
-            local_path=tmpdir,
-        )
-        logger.info(
-            "scan_complete",
-            files=summary.total_files,
-            functions=summary.total_functions,
-            classes=summary.total_classes,
-            endpoints=len(endpoints),
-        )
-        return summary
+        return scan_directory(tmpdir, repo_url, actual_branch)
 
     except Exception as e:
         shutil.rmtree(tmpdir, ignore_errors=True)
@@ -260,7 +292,13 @@ async def clone_and_scan(repo_url: str, branch: str | None = None) -> RepoSummar
 
 
 def cleanup_clone(local_path: str) -> None:
-    """Remove the temporary cloned directory."""
-    if local_path and os.path.exists(local_path):
+    """Remove the temporary cloned directory. Skips persistent directories."""
+    if not local_path:
+        return
+    # NEVER delete persistent project directories
+    if "data/projects" in local_path.replace("\\", "/"):
+        logger.info("skipping_cleanup_for_persistent_project", path=local_path)
+        return
+    if os.path.exists(local_path):
         shutil.rmtree(local_path, ignore_errors=True)
         logger.info("clone_cleaned", path=local_path)

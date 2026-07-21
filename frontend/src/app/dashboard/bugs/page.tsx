@@ -5,9 +5,11 @@ import { AlertCircle, FileSearch, RefreshCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { getProjectBugs, getDefaultProjectId, generatePatches, scanBugs, type BugItem } from "@/lib/api";
+import { getProjectBugs, listProjects, ProjectItem, generatePatches, scanBugs, type BugItem } from "@/lib/api";
 
 export default function BugsPage() {
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [bugs, setBugs] = useState<BugItem[]>([]);
   const [selectedBug, setSelectedBug] = useState<BugItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -15,35 +17,54 @@ export default function BugsPage() {
   const [repairing, setRepairing] = useState(false);
   const [scanning, setScanning] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const pid = await getDefaultProjectId();
-      if (!pid) throw new Error("No projects found.");
-      const data = await getProjectBugs(pid);
-      setBugs(data);
-      if (data.length > 0) setSelectedBug(data[0]);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load bugs");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Load projects list
+  useEffect(() => {
+    listProjects(1, 100)
+      .then((res) => {
+        setProjects(res.items);
+        if (res.items.length > 0) {
+          setSelectedProjectId(res.items[0].id);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load projects", err);
+        setError("Failed to load projects list.");
+      });
+  }, []);
 
-  useEffect(() => { fetchData(); }, []);
+  // Fetch bugs when selected project changes
+  useEffect(() => {
+    if (!selectedProjectId) return;
+    async function fetchBugs() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getProjectBugs(selectedProjectId);
+        setBugs(data);
+        if (data.length > 0) {
+          setSelectedBug(data[0]);
+        } else {
+          setSelectedBug(null);
+        }
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Failed to load bugs");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBugs();
+  }, [selectedProjectId]);
 
   const handleHuggingFaceScan = async () => {
+    if (!selectedProjectId) return;
     setScanning(true);
     setError(null);
     try {
-      const pid = await getDefaultProjectId();
-      if (!pid) throw new Error("No projects found.");
-      await scanBugs(pid);
+      await scanBugs(selectedProjectId);
       alert("Hugging Face static scan started successfully in the background! The bug list will refresh in a few seconds.");
       setTimeout(async () => {
         try {
-          const data = await getProjectBugs(pid);
+          const data = await getProjectBugs(selectedProjectId);
           setBugs(data);
           if (data.length > 0 && !selectedBug) setSelectedBug(data[0]);
         } catch { /* ignore */ }
@@ -89,7 +110,7 @@ export default function BugsPage() {
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto min-h-screen pb-12">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-[28px] font-bold tracking-tight">
             <span className="gradient-text">Bug</span> Intelligence Tracker
@@ -98,14 +119,40 @@ export default function BugsPage() {
             Review localized faults, call stack analyses, and root-cause explanations.
           </p>
         </div>
-        <Button
-          onClick={handleHuggingFaceScan}
-          disabled={scanning}
-          className="gap-2 text-[13px] font-semibold bg-[#3B82F6] hover:bg-[#2563EB]"
-        >
-          <RefreshCw className={`w-4 h-4 ${scanning ? "animate-spin" : ""}`} />
-          {scanning ? "Scanning Codebase…" : "Scan with HuggingFace"}
-        </Button>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Project Selector */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">Select Project</label>
+            <select
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              disabled={scanning}
+              className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-4 py-2 text-sm text-[#F9FAFB] focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50"
+            >
+              {projects.length === 0 ? (
+                <option value="">No projects loaded</option>
+              ) : (
+                projects.map((p) => (
+                  <option key={p.id} value={p.id} className="bg-[#18181B] text-[#F9FAFB]">
+                    {p.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
+          <div className="pt-5">
+            <Button
+              onClick={handleHuggingFaceScan}
+              disabled={scanning || !selectedProjectId}
+              className="gap-2 text-[13px] font-semibold bg-[#3B82F6] hover:bg-[#2563EB]"
+            >
+              <RefreshCw className={`w-4 h-4 ${scanning ? "animate-spin" : ""}`} />
+              {scanning ? "Scanning Codebase…" : "Scan with HuggingFace"}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {error && (

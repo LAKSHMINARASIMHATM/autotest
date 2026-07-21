@@ -55,6 +55,15 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 
 
+@router.get("/projects/{project_id}/tree")
+async def get_project_graph_tree(
+    project_id: str,
+    _user_id: str = Depends(get_current_user_id),
+) -> Any:
+    """Get the hierarchical tree structure of the project's code entities (from Neo4j or MongoDB)."""
+    return await GraphQueryService.get_project_graph_tree(project_id)
+
+
 class CypherQueryRequest(BaseModel):
     query: str
 

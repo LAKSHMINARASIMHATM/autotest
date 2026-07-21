@@ -212,26 +212,38 @@ async def get_current_user_payload(
     # Dev fallback
     if settings.APP_ENV == "development":
         from app.models.user import User
-        # Find any user
-        user = await User.find_one({})
-        if not user:
-            try:
-                user = User(
-                    email="dev@autotest.ai",
-                    password_hash="",
-                    full_name="Dev Engineer",
-                    role=Role.ENGINEER,
-                    is_active=True
-                )
-                await user.insert()
-                logger.info("dev_user_auto_seeded", email=user.email)
-            except Exception as seed_err:
-                logger.warning("user_auto_seed_failed", error=str(seed_err))
+        user = None
+        try:
+            # Find any user
+            user = await User.find_one({})
+            if not user:
+                try:
+                    user = User(
+                        email="dev@autotest.ai",
+                        password_hash="",
+                        full_name="Dev Engineer",
+                        role=Role.ENGINEER,
+                        is_active=True
+                    )
+                    await user.insert()
+                    logger.info("dev_user_auto_seeded", email=user.email)
+                except Exception as seed_err:
+                    logger.warning("user_auto_seed_failed", error=str(seed_err))
+        except Exception as db_err:
+            logger.warning("dev_fallback_db_error_using_mock_payload", error=str(db_err))
 
         if user:
             return TokenPayload(
                 sub=str(user.id),
                 role=user.role,
+                exp=datetime.now(UTC) + timedelta(days=1)
+            )
+        else:
+            # Unreachable DB fallback
+            from beanie import PydanticObjectId
+            return TokenPayload(
+                sub=str(PydanticObjectId()),
+                role=Role.ENGINEER,
                 exp=datetime.now(UTC) + timedelta(days=1)
             )
 

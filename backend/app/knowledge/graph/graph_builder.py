@@ -27,33 +27,40 @@ class GraphBuilder:
     async def create_module(cls, project_id: str, name: str, file_path: str) -> None:
         """Create a Module node and link to Project."""
         query = """
-        MERGE (m:Module {name: $name})
-        SET m.file_path = $file_path
+        MERGE (m:Module {id: $id})
+        SET m.name = $name, m.file_path = $file_path
         WITH m
         MATCH (p:Project {id: $project_id})
         MERGE (p)-[:CONTAINS]->(m)
         """
         await Neo4jService.execute_query(
-            query, {"project_id": project_id, "name": name, "file_path": file_path}
+            query, {"project_id": project_id, "id": f"{project_id}:{name}", "name": name, "file_path": file_path}
         )
 
     @classmethod
-    async def create_class(cls, module_name: str, name: str, docstring: str = "") -> None:
+    async def create_class(cls, project_id: str, module_name: str, name: str, docstring: str = "") -> None:
         """Create a Class node and link to its parent Module."""
         query = """
-        MERGE (c:Class {name: $name})
-        SET c.docstring = $docstring
+        MERGE (c:Class {id: $id})
+        SET c.name = $name, c.docstring = $docstring
         WITH c
-        MATCH (m:Module {name: $module_name})
+        MATCH (m:Module {id: $module_id})
         MERGE (m)-[:CONTAINS]->(c)
         """
         await Neo4jService.execute_query(
-            query, {"module_name": module_name, "name": name, "docstring": docstring}
+            query, {
+                "id": f"{project_id}:{module_name}:{name}",
+                "module_id": f"{project_id}:{module_name}",
+                "name": name,
+                "docstring": docstring
+            }
         )
 
     @classmethod
     async def create_function(
         cls,
+        project_id: str,
+        module_name: str,
         parent_name: str,
         parent_type: str,
         name: str,
@@ -62,17 +69,26 @@ class GraphBuilder:
     ) -> None:
         """Create a Function node and link to its parent Module or Class."""
         assert parent_type in ("Module", "Class")
+        
+        if parent_type == "Class":
+            func_id = f"{project_id}:{module_name}:{parent_name}:{name}"
+            parent_id = f"{project_id}:{module_name}:{parent_name}"
+        else:
+            func_id = f"{project_id}:{module_name}::{name}"
+            parent_id = f"{project_id}:{module_name}"
+
         query = f"""
-        MERGE (f:Function {{name: $name}})
-        SET f.signature = $signature, f.docstring = $docstring
+        MERGE (f:Function {{id: $id}})
+        SET f.name = $name, f.signature = $signature, f.docstring = $docstring
         WITH f
-        MATCH (p:{parent_type} {{name: $parent_name}})
+        MATCH (p:{parent_type} {{id: $parent_id}})
         MERGE (p)-[:CONTAINS]->(f)
         """
         await Neo4jService.execute_query(
             query,
             {
-                "parent_name": parent_name,
+                "id": func_id,
+                "parent_id": parent_id,
                 "name": name,
                 "signature": signature,
                 "docstring": docstring,
@@ -80,24 +96,38 @@ class GraphBuilder:
         )
 
     @classmethod
-    async def create_dependency(cls, from_module: str, to_module: str) -> None:
+    async def create_dependency(cls, project_id: str, from_module: str, to_module: str) -> None:
         """Create a DEPENDS_ON relationship between modules."""
         query = """
-        MATCH (m1:Module {name: $from_module})
-        MATCH (m2:Module {name: $to_module})
+        MATCH (m1:Module {id: $from_id})
+        MATCH (m2:Module {id: $to_id})
         MERGE (m1)-[:DEPENDS_ON]->(m2)
         """
-        await Neo4jService.execute_query(query, {"from_module": from_module, "to_module": to_module})
+        await Neo4jService.execute_query(
+            query,
+            {
+                "from_id": f"{project_id}:{from_module}",
+                "to_id": f"{project_id}:{to_module}"
+            }
+        )
 
     @classmethod
-    async def create_call_relationship(cls, from_func: str, to_func: str) -> None:
+    async def create_call_relationship(cls, project_id: str, from_func: str, to_func: str) -> None:
         """Create a CALLS relationship between functions."""
+        # Search for functions within the specific project
         query = """
-        MATCH (f1:Function {name: $from_func})
-        MATCH (f2:Function {name: $to_func})
+        MATCH (f1:Function) WHERE f1.name = $from_func AND f1.id STARTS WITH $prefix
+        MATCH (f2:Function) WHERE f2.name = $to_func AND f2.id STARTS WITH $prefix
         MERGE (f1)-[:CALLS]->(f2)
         """
-        await Neo4jService.execute_query(query, {"from_func": from_func, "to_func": to_func})
+        await Neo4jService.execute_query(
+            query,
+            {
+                "from_func": from_func,
+                "to_func": to_func,
+                "prefix": f"{project_id}:"
+            }
+        )
 
     @classmethod
     async def ingest_project_structure(cls, project_id: str, analysis: dict[str, Any]) -> None:
@@ -119,11 +149,13 @@ class GraphBuilder:
             # Ingest classes
             for cls_data in mod.get("classes", []):
                 class_name = cls_data.get("name")
-                await cls.create_class(mod_name, class_name, cls_data.get("docstring", ""))
+                await cls.create_class(project_id, mod_name, class_name, cls_data.get("docstring", ""))
 
                 # Ingest class methods
                 for method in cls_data.get("methods", []):
                     await cls.create_function(
+                        project_id=project_id,
+                        module_name=mod_name,
                         parent_name=class_name,
                         parent_type="Class",
                         name=method.get("name"),
@@ -134,6 +166,8 @@ class GraphBuilder:
             # Ingest module functions (non-methods)
             for func in mod.get("functions", []):
                 await cls.create_function(
+                    project_id=project_id,
+                    module_name=mod_name,
                     parent_name=mod_name,
                     parent_type="Module",
                     name=func.get("name"),
@@ -143,10 +177,10 @@ class GraphBuilder:
 
         # 3. Ingest module-level dependencies
         for dep in analysis.get("dependencies", []):
-            await cls.create_dependency(dep.get("from"), dep.get("to"))
+            await cls.create_dependency(project_id, dep.get("from"), dep.get("to"))
 
         # 4. Ingest call graphs
         for call in analysis.get("calls", []):
-            await cls.create_call_relationship(call.get("from"), call.get("to"))
+            await cls.create_call_relationship(project_id, call.get("from"), call.get("to"))
 
         logger.info("neo4j_ingest_completed", project_id=project_id)

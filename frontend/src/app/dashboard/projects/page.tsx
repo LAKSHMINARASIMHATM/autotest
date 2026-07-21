@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
-  listProjects, importFromGitHub, triggerAgentPipeline, getPipelineStatus,
+  listProjects, importFromGitHub, importFromZip, triggerAgentPipeline, getPipelineStatus,
   type ProjectItem, type GitHubImportResponse, type PipelineStatusResponse,
 } from "@/lib/api";
+import { Upload, FileArchive, Link as LinkIcon } from "lucide-react";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectItem[]>([]);
@@ -21,6 +22,8 @@ export default function ProjectsPage() {
   const [importResult, setImportResult] = useState<GitHubImportResponse | null>(null);
 
   // Form state
+  const [activeTab, setActiveTab] = useState<"link" | "file">("link");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [repoUrl, setRepoUrl] = useState("");
   const [projName, setProjName] = useState("");
   const [branch, setBranch] = useState("main");
@@ -66,18 +69,35 @@ export default function ProjectsPage() {
 
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!repoUrl) return;
     setIsImporting(true);
     setImportError(null);
 
     try {
-      const result = await importFromGitHub({
-        repo_url: repoUrl,
-        name: projName || undefined,
-        branch,
-        description: description || undefined,
-        auto_run_agents: autoRun,
-      });
+      let result: GitHubImportResponse;
+      if (activeTab === "link") {
+        if (!repoUrl) {
+          throw new Error("Repository/ZIP link URL is required");
+        }
+        result = await importFromGitHub({
+          repo_url: repoUrl,
+          name: projName || undefined,
+          branch,
+          description: description || undefined,
+          auto_run_agents: autoRun,
+        });
+      } else {
+        if (!selectedFile) {
+          throw new Error("Please select a project ZIP file to upload");
+        }
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        formData.append("name", projName);
+        formData.append("repo_url", repoUrl);
+        formData.append("description", description);
+        formData.append("auto_run_agents", autoRun.toString());
+
+        result = await importFromZip(formData);
+      }
       setImportResult(result);
 
       // Track pipeline session
@@ -131,6 +151,8 @@ export default function ProjectsPage() {
     setProjName("");
     setBranch("main");
     setDescription("");
+    setSelectedFile(null);
+    setActiveTab("link");
   };
 
   const getSessionForProject = (projectId: string) =>
@@ -321,9 +343,9 @@ export default function ProjectsPage() {
               ) : (
                 <>
                   <div>
-                    <h2 className="text-lg font-bold text-[#F9FAFB]">Import from GitHub</h2>
+                    <h2 className="text-lg font-bold text-[#F9FAFB]">Import Project</h2>
                     <p className="text-xs text-[#6B7280] mt-0.5">
-                      Clone a public GitHub repository and run the AI agent pipeline.
+                      Import a project by repository link, ZIP download link, or direct ZIP file upload.
                     </p>
                   </div>
 
@@ -334,41 +356,153 @@ export default function ProjectsPage() {
                     </div>
                   )}
 
-                  <form onSubmit={handleImport} className="space-y-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-[#9CA3AF]">GitHub Repository URL *</label>
-                      <input
-                        type="text"
-                        required
-                        value={repoUrl}
-                        onChange={e => setRepoUrl(e.target.value)}
-                        placeholder="https://github.com/username/repository"
-                        className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3B82F6] font-mono"
-                      />
-                    </div>
+                  <div className="flex bg-[rgba(255,255,255,0.03)] p-1 rounded-xl border border-[rgba(255,255,255,0.06)]">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("link")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+                        activeTab === "link"
+                          ? "bg-[#3B82F6] text-white shadow-lg shadow-[#3B82F6]/20"
+                          : "text-[#9CA3AF] hover:text-white"
+                      }`}
+                    >
+                      <LinkIcon className="w-3.5 h-3.5" />
+                      Git / ZIP Link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("file")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+                        activeTab === "file"
+                          ? "bg-[#3B82F6] text-white shadow-lg shadow-[#3B82F6]/20"
+                          : "text-[#9CA3AF] hover:text-white"
+                      }`}
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      ZIP File Upload
+                    </button>
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-[#9CA3AF]">Project Name (optional)</label>
-                        <input
-                          type="text"
-                          value={projName}
-                          onChange={e => setProjName(e.target.value)}
-                          placeholder="auto-detected"
-                          className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
-                        />
+                  <form onSubmit={handleImport} className="space-y-4">
+                    {activeTab === "link" ? (
+                      <>
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-[#9CA3AF]">Repository or ZIP URL *</label>
+                          <input
+                            type="text"
+                            required
+                            value={repoUrl}
+                            onChange={e => setRepoUrl(e.target.value)}
+                            placeholder="https://github.com/username/repository or https://site.com/code.zip"
+                            className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3B82F6] font-mono"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-[#9CA3AF]">Project Name (optional)</label>
+                            <input
+                              type="text"
+                              value={projName}
+                              onChange={e => setProjName(e.target.value)}
+                              placeholder="auto-detected"
+                              className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-[#9CA3AF]">Branch</label>
+                            <input
+                              type="text"
+                              value={branch}
+                              onChange={e => setBranch(e.target.value)}
+                              placeholder="main"
+                              className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-[#9CA3AF]">Project ZIP File *</label>
+                          <div
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (e.dataTransfer.files?.[0]) {
+                                setSelectedFile(e.dataTransfer.files[0]);
+                                if (!projName) {
+                                  setProjName(e.dataTransfer.files[0].name.replace(/\.zip$/, ""));
+                                }
+                              }
+                            }}
+                            className="border-2 border-dashed border-[rgba(255,255,255,0.12)] hover:border-[#3B82F6]/50 transition-colors rounded-xl p-5 text-center cursor-pointer bg-[rgba(255,255,255,0.02)] flex flex-col items-center justify-center space-y-2"
+                            onClick={() => document.getElementById("zip-file-input")?.click()}
+                          >
+                            <input
+                              id="zip-file-input"
+                              type="file"
+                              accept=".zip"
+                              className="hidden"
+                              onChange={(e) => {
+                                if (e.target.files?.[0]) {
+                                  setSelectedFile(e.target.files[0]);
+                                  if (!projName) {
+                                    setProjName(e.target.files[0].name.replace(/\.zip$/, ""));
+                                  }
+                                }
+                              }}
+                            />
+                            {selectedFile ? (
+                              <>
+                                <FileArchive className="w-8 h-8 text-blue-400 animate-pulse" />
+                                <div className="text-xs font-semibold text-white truncate max-w-[250px]">
+                                  {selectedFile.name}
+                                </div>
+                                <div className="text-[10px] text-[#9CA3AF]">
+                                  {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                                </div>
+                                <span className="text-[10px] text-blue-400 font-semibold underline mt-0.5">Change file</span>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-8 h-8 text-[#6B7280]" />
+                                <div className="text-xs text-[#9CA3AF]">
+                                  Drag &amp; drop project ZIP here, or <span className="text-blue-400 underline font-semibold">browse</span>
+                                </div>
+                                <div className="text-[10px] text-[#6B7280]">
+                                  Supports only .zip archives up to 50MB
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-[#9CA3AF]">Project Name *</label>
+                            <input
+                              type="text"
+                              required
+                              value={projName}
+                              onChange={e => setProjName(e.target.value)}
+                              placeholder="Project Name"
+                              className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-[#9CA3AF]">Project/Repo URL (optional)</label>
+                            <input
+                              type="text"
+                              value={repoUrl}
+                              onChange={e => setRepoUrl(e.target.value)}
+                              placeholder="https://simhahatwar.me"
+                              className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3B82F6] font-mono"
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-[#9CA3AF]">Branch</label>
-                        <input
-                          type="text"
-                          value={branch}
-                          onChange={e => setBranch(e.target.value)}
-                          placeholder="main"
-                          className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
-                        />
-                      </div>
-                    </div>
+                    )}
 
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-[#9CA3AF]">Description (optional)</label>
@@ -400,9 +534,9 @@ export default function ProjectsPage() {
                       </Button>
                       <Button type="submit" className="gap-2" disabled={isImporting}>
                         {isImporting ? (
-                          <><RefreshCw className="w-4 h-4 animate-spin" /> Cloning &amp; Scanning…</>
+                          <><RefreshCw className="w-4 h-4 animate-spin" /> Processing &amp; Scanning…</>
                         ) : (
-                          <><Play className="w-4 h-4" /> Import Repository</>
+                          <><Play className="w-4 h-4" /> Import Project</>
                         )}
                       </Button>
                     </div>

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Database, Play, RefreshCw, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { KnowledgeGraphExplorer } from "@/components/knowledge/graph-explorer";
-import { executeCypherQuery } from "@/lib/api";
+import { executeCypherQuery, listProjects, type ProjectItem } from "@/lib/api";
 
 const PRESET_QUERIES = [
   {
@@ -23,10 +23,26 @@ const PRESET_QUERIES = [
 ];
 
 export default function KnowledgePage() {
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [cypher, setCypher] = useState(PRESET_QUERIES[0].query);
   const [result, setResult] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load projects list
+  useEffect(() => {
+    listProjects(1, 100)
+      .then((res) => {
+        setProjects(res.items);
+        if (res.items.length > 0) {
+          setSelectedProjectId(res.items[0].id);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load projects", err);
+      });
+  }, []);
 
   const runQuery = async () => {
     if (!cypher.trim()) return;
@@ -51,21 +67,44 @@ export default function KnowledgePage() {
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto min-h-screen pb-12">
-      {/* Header */}
-      <div>
-        <h1 className="text-[28px] font-bold tracking-tight">
-          <span className="gradient-text">Neo4j Knowledge</span> Graph
-        </h1>
-        <p className="text-sm text-[#6B7280] mt-1">
-          Explore structured code topology, entity relationships, and test coverage graphs — powered by live Neo4j Aura.
-        </p>
+      {/* Header with Project Selector */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[28px] font-bold tracking-tight">
+            <span className="gradient-text">Neo4j Knowledge</span> Graph
+          </h1>
+          <p className="text-sm text-[#6B7280] mt-1">
+            Explore structured code topology, entity relationships, and test coverage graphs — powered by live Neo4j Aura.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">Select Project</label>
+            <select
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-4 py-2 text-sm text-[#F9FAFB] focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            >
+              {projects.length === 0 ? (
+                <option value="">No projects loaded</option>
+              ) : (
+                projects.map((p) => (
+                  <option key={p.id} value={p.id} className="bg-[#18181B] text-[#F9FAFB]">
+                    {p.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Main layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Graph Tree */}
         <div className="lg:col-span-1">
-          <KnowledgeGraphExplorer className="h-full" />
+          <KnowledgeGraphExplorer projectId={selectedProjectId} className="h-full" />
         </div>
 
         {/* Right Column: Console & Results */}
