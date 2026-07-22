@@ -72,3 +72,6 @@ export function useDebounce<T>(value: T, delay = 300): T {
 // Re-export pipeline status hook
 export { usePipelineStatus, PIPELINE_AGENTS } from "./usePipelineStatus";
 export type { LiveAgentStatus, LivePipelineState, PipelineAgentId } from "./usePipelineStatus";
+
+// Re-export authentication hooks
+export { useAuth, AuthProvider } from "./use-auth";

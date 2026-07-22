@@ -9,9 +9,21 @@ const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 let _cachedProjectId: string | null = null;
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options?.headers as Record<string, string> ?? {}),
+  };
+
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  }
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(options?.headers ?? {}) },
     ...options,
+    headers,
   });
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
@@ -330,4 +342,44 @@ export async function scanBugs(projectId: string): Promise<{ status: string; mes
     method: "POST",
   });
 }
+
+// ─── Authentication ──────────────────────────────────────────────────────────
+
+export interface LoginPayload {
+  email: string;
+  password?: string;
+}
+
+export interface RegisterPayload {
+  email: string;
+  password?: string;
+  full_name?: string;
+}
+
+export interface UserResponse {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  is_active: boolean;
+}
+
+export async function loginUser(payload: LoginPayload): Promise<TokenResponse> {
+  return request<TokenResponse>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function registerUser(payload: RegisterPayload): Promise<TokenResponse> {
+  return request<TokenResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getMe(): Promise<UserResponse> {
+  return request<UserResponse>("/auth/me");
+}
+
 

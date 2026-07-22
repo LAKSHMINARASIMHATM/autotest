@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/hooks";
 
 export const metadata: Metadata = {
   title: "AutoTestAI — AI Quality Engineering Platform",
@@ -28,8 +29,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="min-h-screen bg-[#09090B] text-[#F9FAFB] antialiased">
-        <div className="ambient-bg" />
-        {children}
+        <AuthProvider>
+          <div className="ambient-bg" />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

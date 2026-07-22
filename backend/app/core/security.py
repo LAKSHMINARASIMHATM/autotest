@@ -174,6 +174,12 @@ async def get_current_user_payload(
         token = credentials.credentials
         if token and token not in ("undefined", "null", "none", ""):
             try:
+                # Try decoding as a local JWT token first
+                try:
+                    return decode_token(token, settings)
+                except HTTPException:
+                    pass
+
                 # Verify Firebase token
                 decoded_token = auth.verify_id_token(token)
                 email = decoded_token.get("email", "")
@@ -201,7 +207,7 @@ async def get_current_user_payload(
                 )
             except Exception as e:
                 if settings.APP_ENV == "development":
-                    logger.warning("firebase_token_verification_failed_using_dev_fallback", error=str(e))
+                    logger.warning("token_verification_failed_using_dev_fallback", error=str(e))
                 else:
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
