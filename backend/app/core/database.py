@@ -32,7 +32,11 @@ async def init_mongodb() -> None:
     global _client, _database
 
     settings = get_settings()
-    _client = AsyncIOMotorClient(settings.MONGODB_URL)
+    _client = AsyncIOMotorClient(
+        settings.MONGODB_URL,
+        serverSelectionTimeoutMS=10000,
+        connectTimeoutMS=10000,
+    )
     _database = _client[settings.MONGODB_DB_NAME]
 
     # Import all document models so Beanie can discover them

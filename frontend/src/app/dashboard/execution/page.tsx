@@ -476,7 +476,17 @@ export default function ExecutionPage() {
       {/* Source Code Coverage Heatmap */}
       <div className="mt-8">
         <CoverageHeatmap
-          filename={selectedProjectId ? "Project Execution Coverage" : undefined}
+          filename={selectedProject ? `${selectedProject.name} (${executionResult?.framework || framework})` : undefined}
+          lines={
+            executionResult
+              ? [
+                  { line_number: 1, content: `// Executed ${executionResult.framework} runner on ${selectedProject?.name || "project"}`, covered: true },
+                  { line_number: 2, content: `// Total Tests: ${executionResult.total} | Passed: ${executionResult.passed} | Failed: ${executionResult.failed}`, covered: executionResult.failed === 0 },
+                  { line_number: 3, content: `// Execution Duration: ${executionResult.duration_ms} ms`, covered: true },
+                  { line_number: 4, content: `// Exit Code: ${executionResult.exit_code ?? 0}`, covered: (executionResult.exit_code ?? 0) === 0 },
+                ]
+              : []
+          }
           lineCoveragePct={executionResult ? executionResult.coverage_pct : undefined}
         />
       </div>

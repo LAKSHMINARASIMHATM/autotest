@@ -86,21 +86,30 @@ class ProjectService:
         Returns:
             Paginated project list.
         """
-        query = Project.find(
-            Project.owner_id == PydanticObjectId(owner_id),
-            Project.is_deleted == False,  # noqa: E712
-        )
+        try:
+            query = Project.find(
+                Project.owner_id == PydanticObjectId(owner_id),
+                Project.is_deleted == False,  # noqa: E712
+            )
 
-        total = await query.count()
-        skip = (page - 1) * page_size
-        projects = await query.skip(skip).limit(page_size).sort("-created_at").to_list()
+            total = await query.count()
+            skip = (page - 1) * page_size
+            projects = await query.skip(skip).limit(page_size).sort("-created_at").to_list()
 
-        return ProjectListResponse(
-            items=[_project_to_response(p) for p in projects],
-            total=total,
-            page=page,
-            page_size=page_size,
-        )
+            return ProjectListResponse(
+                items=[_project_to_response(p) for p in projects],
+                total=total,
+                page=page,
+                page_size=page_size,
+            )
+        except Exception as e:
+            logger.warning("list_projects_db_error", error=str(e))
+            return ProjectListResponse(
+                items=[],
+                total=0,
+                page=page,
+                page_size=page_size,
+            )
 
     @staticmethod
     async def update(

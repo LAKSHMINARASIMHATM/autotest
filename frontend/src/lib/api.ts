@@ -199,6 +199,27 @@ export async function generatePatches(payload: GeneratePatchRequest): Promise<Pa
   });
 }
 
+export interface ApprovePatchResponse {
+  status: string;
+  patch_id: string;
+  commit_sha?: string;
+  commit_message?: string;
+  message: string;
+}
+
+export async function approvePatch(patchId: string): Promise<ApprovePatchResponse> {
+  return request<ApprovePatchResponse>(`/repair/approve/${patchId}`, {
+    method: "POST",
+  });
+}
+
+export async function rejectPatch(patchId: string): Promise<{ status: string; patch_id: string; message: string }> {
+  return request<{ status: string; patch_id: string; message: string }>(`/repair/reject/${patchId}`, {
+    method: "POST",
+  });
+}
+
+
 // ─── Knowledge Graph / Cypher ────────────────────────────────────────────────
 
 export async function executeCypherQuery(query: string): Promise<unknown> {
@@ -296,6 +317,7 @@ export interface ExecuteTestsResponse {
   total: number;
   duration_ms: number;
   coverage_pct: number;
+  exit_code?: number;
   failures: { node_id: string; longrepr?: string; name?: string; message?: string }[];
   logs: string;
 }

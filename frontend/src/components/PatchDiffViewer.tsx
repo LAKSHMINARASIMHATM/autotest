@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, XCircle, FileDiff, Wrench } from "lucide-react";
+import { CheckCircle2, XCircle, FileDiff, Wrench, RefreshCw, GitCommit } from "lucide-react";
 
 export interface PatchDiffViewerProps {
   patchDiff?: string;
@@ -9,6 +9,9 @@ export interface PatchDiffViewerProps {
   confidenceScore?: number;
   onApprove?: () => void;
   onReject?: () => void;
+  isSubmitting?: boolean;
+  commitSha?: string | null;
+  status?: string;
 }
 
 export function PatchDiffViewer({
@@ -17,9 +20,14 @@ export function PatchDiffViewer({
   confidenceScore,
   onApprove,
   onReject,
+  isSubmitting = false,
+  commitSha,
+  status,
 }: PatchDiffViewerProps) {
   const hasDiff = Boolean(patchDiff && patchDiff.trim().length > 0);
   const diffLines = hasDiff ? patchDiff!.split("\n") : [];
+  const isAccepted = status === "accepted";
+  const isRejected = status === "rejected";
 
   return (
     <div className="w-full bg-[#121318] border border-[#27272A] rounded-xl p-5 shadow-xl">
@@ -34,13 +42,19 @@ export function PatchDiffViewer({
           </div>
         </div>
 
-        {confidenceScore !== undefined && (
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
+          {commitSha && (
+            <span className="flex items-center gap-1 text-xs font-mono px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold">
+              <GitCommit className="w-3.5 h-3.5" />
+              {commitSha}
+            </span>
+          )}
+          {confidenceScore !== undefined && (
             <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-400 font-semibold">
               Confidence C: {(confidenceScore * 100).toFixed(0)}%
             </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {!hasDiff ? (
@@ -60,6 +74,23 @@ export function PatchDiffViewer({
             <div className="mb-4 p-3 rounded-lg bg-[#18181B] border border-[#27272A] text-xs text-[#D4D4D8]">
               <span className="font-semibold text-blue-400">RCA Explanation: </span>
               {explanation}
+            </div>
+          )}
+
+          {/* Status Banner if committed */}
+          {isAccepted && (
+            <div className="mb-4 p-3 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>
+                <strong>Approved & Committed:</strong> Patch successfully applied and committed to repository {commitSha ? `(${commitSha})` : ""}.
+              </span>
+            </div>
+          )}
+
+          {isRejected && (
+            <div className="mb-4 p-3 rounded-lg bg-rose-950/30 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2">
+              <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>Patch candidate has been rejected.</span>
             </div>
           )}
 
@@ -84,12 +115,13 @@ export function PatchDiffViewer({
           </div>
 
           {/* Actions */}
-          {(onApprove || onReject) && (
+          {(onApprove || onReject) && !isAccepted && !isRejected && (
             <div className="flex items-center justify-end gap-3 pt-2">
               {onReject && (
                 <button
                   onClick={onReject}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-semibold transition-all"
+                  disabled={isSubmitting}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-semibold transition-all disabled:opacity-50"
                 >
                   <XCircle className="w-4 h-4" />
                   Reject Patch
@@ -99,10 +131,20 @@ export function PatchDiffViewer({
               {onApprove && (
                 <button
                   onClick={onApprove}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-semibold transition-all"
+                  disabled={isSubmitting}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-semibold transition-all disabled:opacity-50"
                 >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Approve & Commit Patch
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Committing to Repo...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      Approve & Commit Patch
+                    </>
+                  )}
                 </button>
               )}
             </div>

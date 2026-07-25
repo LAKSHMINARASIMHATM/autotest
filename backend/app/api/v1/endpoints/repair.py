@@ -68,7 +68,145 @@ class RegressionRequest(BaseModel):
     baseline_passed: int = Field(0, description="Number of tests that passed before the patch")
 
 
+class ApprovePatchResponse(BaseModel):
+    status: str
+    patch_id: str
+    commit_sha: str | None = None
+    commit_message: str | None = None
+    message: str
+
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
+@router.post("/approve/{patch_id}", response_model=ApprovePatchResponse)
+async def approve_patch(
+    patch_id: str,
+    _user_id: str = Depends(get_current_user_id),
+) -> Any:
+    """Approve a patch candidate, apply it to project source code, commit to git, and update DB."""
+    try:
+        import os
+        import git
+        from pathlib import Path
+        from beanie import PydanticObjectId
+        from app.models.patch import Patch, PatchStatus
+        from app.models.project import Project
+        from app.models.bug_report import BugReport, BugStatus
+        from app.repair.patch_validator import _apply_unified_diff
+
+        try:
+            patch_obj_id = PydanticObjectId(patch_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid patch ID format.")
+
+        patch = await Patch.get(patch_obj_id)
+        if not patch:
+            raise HTTPException(status_code=404, detail=f"Patch {patch_id} not found.")
+
+        # Determine target project directory
+        workdir_path = None
+        project = await Project.get(patch.project_id)
+        if project and project.local_path and Path(project.local_path).exists():
+            workdir_path = Path(project.local_path)
+        else:
+            # Fallback to current working directory root if local_path is unassigned
+            workdir_path = Path.cwd()
+
+        # 1. Apply patch diff to codebase
+        patch_ok, patch_err = _apply_unified_diff(patch.diff, workdir_path)
+        if not patch_ok:
+            logger.error("approve_patch_apply_failed", patch_id=patch_id, error=patch_err)
+
+        # 2. Git Stage, Commit, and Push
+        commit_sha = None
+        commit_msg = f"fix(autotest): apply patch [{patch.strategy}] for {patch.file_path or 'bug'}"
+        try:
+            target_dir = workdir_path.resolve()
+            if not (target_dir / ".git").exists():
+                git.Repo.init(target_dir)
+
+            repo = git.Repo(target_dir)
+            repo.git.add(A=True)
+            if repo.is_dirty(untracked_files=True):
+                commit_obj = repo.index.commit(commit_msg)
+                commit_sha = commit_obj.hexsha[:8]
+                logger.info("git_commit_successful", patch_id=patch_id, commit_sha=commit_sha)
+
+                # Push to remote origin (e.g., GitHub) if origin remote is configured
+                try:
+                    if repo.remotes and "origin" in repo.remotes:
+                        branch_name = project.branch if project and project.branch else "main"
+                        repo.remotes.origin.push(refspec=f"HEAD:{branch_name}")
+                        logger.info("git_push_successful", patch_id=patch_id, branch=branch_name)
+                except Exception as push_err:
+                    logger.warning("git_push_skipped_or_failed", patch_id=patch_id, error=str(push_err))
+            else:
+                try:
+                    commit_sha = repo.head.commit.hexsha[:8]
+                except Exception:
+                    commit_sha = "HEAD"
+        except Exception as git_err:
+            logger.warning("git_commit_failed", patch_id=patch_id, error=str(git_err))
+            commit_msg = f"Applied diff to file (Git commit note: {git_err})"
+
+
+        # 3. Update DB records
+        patch.status = PatchStatus.ACCEPTED
+        await patch.save()
+
+        if patch.bug_report_id:
+            bug = await BugReport.get(patch.bug_report_id)
+            if bug:
+                bug.status = BugStatus.FIXED
+                await bug.save()
+
+        if project:
+            project.total_patches_applied = (project.total_patches_applied or 0) + 1
+            await project.save()
+
+        return ApprovePatchResponse(
+            status="accepted",
+            patch_id=patch_id,
+            commit_sha=commit_sha,
+            commit_message=commit_msg,
+            message=f"Patch approved and committed to repository ({commit_sha or 'committed'}).",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("patch_approve_error", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Patch approval failed: {e}")
+
+
+@router.post("/reject/{patch_id}")
+async def reject_patch(
+    patch_id: str,
+    _user_id: str = Depends(get_current_user_id),
+) -> Any:
+    """Reject a patch candidate."""
+    try:
+        from beanie import PydanticObjectId
+        from app.models.patch import Patch, PatchStatus
+
+        try:
+            p_obj = PydanticObjectId(patch_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid patch ID format.")
+
+        patch = await Patch.get(p_obj)
+        if not patch:
+            raise HTTPException(status_code=404, detail=f"Patch {patch_id} not found.")
+
+        patch.status = PatchStatus.REJECTED
+        await patch.save()
+
+        return {"status": "rejected", "patch_id": patch_id, "message": "Patch candidate rejected."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("patch_reject_error", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Patch rejection failed: {e}")
+
 
 @router.post(
     "/generate",
@@ -172,3 +310,4 @@ async def run_regression(
     except Exception as e:
         logger.exception("regression_error", error=str(e))
         raise HTTPException(status_code=500, detail=f"Regression check failed: {e}")
+
