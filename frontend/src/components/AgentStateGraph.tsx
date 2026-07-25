@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Bot, CheckCircle2, AlertTriangle, ArrowRight, RefreshCw, Cpu } from "lucide-react";
+import { Bot, CheckCircle2, AlertTriangle, RefreshCw, Cpu, Layers } from "lucide-react";
 
 export interface AgentNodeState {
   id: string;
@@ -13,17 +13,15 @@ export interface AgentNodeState {
   confidence?: number;
 }
 
-const defaultNodes: AgentNodeState[] = [
-  { id: "1", name: "Planner", role: "Test Planning", status: "completed", latency_ms: 120, confidence: 0.95 },
-  { id: "2", name: "Requirement", role: "Contract Extraction", status: "completed", latency_ms: 240, confidence: 0.92 },
-  { id: "3", name: "Architecture", role: "CFG & AST Analysis", status: "completed", latency_ms: 180, confidence: 0.98 },
-  { id: "4", name: "Test Strategy", role: "Scenario Formulation", status: "completed", latency_ms: 310, confidence: 0.90 },
-  { id: "5", name: "Test Gen", role: "PyTest / Jest Synthesis", status: "completed", latency_ms: 1450, confidence: 0.88 },
-  { id: "6", name: "Verification", role: "Static AST Check", status: "completed", latency_ms: 95, confidence: 1.0 },
-  { id: "7", name: "Execution", role: "Sandboxed Runner", status: "running", latency_ms: 450, confidence: 0.85 },
-];
+export function AgentStateGraph({
+  nodes = [],
+  activeStateLabel = "Idle",
+}: {
+  nodes?: AgentNodeState[];
+  activeStateLabel?: string;
+}) {
+  const hasNodes = nodes && nodes.length > 0;
 
-export function AgentStateGraph({ nodes = defaultNodes }: { nodes?: AgentNodeState[] }) {
   return (
     <div className="w-full bg-[#121318] border border-[#27272A] rounded-xl p-5 shadow-xl">
       <div className="flex items-center justify-between mb-6">
@@ -33,28 +31,39 @@ export function AgentStateGraph({ nodes = defaultNodes }: { nodes?: AgentNodeSta
           </div>
           <div>
             <h3 className="text-sm font-semibold text-[#F9FAFB]">Agent State Graph</h3>
-            <p className="text-xs text-[#6B7280]">LangGraph dynamic routing & execution pipeline</p>
+            <p className="text-xs text-[#6B7280]">LangGraph dynamic routing & state transitions</p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs text-[#9CA3AF] bg-[#18181B] px-3 py-1.5 rounded-lg border border-[#27272A]">
-          <RefreshCw className="w-3.5 h-3.5 text-blue-400 animate-spin" />
-          <span>Active State: Execution Node</span>
+          <RefreshCw className={`w-3.5 h-3.5 ${hasNodes ? "text-blue-400 animate-spin" : "text-[#6B7280]"}`} />
+          <span>Active State: {activeStateLabel}</span>
         </div>
       </div>
 
-      {/* Nodes Pipeline Row */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-3 relative">
-        {nodes.map((node, index) => {
-          const isCompleted = node.status === "completed";
-          const isRunning = node.status === "running";
-          const isReflecting = node.status === "reflecting";
+      {!hasNodes ? (
+        <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-[#27272A] rounded-xl bg-[#09090B]">
+          <div className="w-10 h-10 rounded-xl bg-[#18181B] border border-[#27272A] flex items-center justify-center mb-3 text-[#6B7280]">
+            <Layers className="w-5 h-5" />
+          </div>
+          <h4 className="text-xs font-semibold text-[#E4E4E7] mb-1">No Active Agent Execution Session</h4>
+          <p className="text-[11px] text-[#6B7280] max-w-sm">
+            Trigger an autonomous testing pipeline or select a project run to stream live agent graph transitions.
+          </p>
+        </div>
+      ) : (
+        /* Nodes Pipeline Grid */
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 relative">
+          {nodes.map((node, index) => {
+            const isCompleted = node.status === "completed";
+            const isRunning = node.status === "running";
+            const isReflecting = node.status === "reflecting";
 
-          return (
-            <React.Fragment key={node.id}>
+            return (
               <motion.div
+                key={node.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: index * 0.04 }}
                 className={`flex flex-col justify-between p-3.5 rounded-xl border relative transition-all ${
                   isRunning
                     ? "bg-blue-500/10 border-blue-500/40 shadow-lg shadow-blue-500/10"
@@ -66,13 +75,13 @@ export function AgentStateGraph({ nodes = defaultNodes }: { nodes?: AgentNodeSta
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <Bot className={`w-4 h-4 ${isRunning ? "text-blue-400" : isCompleted ? "text-emerald-400" : "text-[#6B7280]"}`} />
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Bot className={`w-4 h-4 shrink-0 ${isRunning ? "text-blue-400" : isCompleted ? "text-emerald-400" : "text-[#6B7280]"}`} />
                     <span className="text-xs font-semibold text-[#F9FAFB] truncate">{node.name}</span>
                   </div>
-                  {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-                  {isRunning && <RefreshCw className="w-3.5 h-3.5 text-blue-400 animate-spin" />}
-                  {isReflecting && <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />}
+                  {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                  {isRunning && <RefreshCw className="w-3.5 h-3.5 text-blue-400 animate-spin shrink-0" />}
+                  {isReflecting && <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
                 </div>
 
                 <p className="text-[11px] text-[#9CA3AF] mb-3 leading-tight truncate">{node.role}</p>
@@ -82,10 +91,10 @@ export function AgentStateGraph({ nodes = defaultNodes }: { nodes?: AgentNodeSta
                   <span className="font-mono text-emerald-400">{node.confidence ? `${(node.confidence * 100).toFixed(0)}% C` : ""}</span>
                 </div>
               </motion.div>
-            </React.Fragment>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

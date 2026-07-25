@@ -472,6 +472,14 @@ export default function ExecutionPage() {
           </GlassCard>
         </div>
       </div>
+
+      {/* Source Code Coverage Heatmap */}
+      <div className="mt-8">
+        <CoverageHeatmap
+          filename={selectedProjectId ? "Project Execution Coverage" : undefined}
+          lineCoveragePct={executionResult ? executionResult.coverage_pct : undefined}
+        />
+      </div>
     </div>
   );
 }

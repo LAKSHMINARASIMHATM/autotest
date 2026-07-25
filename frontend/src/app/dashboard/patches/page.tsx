@@ -140,9 +140,9 @@ export default function PatchesPage() {
         <div className="lg:col-span-2">
           {selectedPatch ? (
             <PatchDiffViewer
-              patchDiff={selectedPatch.diff || "--- a/source.py\n+++ b/source.py\n@@ -1,2 +1,2 @@\n- old_code()\n+ new_repaired_code()"}
-              explanation={`Applied ${selectedPatch.strategy} strategy on ${selectedPatch.file}`}
-              confidenceScore={selectedPatch.confidence || 0.92}
+              patchDiff={selectedPatch.diff}
+              explanation={`Applied ${selectedPatch.strategy} repair strategy on ${selectedPatch.file}`}
+              confidenceScore={selectedPatch.confidence}
               onApprove={() => handleVerdict(selectedPatch.id, "accepted")}
               onReject={() => handleVerdict(selectedPatch.id, "rejected")}
             />
