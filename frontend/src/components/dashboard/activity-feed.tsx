@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { ActivityItem } from "@/types";
-import { getProjectBugs, getProjectPatches, getProjectTestCases, getDefaultProjectId } from "@/lib/api";
+import { getProjectBugs, getProjectPatches, getProjectTestCases, getDefaultProjectId, listPipelineSessions } from "@/lib/api";
 import {
   Bot,
   Brain,
@@ -13,7 +13,6 @@ import {
   FileSearch,
   FlaskConical,
   Network,
-  Search,
   Shield,
   Wrench,
   Zap,
@@ -21,7 +20,6 @@ import {
 
 const iconMap: Record<string, React.ElementType> = {
   planner: Brain,
-  retriever: Search,
   architecture: Network,
   "test-gen": Code2,
   execution: Zap,
@@ -33,7 +31,7 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 /**
- * Real-time activity feed showing agent actions chronologically.
+ * Real-time activity feed displaying dynamic agent actions and real DB events.
  */
 export function ActivityFeed() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -48,60 +46,73 @@ export function ActivityFeed() {
           return;
         }
 
-        const [bugs, patches, testCases] = await Promise.all([
+        const [bugs, patches, testCases, sessions] = await Promise.all([
           getProjectBugs(pid).catch(() => []),
           getProjectPatches(pid).catch(() => []),
           getProjectTestCases(pid).catch(() => []),
+          listPipelineSessions().catch(() => []),
         ]);
 
         const items: ActivityItem[] = [];
 
-        // Map real bugs
+        // 1. Pipeline execution sessions
+        sessions.forEach((s, idx) => {
+          items.push({
+            id: `session-${s.session_id || idx}`,
+            agent: "planner",
+            action: `Pipeline Execution ${s.status === "complete" ? "Completed" : "Running"}`,
+            detail: `Generated ${s.test_cases_generated} tests, localized ${s.bugs_found} bugs, and ${s.patches_generated} patches.`,
+            timestamp: `Session #${(s.session_id || "").slice(-4)}`,
+            status: s.status === "complete" ? "success" : s.status === "running" ? "running" : "idle",
+          });
+        });
+
+        // 2. Real bugs
         bugs.forEach((bug) => {
           items.push({
             id: `bug-${bug.id}`,
             agent: "bug-loc",
-            action: "Defect Localized",
-            detail: `Found issue in ${bug.file} at line ${bug.line} (${bug.method})`,
-            timestamp: "Recent",
-            status: "success",
+            action: bug.status === "fixed" ? "Defect Resolved & Patched" : "Defect Localized",
+            detail: `Severity: ${bug.severity.toUpperCase()} | File: ${bug.file}:${bug.line || 1} (${bug.method || "handler"})`,
+            timestamp: "Verified",
+            status: bug.status === "fixed" ? "success" : "error",
           });
         });
 
-        // Map real patches
+        // 3. Real patches
         patches.forEach((patch) => {
+          const isCommitted = patch.status === "accepted";
           items.push({
             id: `patch-${patch.id}`,
             agent: "repair",
-            action: "Patch Candidate Generated",
-            detail: `Generated patch candidate for ${patch.file} using ${patch.strategy}`,
-            timestamp: "Just now",
-            status: patch.status === "candidate" ? "success" : "running",
+            action: isCommitted ? "Patch Approved & Committed" : "Patch Candidate Generated",
+            detail: `${patch.strategy.toUpperCase()} strategy on ${patch.file} (Confidence: ${(patch.confidence * 100).toFixed(0)}%)`,
+            timestamp: patch.timestamp ? new Date(patch.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now",
+            status: isCommitted ? "success" : "running",
           });
         });
 
-        // Map real test cases
-        testCases.forEach((tc) => {
+        // 4. Real test cases
+        testCases.slice(0, 5).forEach((tc) => {
           items.push({
             id: `tc-${tc.id}`,
             agent: "test-gen",
-            action: "Unit Test Generated",
-            detail: `Synthesized ${tc.name} with ${tc.assertions || 3} assertions`,
-            timestamp: "Recent",
+            action: "Test Case Synthesized",
+            detail: `${tc.name} (${tc.framework || "pytest"}) in ${tc.file}`,
+            timestamp: "Synthesized",
             status: "success",
           });
         });
 
         if (items.length > 0) {
-          // Sort or slice latest items
-          setActivities(items.slice(-6).reverse());
+          setActivities(items.slice(0, 8));
         } else {
           setActivities([
             {
               id: "empty",
               agent: "planner",
-              action: "System Idle",
-              detail: "No autonomous pipeline activities recorded yet. Run a codebase scan to populate findings.",
+              action: "System Ready",
+              detail: "No autonomous pipeline activities recorded yet. Trigger a scan or test run to view live agent actions.",
               timestamp: "now",
               status: "idle",
             }
@@ -122,13 +133,13 @@ export function ActivityFeed() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="text-[15px] font-semibold text-[#F9FAFB]">Activity Feed</h3>
-          <p className="text-xs text-[#6B7280] mt-0.5">Real-time agent actions</p>
+          <p className="text-xs text-[#6B7280] mt-0.5">Real-time agent actions & MongoDB metrics</p>
         </div>
       </div>
 
       <div className="space-y-1">
         {loading ? (
-          <div className="text-xs text-[#6B7280] p-4 text-center">Loading feed activity...</div>
+          <div className="text-xs text-[#6B7280] p-4 text-center">Loading live feed activity...</div>
         ) : (
           activities.map((activity, i) => {
             const Icon = iconMap[activity.agent] || Bot;

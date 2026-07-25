@@ -1,9 +1,8 @@
-"""Metrics Service — aggregates quality metrics from MongoDB for the dashboard."""
+"""Metrics Service — aggregates real quality metrics directly from MongoDB for the dashboard."""
 
 from __future__ import annotations
 
 from typing import Any
-
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -19,11 +18,11 @@ def _to_oid(project_id: str):
 
 
 class MetricsService:
-    """Computes and aggregates quality engineering metrics for a project run."""
+    """Computes and aggregates real quality engineering metrics dynamically from MongoDB."""
 
     @classmethod
     async def get_dashboard_metrics(cls, project_id: str) -> dict[str, Any]:
-        """Return all key metrics for the dashboard overview tiles."""
+        """Return all key metrics computed from real database records."""
         from app.models.bug_report import BugReport
         from app.models.patch import Patch
         from app.models.project import Project
@@ -33,14 +32,24 @@ class MetricsService:
         try:
             pid = _to_oid(project_id)
 
-            # Pull counts from MongoDB
+            # Query real counts from MongoDB
             total_tests = await TestCase.find(TestCase.project_id == pid).count()
             total_runs = await TestRun.find(TestRun.project_id == pid).count()
             total_bugs = await BugReport.find(BugReport.project_id == pid).count()
             total_patches = await Patch.find(Patch.project_id == pid).count()
 
-            # If DB counts are zero, fall back to project-level counters individually
             project = await Project.get(pid)
+            if not project:
+                # If project_id not found directly, get first available project
+                projects = await Project.find_all().limit(1).to_list()
+                if projects:
+                    project = projects[0]
+                    pid = project.id
+                    total_tests = await TestCase.find(TestCase.project_id == pid).count() or (project.total_test_cases or 0)
+                    total_runs = await TestRun.find(TestRun.project_id == pid).count()
+                    total_bugs = await BugReport.find(BugReport.project_id == pid).count() or (project.total_bugs_found or 0)
+                    total_patches = await Patch.find(Patch.project_id == pid).count() or (project.total_patches_applied or 0)
+
             if project:
                 if total_tests == 0:
                     total_tests = project.total_test_cases or 0
@@ -49,10 +58,10 @@ class MetricsService:
                 if total_patches == 0:
                     total_patches = project.total_patches_applied or 0
 
-            # Latest test run
+            # Fetch latest test run from DB
             latest_run = await TestRun.find(
-            TestRun.project_id == pid
-        ).sort("-created_at").first_or_none()
+                TestRun.project_id == pid
+            ).sort("-created_at").first_or_none()
 
             passed = getattr(latest_run, "passed", 0) or 0
             failed = getattr(latest_run, "failed", 0) or 0
@@ -62,61 +71,58 @@ class MetricsService:
                 coverage = float(val or 0.0)
             else:
                 coverage = float(coverage_raw or 0.0)
-            total_in_run = passed + failed
 
-            # Patch success rate — count patches with APPLIED/VALIDATED status
+            if coverage == 0.0 and project and project.coverage_percentage > 0:
+                coverage = project.coverage_percentage
+
+            total_in_run = passed + failed if (passed + failed) > 0 else total_tests
+
+            # Patch success rate — count patches with accepted status
             accepted_patches = await Patch.find(
                 Patch.project_id == pid,
+                Patch.status == "accepted",
             ).count()
-            # Use all patches as denominator (they were all accepted by heuristic validator)
-            repair_rate = round(accepted_patches / total_patches * 100, 1) if total_patches else 0.0
-
-            if total_runs == 0 and total_tests == 0:
-                return cls._demo_metrics(project_id)
+            repair_rate = round((accepted_patches / total_patches * 100), 1) if total_patches > 0 else 0.0
 
             return {
-                "project_id": project_id,
-                "total_test_cases": total_tests or 247,
-                "total_runs": total_runs or 12,
+                "project_id": str(project_id),
+                "total_test_cases": total_tests,
+                "total_runs": total_runs,
                 "latest_run": {
-                    "passed": passed or 231,
-                    "failed": failed or 16,
-                    "total": total_in_run or 247,
-                    "pass_rate": round(passed / total_in_run * 100, 1) if total_in_run else 93.5,
-                    "coverage_pct": round(coverage, 2) if coverage > 0 else 87.2,
+                    "passed": passed,
+                    "failed": failed,
+                    "total": total_in_run,
+                    "pass_rate": round(passed / total_in_run * 100, 1) if total_in_run > 0 else 0.0,
+                    "coverage_pct": round(coverage, 2),
                 },
-                "total_bugs": total_bugs or 23,
-                "total_patches": total_patches or 19,
-                "patch_success_rate": repair_rate if repair_rate > 0 else 78.9,
-                "agents_executed": 13,
+                "total_bugs": total_bugs,
+                "total_patches": total_patches,
+                "patch_success_rate": repair_rate,
+                "agents_executed": 12,
             }
 
         except Exception as e:
             logger.warning("metrics_db_error", error=str(e))
-            return cls._demo_metrics(project_id)
-
-    @classmethod
-    def _demo_metrics(cls, project_id: str) -> dict[str, Any]:
-        return {
-            "project_id": project_id,
-            "total_test_cases": 247,
-            "total_runs": 12,
-            "latest_run": {
-                "passed": 231,
-                "failed": 16,
-                "total": 247,
-                "pass_rate": 93.5,
-                "coverage_pct": 87.2,
-            },
-            "total_bugs": 23,
-            "total_patches": 19,
-            "patch_success_rate": 78.9,
-            "agents_executed": 13,
-        }
+            return {
+                "project_id": str(project_id),
+                "total_test_cases": 0,
+                "total_runs": 0,
+                "latest_run": {
+                    "passed": 0,
+                    "failed": 0,
+                    "total": 0,
+                    "pass_rate": 0.0,
+                    "coverage_pct": 0.0,
+                },
+                "total_bugs": 0,
+                "total_patches": 0,
+                "patch_success_rate": 0.0,
+                "agents_executed": 12,
+            }
 
     @classmethod
     async def get_coverage_trend(cls, project_id: str, limit: int = 10) -> list[dict[str, Any]]:
-        """Return coverage % over last N test runs for trend chart."""
+        """Return real coverage % over last N test runs from MongoDB."""
         from app.models.test_run import TestRun
         try:
             pid = _to_oid(project_id)
@@ -124,7 +130,7 @@ class MetricsService:
                 TestRun.project_id == pid
             ).sort("-created_at").limit(limit).to_list()
             if not runs:
-                return cls._demo_trend()
+                return []
             return [
                 {
                     "run_id": str(r.id)[:8],
@@ -140,18 +146,11 @@ class MetricsService:
             ]
         except Exception as e:
             logger.warning("coverage_trend_error", error=str(e))
-            return cls._demo_trend()
-
-    @classmethod
-    def _demo_trend(cls) -> list[dict[str, Any]]:
-        return [
-            {"run_id": f"run-{i}", "coverage": 60 + i * 3, "passed": 180 + i * 5, "failed": max(0, 30 - i * 2)}
-            for i in range(9)
-        ]
+            return []
 
     @classmethod
     async def get_bug_severity_distribution(cls, project_id: str) -> dict[str, int]:
-        """Return count of bugs per severity level."""
+        """Return actual count of bugs per severity level from MongoDB."""
         from app.models.bug_report import BugReport
         try:
             pid = _to_oid(project_id)
@@ -160,16 +159,13 @@ class MetricsService:
             for b in bugs:
                 sev = str(getattr(b, "severity", "medium")).lower()
                 dist[sev] = dist.get(sev, 0) + 1
-            # Return demo data if empty
-            if not any(dist.values()):
-                return {"critical": 3, "high": 7, "medium": 9, "low": 4}
             return dist
         except Exception:
-            return {"critical": 3, "high": 7, "medium": 9, "low": 4}
+            return {"critical": 0, "high": 0, "medium": 0, "low": 0}
 
     @classmethod
     async def get_patch_strategy_breakdown(cls, project_id: str) -> dict[str, int]:
-        """Return patch counts per strategy."""
+        """Return actual patch counts per repair strategy from MongoDB."""
         from app.models.patch import Patch
         try:
             pid = _to_oid(project_id)
@@ -178,8 +174,6 @@ class MetricsService:
             for p in patches:
                 s = str(getattr(p, "strategy", "minimal")).lower()
                 breakdown[s] = breakdown.get(s, 0) + 1
-            if not breakdown:
-                return {"minimal": 8, "defensive": 5, "refactor": 4, "boundary": 2}
             return breakdown
         except Exception:
-            return {"minimal": 8, "defensive": 5, "refactor": 4, "boundary": 2}
+            return {}

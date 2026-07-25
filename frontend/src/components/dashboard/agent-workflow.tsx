@@ -14,7 +14,6 @@ const AGENT_ICONS: Record<string, React.ElementType> = {
   planner:         Brain,
   requirement:     ClipboardCheck,
   architecture:    Network,
-  retriever:       Search,
   "test-strategy": Target,
   "test-gen":      Code2,
   verification:    ShieldCheck,
@@ -28,7 +27,7 @@ const AGENT_ICONS: Record<string, React.ElementType> = {
 
 /**
  * Agent pipeline visualization — polls the real backend pipeline API every 3s.
- * Shows all 13 agents with their live statuses from the most recent session.
+ * Shows all 12 agents with their live statuses from the most recent session.
  */
 export function AgentWorkflow() {
   const { state, refresh, isPolling } = usePipelineStatus(null, 3000);
@@ -49,10 +48,10 @@ export function AgentWorkflow() {
           <h3 className="text-[15px] font-semibold text-[#F9FAFB]">Agent Pipeline</h3>
           <p className="text-xs text-[#6B7280] mt-0.5">
             {pipelineStatus === "running"
-              ? `${completedCount}/13 agents completed`
+              ? `${completedCount}/12 agents completed`
               : pipelineStatus === "complete"
               ? `Complete — ${testCasesGenerated} tests, ${bugsFound} bugs`
-              : "13 agents • Real-time orchestration"}
+              : "12 agents • Real-time orchestration"}
           </p>
         </div>
         <div className="flex items-center gap-2">

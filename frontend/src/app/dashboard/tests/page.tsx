@@ -16,12 +16,11 @@ import {
   getPipelineStatus, type TestCaseItem,
 } from "@/lib/api";
 
-// ── All 13 agents in the full pipeline ───────────────────────────────────────
+// ── All 12 agents in the full pipeline ───────────────────────────────────────
 const ALL_AGENTS = [
   { key: "planner",        label: "Planner",          icon: Brain,         phase: "analyze" },
   { key: "requirement",    label: "Requirement",       icon: ClipboardCheck, phase: "analyze" },
   { key: "architecture",   label: "Architecture",      icon: Network,       phase: "analyze" },
-  { key: "retriever",      label: "Retriever",         icon: Search,        phase: "analyze" },
   { key: "test_strategy",  label: "Test Strategy",     icon: Target,        phase: "generate" },
   { key: "test_generation",label: "Test Generator",    icon: Code2,         phase: "generate" },
   { key: "verification",   label: "Verification",      icon: Shield,        phase: "generate" },

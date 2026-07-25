@@ -9,7 +9,6 @@ export const PIPELINE_AGENTS = [
   { id: "planner",       backendName: "planner",         name: "Planner",          description: "Workflow orchestration" },
   { id: "requirement",   backendName: "requirement",      name: "Requirement",       description: "SRS analysis" },
   { id: "architecture",  backendName: "architecture",     name: "Architecture",      description: "Dependency mapping" },
-  { id: "retriever",     backendName: "retriever",        name: "Retriever",         description: "Context retrieval" },
   { id: "test-strategy", backendName: "test_strategy",    name: "Test Strategy",     description: "Strategy selection" },
   { id: "test-gen",      backendName: "test_generation",  name: "Test Generator",    description: "Code generation" },
   { id: "verification",  backendName: "verification",     name: "Verification",      description: "Hallucination check" },
@@ -46,7 +45,7 @@ export interface LivePipelineState {
 // Stable confidence values per agent (avoids re-render flicker)
 const AGENT_CONFIDENCES: Record<string, number> = {
   planner: 0.95, requirement: 0.92, architecture: 0.88,
-  retriever: 0.91, test_strategy: 0.87, test_generation: 0.85,
+  test_strategy: 0.87, test_generation: 0.85,
   verification: 0.90, execution: 0.94, bug_localization: 0.88,
   root_cause: 0.86, program_repair: 0.83, patch_validation: 0.89,
   learning: 0.82,

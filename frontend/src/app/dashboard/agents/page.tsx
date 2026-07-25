@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Brain, ClipboardCheck, Network, Search, Target, Code2,
+  Brain, ClipboardCheck, Network, Target, Code2,
   ShieldCheck, Play, Microscope, FileSearch, Wrench,
   GitCompare, FlaskConical, Loader2, Zap, RefreshCw,
   CheckCircle2, AlertCircle,
@@ -17,10 +17,17 @@ import type { AgentStatus } from "@/types";
 
 // ── Icon map ──────────────────────────────────────────────────────────────────
 const AGENT_ICONS: Record<string, React.ElementType> = {
-  planner: Brain, requirement: ClipboardCheck, architecture: Network,
-  retriever: Search, "test-strategy": Target, "test-gen": Code2,
-  verification: ShieldCheck, execution: Play, "bug-loc": Microscope,
-  "root-cause": FileSearch, repair: Wrench, "patch-val": GitCompare,
+  planner: Brain,
+  requirement: ClipboardCheck,
+  architecture: Network,
+  "test-strategy": Target,
+  "test-gen": Code2,
+  verification: ShieldCheck,
+  execution: Play,
+  "bug-loc": Microscope,
+  "root-cause": FileSearch,
+  repair: Wrench,
+  "patch-val": GitCompare,
   learning: FlaskConical,
 };
 
@@ -29,11 +36,10 @@ const AGENT_TASK: Record<string, Partial<Record<AgentStatus, string>>> = {
   planner:         { running: "Analyzing project structure & planning execution…", success: "Execution plan created", waiting: "Queued for execution" },
   requirement:     { running: "Extracting functional & non-functional requirements…", success: "Requirements extracted", waiting: "Awaiting planner" },
   architecture:    { running: "Building dependency, API & service graphs…", success: "Architecture mapped", waiting: "Awaiting requirements" },
-  retriever:       { running: "Querying ChromaDB + Neo4j for context…", success: "Context retrieved", waiting: "Awaiting architecture" },
-  "test-strategy": { running: "Selecting optimal test types & risk areas…", success: "Test strategy determined", waiting: "Awaiting retriever" },
+  "test-strategy": { running: "Selecting optimal test types & risk areas…", success: "Test strategy determined", waiting: "Awaiting architecture" },
   "test-gen":      { running: "Generating test cases with Groq LLM…", success: "Test cases generated", waiting: "Awaiting strategy" },
   verification:    { running: "Verifying tests for hallucination & correctness…", success: "Tests verified", waiting: "Awaiting test gen" },
-  execution:       { running: "Running tests in Docker sandbox…", success: "Execution complete", waiting: "Awaiting verification" },
+  execution:       { running: "Running tests in runner sandbox…", success: "Execution complete", waiting: "Awaiting verification" },
   "bug-loc":       { running: "Localizing bugs from failure stack traces…", success: "Bugs localized", waiting: "Awaiting execution" },
   "root-cause":    { running: "Performing root cause analysis…", success: "Root causes identified", waiting: "Awaiting bug loc" },
   repair:          { running: "Generating code patches…", success: "Patches generated", waiting: "Awaiting root cause" },
@@ -58,20 +64,15 @@ const XAI_DECISIONS: Record<string, { decision: string; reason: string; evidence
     reason: "Traced module dependencies, mapped REST endpoints, and constructed service topology to inform test generation.",
     evidence: ["Dependency edges resolved", "API endpoints cataloged", "Database schema inferred"],
   },
-  retriever: {
-    decision: "Retrieved context via hybrid RAG + KG",
-    reason: "Used dense vector search in ChromaDB and structural graph traversal in Neo4j to retrieve semantically relevant code context.",
-    evidence: ["ChromaDB query executed", "Neo4j graph traversal completed", "Results re-ranked by relevance"],
-  },
   test_strategy: {
-    decision: "Selected test strategy and risk areas",
-    reason: "Analyzed project complexity, API surface, and requirement priorities to determine which test types to generate and their priority order.",
-    evidence: ["Risk areas identified from architecture", "Test types selected based on framework", "Coverage estimate produced"],
+    decision: "Formulated test strategy & target risk areas",
+    reason: "Analyzed component topology, API endpoints, and requirement specs to structure unit, API, integration, and security test scenarios.",
+    evidence: ["Target test types selected (unit/API/security)", "High-risk modules prioritized", "Coverage strategy configured"],
   },
   test_generation: {
     decision: "Generated comprehensive test suite",
     reason: "Used Groq LLM to generate executable test cases covering unit, API, integration, and security scenarios based on requirements and architecture.",
-    evidence: ["Tests generated across multiple frameworks", "Assertions crafted per requirement", "Edge cases included"],
+    evidence: ["Tests generated across target framework", "Assertions crafted per requirement", "Edge cases included"],
   },
   verification: {
     decision: "Verified tests for correctness",
@@ -79,9 +80,9 @@ const XAI_DECISIONS: Record<string, { decision: string; reason: string; evidence
     evidence: ["Syntax validation passed", "Hallucination detection run", "Traceability matrix checked"],
   },
   execution: {
-    decision: "Executed tests in Docker sandbox",
-    reason: "Dispatched verified tests to isolated Docker sandbox runners (pytest/playwright/newman) and collected unified results with coverage data.",
-    evidence: ["Sandbox container spawned", "Test runners dispatched", "Results collected and merged"],
+    decision: "Executed tests in runner sandbox",
+    reason: "Dispatched verified tests to runner environment (pytest/jest/newman) and collected unified results with coverage data.",
+    evidence: ["Runner environment spawned", "Test runners dispatched", "Results collected and merged"],
   },
   bug_localization: {
     decision: "Localized bugs to specific code locations",
@@ -104,7 +105,7 @@ const XAI_DECISIONS: Record<string, { decision: string; reason: string; evidence
     evidence: ["Failing tests now pass", "Regression suite executed", "Coverage maintained"],
   },
   learning: {
-    decision: "Updated knowledge base",
+    decision: "Updated knowledge base & vector memory",
     reason: "Persisted verified bug-patch pairs, test strategies, and XAI explanations to long-term memory for future pipeline improvement.",
     evidence: ["Bug-patch pairs stored", "Strategy templates updated", "Knowledge graph enriched"],
   },
@@ -119,7 +120,7 @@ export default function AgentsPage() {
   const { state, refresh } = usePipelineStatus(null, 3000);
   const { agents, pipelineStatus, testCasesGenerated, bugsFound, patchesGenerated, agentsRun } = state;
 
-  // ── Trigger full 13-agent pipeline ───────────────────────────────────────
+  // ── Trigger full 12-agent pipeline ───────────────────────────────────────
   const handleRunPipeline = useCallback(async () => {
     setTriggering(true);
     setTriggerMsg(null);
@@ -156,15 +157,30 @@ export default function AgentsPage() {
     agent: selectedAgent?.name ?? selectedAgentId,
     decision: xaiBase.decision,
     reason: xaiBase.reason,
-    retrievedDocs: agentsRun.includes(selectedBackendName)
-      ? [`${selectedBackendName}.py context`, "requirements docs", "project source files"]
-      : [],
-    knowledgeGraphNodes: agentsRun.includes(selectedBackendName)
-      ? [`Agent: ${selectedAgent?.name}`, `Status: ${selectedAgent?.status}`, "Project dependency graph"]
-      : [],
     confidence: selectedAgent?.confidence ?? 0,
     evidence: agentsRun.includes(selectedBackendName) ? xaiBase.evidence : [],
   };
+
+  // ── Build Agent State Graph nodes for visualization ───────────────────────
+  const stateGraphNodes = PIPELINE_AGENTS.map((a) => {
+    const liveAgent = agents.find((ag) => ag.id === a.id);
+    const statusMap: Record<string, "idle" | "running" | "completed" | "failed" | "reflecting"> = {
+      success: "completed",
+      running: "running",
+      thinking: "running",
+      error: "failed",
+      waiting: "idle",
+      idle: "idle",
+    };
+
+    return {
+      id: a.id,
+      name: a.name,
+      role: a.description,
+      status: liveAgent ? statusMap[liveAgent.status] ?? "idle" : "idle",
+      confidence: liveAgent?.confidence ?? 0,
+    };
+  });
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto min-h-screen pb-12">
@@ -175,9 +191,9 @@ export default function AgentsPage() {
             <span className="gradient-text">Agentic</span> Command Center
           </h1>
           <p className="text-sm text-[#6B7280] mt-1">
-            Real-time status of all 13 AI agents •{" "}
+            Real-time status of all 12 AI agents •{" "}
             {pipelineStatus === "running"
-              ? `${agentsRun.length}/13 completed`
+              ? `${agentsRun.length}/12 completed`
               : pipelineStatus === "complete"
               ? `${testCasesGenerated} tests · ${bugsFound} bugs · ${patchesGenerated} patches`
               : "No active session"}
@@ -223,7 +239,16 @@ export default function AgentsPage() {
 
       {/* Visual Agent State Graph */}
       <div className="mb-8">
-        <AgentStateGraph />
+        <AgentStateGraph
+          nodes={stateGraphNodes}
+          activeStateLabel={
+            pipelineStatus === "running"
+              ? "Running Pipeline"
+              : pipelineStatus === "complete"
+              ? "Pipeline Completed"
+              : "Pipeline Ready"
+          }
+        />
       </div>
 
       {/* Trigger feedback banner */}
@@ -267,10 +292,7 @@ export default function AgentsPage() {
                     status={agent.status}
                     icon={Icon as any}
                     confidence={agent.confidence}
-                    latencyMs={agent.status === "success" ? Math.round(500 + Math.random() * 1500) : 0}
                     currentTask={taskDesc}
-                    memoryUsage={`${12 + (PIPELINE_AGENTS.findIndex((a) => a.id === agent.id) * 2)} MB`}
-                    reasoningSteps={agent.status === "success" ? 5 + Math.round(Math.random() * 10) : 0}
                     className={isSelected ? "ring-2 ring-[#3B82F6]/50 bg-[#3B82F6]/5" : ""}
                   />
                 </div>

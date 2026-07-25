@@ -1,7 +1,7 @@
-"""LangGraph orchestrator — wires up the StateGraph with all 13 agent nodes.
+"""LangGraph orchestrator — wires up the StateGraph with all 12 agent nodes.
 
 Defines the flow:
-1. planner -> requirement -> architecture -> retriever -> test_strategy -> test_generation -> verification -> execution
+1. planner -> requirement -> architecture -> test_strategy -> test_generation -> verification -> execution
 2. If execution has failing tests -> bug_localization -> root_cause -> program_repair -> patch_validation
 3. patch_validation -> learning
 4. learning -> complete
@@ -59,7 +59,7 @@ def route_after_patch_validation(state: AgentState) -> Literal["learning", "prog
 
 
 def build_agent_graph(llm: BaseChatModel | None = None) -> StateGraph:
-    """Instantiates the LangGraph StateGraph with all 13 agents.
+    """Instantiates the LangGraph StateGraph with all 12 agents.
 
     All agents use Groq (llama-3.3-70b-versatile) for reliable execution.
     HuggingFace is not used — it caused silent failures due to chat template
@@ -75,7 +75,7 @@ def build_agent_graph(llm: BaseChatModel | None = None) -> StateGraph:
 
     workflow = StateGraph(AgentState)
 
-    # All 13 agents use Groq for consistent, reliable execution
+    # All 12 agents use Groq for consistent, reliable execution
     planner      = PlannerAgent(groq_llm)
     requirement  = RequirementAgent(groq_llm)
     architecture = ArchitectureAgent(groq_llm)

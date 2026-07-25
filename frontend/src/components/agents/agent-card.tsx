@@ -18,7 +18,7 @@ interface AgentCardProps {
   status: AgentStatus;
   icon: LucideIcon;
   confidence: number;
-  latencyMs: number;
+  latencyMs?: number;
   currentTask?: string;
   memoryUsage?: string;
   reasoningSteps?: number;
@@ -123,14 +123,14 @@ export function AgentCard({
           <p className="text-[10px] text-[#4B5563] uppercase tracking-wider mb-0.5">Latency</p>
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3 text-[#6B7280]" />
-            <span className="text-[11px] font-semibold text-[#F9FAFB]">{latencyMs}ms</span>
+            <span className="text-[11px] font-semibold text-[#F9FAFB]">{latencyMs ? `${latencyMs}ms` : "N/A"}</span>
           </div>
         </div>
         <div>
-          <p className="text-[10px] text-[#4B5563] uppercase tracking-wider mb-0.5">Memory</p>
+          <p className="text-[10px] text-[#4B5563] uppercase tracking-wider mb-0.5">Status</p>
           <div className="flex items-center gap-1">
             <Cpu className="w-3 h-3 text-[#6B7280]" />
-            <span className="text-[11px] font-semibold text-[#F9FAFB]">{memoryUsage}</span>
+            <span className="text-[11px] font-semibold text-[#F9FAFB] capitalize">{status}</span>
           </div>
         </div>
       </div>

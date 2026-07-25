@@ -3,14 +3,13 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { GlassCard } from "@/components/ui/glass-card";
-import { ChevronRight, ExternalLink, Eye } from "lucide-react";
+import { ChevronRight, Eye } from "lucide-react";
 
 interface XAIExplanation {
   agent: string;
   decision: string;
   reason: string;
-  retrievedDocs: string[];
-  knowledgeGraphNodes: string[];
+  knowledgeGraphNodes?: string[];
   confidence: number;
   evidence: string[];
 }
@@ -22,15 +21,14 @@ interface ExplanationCardProps {
 
 /**
  * Explainable AI card — shows why an agent made a particular decision,
- * with retrieved context, KG nodes, confidence, and supporting evidence.
+ * with real database metrics, confidence, and supporting evidence.
  */
 export function ExplanationCard({ explanation, className }: ExplanationCardProps) {
   const {
     agent,
     decision,
     reason,
-    retrievedDocs,
-    knowledgeGraphNodes,
+    knowledgeGraphNodes = [],
     confidence,
     evidence,
   } = explanation;
@@ -58,23 +56,6 @@ export function ExplanationCard({ explanation, className }: ExplanationCardProps
         <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Reasoning</p>
         <p className="text-[12px] text-[#9CA3AF] leading-relaxed">{reason}</p>
       </div>
-
-      {/* Retrieved Context */}
-      {retrievedDocs.length > 0 && (
-        <div className="mb-3">
-          <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1.5">
-            Retrieved Context ({retrievedDocs.length})
-          </p>
-          <div className="space-y-1">
-            {retrievedDocs.map((doc, i) => (
-              <div key={i} className="flex items-center gap-2 text-[11px] text-[#9CA3AF]">
-                <ExternalLink className="w-3 h-3 text-[#3B82F6] shrink-0" />
-                <span className="truncate">{doc}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* KG Nodes */}
       {knowledgeGraphNodes.length > 0 && (
