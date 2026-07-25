@@ -5,7 +5,7 @@ import { BarChart3, Check, X } from "lucide-react";
 
 export interface LineCoverageItem {
   line_number: number;
-  content: str;
+  content: string;
   covered: boolean;
 }
 

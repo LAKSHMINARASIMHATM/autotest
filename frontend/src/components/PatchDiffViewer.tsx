@@ -57,11 +57,11 @@ export function PatchDiffViewer({
       <div className="font-mono text-xs border border-[#27272A] rounded-lg overflow-hidden bg-[#09090B] mb-4">
         {diffLines.map((line, idx) => {
           let lineBg = "bg-transparent text-[#A1A1AA]";
-          if (line.startswith("+") && !line.startswith("+++")) {
+          if (line.startsWith("+") && !line.startsWith("+++")) {
             lineBg = "bg-emerald-950/40 text-emerald-300 font-semibold";
-          } else if (line.startswith("-") && !line.startswith("---")) {
+          } else if (line.startsWith("-") && !line.startsWith("---")) {
             lineBg = "bg-rose-950/40 text-rose-300 font-semibold";
-          } else if (line.startswith("@@")) {
+          } else if (line.startsWith("@@")) {
             lineBg = "bg-blue-950/30 text-blue-400 font-bold";
           }
 
