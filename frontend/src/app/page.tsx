@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 const features = [
   { icon: Bot, title: "13 AI Agents", desc: "Autonomous multi-agent pipeline for end-to-end quality engineering" },
   { icon: Network, title: "Knowledge Graph", desc: "Neo4j-powered project understanding with structural reasoning" },
-  { icon: Sparkles, title: "RAG Pipeline", desc: "Hybrid retrieval with dense embeddings and graph traversal" },
+  { icon: Sparkles, title: "Self Reflection", desc: "Iterative feedback loops with execution-guided prompt mutation" },
   { icon: Shield, title: "Auto Repair", desc: "Generate, validate, and apply patches in isolated sandboxes" },
   { icon: GitBranch, title: "CI/CD Ready", desc: "Integrate into your pipeline with Docker and GitHub Actions" },
   { icon: Zap, title: "Explainable AI", desc: "Every decision includes reasoning traces and confidence scores" },

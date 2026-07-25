@@ -57,7 +57,7 @@ def create_app() -> FastAPI:
         description=(
             "Agentic Multi-Agent Software Quality Engineer — "
             "Autonomous Testing, Root Cause Analysis, Automated Program Repair, "
-            "and Continuous Validation using RAG and Knowledge Graphs."
+            "and Continuous Validation using Knowledge Graphs."
         ),
         docs_url="/docs" if not settings.is_production else None,
         redoc_url="/redoc" if not settings.is_production else None,

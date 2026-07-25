@@ -42,7 +42,6 @@ const navSections: { title: string; items: NavItem[] }[] = [
     items: [
       { label: "Agents", href: "/dashboard/agents", icon: Bot, badge: "13" },
       { label: "Knowledge Graph", href: "/dashboard/knowledge", icon: Network },
-      { label: "RAG Pipeline", href: "/dashboard/rag", icon: Search },
     ],
   },
   {

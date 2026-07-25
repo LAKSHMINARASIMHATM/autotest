@@ -22,7 +22,6 @@ from app.agents.nodes.patch_validation import PatchValidationAgent
 from app.agents.nodes.planner import PlannerAgent
 from app.agents.nodes.program_repair import ProgramRepairAgent
 from app.agents.nodes.requirement import RequirementAgent
-from app.agents.nodes.retriever import RetrieverAgent
 from app.agents.nodes.root_cause import RootCauseAgent
 from app.agents.nodes.test_generation import TestGenerationAgent
 from app.agents.nodes.test_strategy import TestStrategyAgent
@@ -80,7 +79,6 @@ def build_agent_graph(llm: BaseChatModel | None = None) -> StateGraph:
     planner      = PlannerAgent(groq_llm)
     requirement  = RequirementAgent(groq_llm)
     architecture = ArchitectureAgent(groq_llm)
-    retriever    = RetrieverAgent(groq_llm)
     test_strategy = TestStrategyAgent(groq_llm)
     test_gen     = TestGenerationAgent(groq_llm)
     verification = VerificationAgent(groq_llm)
@@ -95,7 +93,6 @@ def build_agent_graph(llm: BaseChatModel | None = None) -> StateGraph:
     workflow.add_node("planner", planner)
     workflow.add_node("requirement", requirement)
     workflow.add_node("architecture", architecture)
-    workflow.add_node("retriever", retriever)
     workflow.add_node("test_strategy", test_strategy)
     workflow.add_node("test_generation", test_gen)
     workflow.add_node("verification", verification)
@@ -110,8 +107,7 @@ def build_agent_graph(llm: BaseChatModel | None = None) -> StateGraph:
     workflow.set_entry_point("planner")
     workflow.add_edge("planner", "requirement")
     workflow.add_edge("requirement", "architecture")
-    workflow.add_edge("architecture", "retriever")
-    workflow.add_edge("retriever", "test_strategy")
+    workflow.add_edge("architecture", "test_strategy")
     workflow.add_edge("test_strategy", "test_generation")
     workflow.add_edge("test_generation", "verification")
     workflow.add_edge("verification", "execution")

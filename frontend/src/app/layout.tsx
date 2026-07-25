@@ -5,12 +5,11 @@ import { AuthProvider } from "@/hooks";
 export const metadata: Metadata = {
   title: "AutoTestAI — AI Quality Engineering Platform",
   description:
-    "Agentic multi-agent platform for autonomous software testing, root cause analysis, automated program repair, and continuous validation using RAG and Knowledge Graphs.",
+    "Agentic multi-agent platform for autonomous software testing, root cause analysis, automated program repair, and continuous validation using Knowledge Graphs.",
   keywords: [
     "AutoTestAI",
     "AI Testing",
     "Automated Program Repair",
-    "RAG",
     "Knowledge Graph",
     "Software Quality",
     "Multi-Agent",
