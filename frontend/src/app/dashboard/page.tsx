@@ -10,6 +10,9 @@ import { MetricTile } from "@/components/ui/metric-tile";
 import { AgentWorkflow } from "@/components/dashboard/agent-workflow";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { CoverageChart, BugSeverityChart, PatchStatusChart } from "@/components/dashboard/charts";
+import { AgentStateGraph } from "@/components/AgentStateGraph";
+import { CoverageHeatmap } from "@/components/CoverageHeatmap";
+import { PatchDiffViewer } from "@/components/PatchDiffViewer";
 import {
   getDashboardMetrics, getCoverageTrend, getBugSeverityDist,
   getPatchStrategyBreakdown, listProjects,
@@ -245,6 +248,15 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <AgentWorkflow />
         <ActivityFeed />
+      </div>
+
+      {/* ── Interactive Quality Engineering Components ───────────── */}
+      <div className="space-y-6">
+        <AgentStateGraph />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CoverageHeatmap />
+          <PatchDiffViewer />
+        </div>
       </div>
     </motion.div>
   );

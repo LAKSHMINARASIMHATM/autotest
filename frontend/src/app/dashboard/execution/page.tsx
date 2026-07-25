@@ -8,6 +8,7 @@ import {
   listProjects, executeTests, ProjectItem, ExecuteTestsResponse, runRegression,
   getMonitoringHealth, MonitoringHealth, generateTests, getPipelineStatus,
 } from "@/lib/api";
+import { CoverageHeatmap } from "@/components/CoverageHeatmap";
 
 const PRE_RUN_LOGS = [
   "Initializing isolated local subprocess sandbox...",

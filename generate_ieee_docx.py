@@ -294,5 +294,5 @@ def generate_ieee_docx(markdown_path, output_path):
 
 if __name__ == '__main__':
     md_file = r"d:\autotest\final project documents\IEEE_Conference_Paper_Full_Manuscript.md"
-    docx_file = r"d:\autotest\final project documents\AutoTestAI_IEEE_Research_Paper_Two_Column.docx"
+    docx_file = r"d:\autotest\final project documents\AutoTestAI_IEEE_Research_Paper_MultiFramework.docx"
     generate_ieee_docx(md_file, docx_file)

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getProjectPatches, getDefaultProjectId, type PatchItem } from "@/lib/api";
+import { PatchDiffViewer } from "@/components/PatchDiffViewer";
 
 export default function PatchesPage() {
   const [patches, setPatches] = useState<PatchItem[]>([]);
@@ -138,51 +139,18 @@ export default function PatchesPage() {
         {/* Right Column: diff viewer */}
         <div className="lg:col-span-2">
           {selectedPatch ? (
-            <GlassCard className="p-6 h-full flex flex-col">
-              <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.05)] pb-4 mb-4">
-                <div>
-                  <h3 className="text-base font-semibold text-[#F9FAFB] capitalize">{selectedPatch.strategy} Patch</h3>
-                  <span className="text-xs font-mono text-[#6B7280]">{selectedPatch.file}</span>
-                </div>
-                {selectedPatch.status === "candidate" && (
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleVerdict(selectedPatch.id, "rejected")}
-                      className="bg-red-950/40 hover:bg-red-900/60 text-red-400 gap-1 text-xs h-8 px-3 rounded-lg"
-                    >
-                      <XCircle className="w-3.5 h-3.5" /> Reject
-                    </Button>
-                    <Button
-                      onClick={() => handleVerdict(selectedPatch.id, "accepted")}
-                      className="bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400 gap-1 text-xs h-8 px-3 rounded-lg"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Accept
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 bg-[#09090B] border border-[rgba(255,255,255,0.06)] rounded-xl p-5 font-mono text-[12px] leading-relaxed overflow-x-auto">
-                {(selectedPatch.diff || "# No diff available").split("\n").map((line, idx) => {
-                  const isAddition = line.startsWith("+");
-                  const isDeletion = line.startsWith("-");
-                  return (
-                    <div
-                      key={idx}
-                      className={`flex ${isAddition ? "bg-[#10B981]/10 text-[#10B981]" : isDeletion ? "bg-[#EF4444]/10 text-[#EF4444]" : "text-[#9CA3AF]"}`}
-                    >
-                      <span className="select-none opacity-20 text-xs w-6 pr-4 text-right">{idx + 1}</span>
-                      <span>{line || " "}</span>
-                    </div>
-                  );
-                })}
-              </div>
+            <PatchDiffViewer
+              patchDiff={selectedPatch.diff || "--- a/source.py\n+++ b/source.py\n@@ -1,2 +1,2 @@\n- old_code()\n+ new_repaired_code()"}
+              explanation={`Applied ${selectedPatch.strategy} strategy on ${selectedPatch.file}`}
+              confidenceScore={selectedPatch.confidence || 0.92}
+              onApprove={() => handleVerdict(selectedPatch.id, "accepted")}
+              onReject={() => handleVerdict(selectedPatch.id, "rejected")}
+            />
+          ) : (
+            <GlassCard className="p-8 text-center text-[#6B7280]">
+              Select a patch from the list to review unified diff and RCA explanation.
             </GlassCard>
-          ) : !loading ? (
-            <GlassCard className="p-12 flex items-center justify-center h-full text-[#6B7280] text-sm">
-              Select a patch to view its diff.
-            </GlassCard>
-          ) : null}
+          )}
         </div>
       </div>
     </div>

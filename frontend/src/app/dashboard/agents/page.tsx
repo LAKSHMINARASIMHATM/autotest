@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { AgentCard } from "@/components/agents/agent-card";
 import { ExplanationCard } from "@/components/agents/explanation-card";
+import { AgentStateGraph } from "@/components/AgentStateGraph";
 import { usePipelineStatus, PIPELINE_AGENTS, type PipelineAgentId } from "@/hooks/usePipelineStatus";
 import { triggerAgentPipeline, getDefaultProjectId } from "@/lib/api";
 import type { AgentStatus } from "@/types";
@@ -218,6 +219,11 @@ export default function AgentsPage() {
             {pipelineStatus === "running" ? "Running…" : "Run Pipeline"}
           </button>
         </div>
+      </div>
+
+      {/* Visual Agent State Graph */}
+      <div className="mb-8">
+        <AgentStateGraph />
       </div>
 
       {/* Trigger feedback banner */}

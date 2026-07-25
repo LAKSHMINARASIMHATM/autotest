@@ -34,9 +34,9 @@ AutoTestAI unifies software test engineering and automated program repair into a
 - **Implementation**: `backend/app/agents/verification_agent.py`
 - **Logic**: Performs static AST parsing on generated test files using Python `ast.parse()`. Checks symbol resolution and flags undefined variable references.
 
-#### Stage 4: Test Execution
-- **Implementation**: `backend/app/execution/runners/pytest_runner.py`
-- **Logic**: Executes tests in a sandboxed Python subprocess (`pytest --json-report --json-report-file=report.json`) with a hard $30\text{-second}$ timeout limit.
+#### Stage 4: Multi-Framework Test Execution
+- **Implementation**: `backend/app/execution/runners/` (`pytest_runner.py`, `jest_runner.py`, `newman_runner.py`, `playwright_runner.py`)
+- **Logic**: Dispatches test suites to isolated sandbox runners matching target language/framework (PyTest for Python, Jest for JavaScript/TypeScript, Newman for REST API Collections, Playwright for E2E Web UI). Enforces a hard $30\text{-second}$ timeout limit.
 
 #### Stage 5: Coverage Analysis
 - **Implementation**: `backend/app/execution/coverage_analyzer.py`

@@ -87,11 +87,11 @@ Respond with JSON:
 
         result: ExecutionResult | None = None
 
-        # ── Attempt real sandbox execution (write tests → run pytest) ──────────
-        pytest_tests = [t for t in tests if t.framework in ("pytest",) and t.code]
-        if pytest_tests:
+        # ── Attempt real sandbox execution (write tests → run runners) ──────────
+        executable_tests = [t for t in tests if t.framework in ("pytest", "jest", "newman", "playwright") and t.code]
+        if executable_tests:
             result = await self._run_with_written_tests(
-                run_id, project_path, pytest_tests, repo_summary
+                run_id, project_path, executable_tests, repo_summary
             )
 
         # ── Fallback: LLM-simulated execution ─────────────────────────────────

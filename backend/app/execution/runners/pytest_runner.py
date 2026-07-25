@@ -149,3 +149,6 @@ class PytestRunner:
         except (json.JSONDecodeError, KeyError):
             return {"passed": 0, "failed": 0, "errors": 0, "total": 0, "failures": []}
 
+
+PyTestRunner = PytestRunner
+
