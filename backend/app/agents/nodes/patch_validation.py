@@ -31,11 +31,21 @@ class PatchValidationAgent(BaseAgentNode):
         if not patches:
             return {"patch_validations": []}
 
-        project_path = project_ctx.repo_path if project_ctx else ""
-        # Use first failing test from execution results, or generic default
+        project_path = (
+            (project_ctx.repo_path if project_ctx else "")
+            or state.get("local_path", "")
+        )
+        # Use first failing test from execution results, or generic default.
+        # Only pass a failing_test if it looks like a real pytest path (.py file).
+        # LLM-simulated node_ids may use Jest-style paths (e.g. unit/jest/...) that
+        # pytest cannot run — passing those guarantees a rejected verdict.
         failing_test = ""
         if execution_result and execution_result.failures:
-            failing_test = execution_result.failures[0].get("node_id", "")
+            raw_node_id = execution_result.failures[0].get("node_id", "")
+            # Accept only paths that contain a .py file reference
+            if ".py" in raw_node_id:
+                failing_test = raw_node_id
+            # else: leave failing_test empty → validator accepts if compilation OK
 
         validations = []
 

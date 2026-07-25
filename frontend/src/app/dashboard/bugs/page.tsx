@@ -61,7 +61,6 @@ export default function BugsPage() {
     setError(null);
     try {
       await scanBugs(selectedProjectId);
-      alert("Hugging Face static scan started successfully in the background! The bug list will refresh in a few seconds.");
       setTimeout(async () => {
         try {
           const data = await getProjectBugs(selectedProjectId);
@@ -69,7 +68,7 @@ export default function BugsPage() {
           if (data.length > 0 && !selectedBug) setSelectedBug(data[0]);
         } catch { /* ignore */ }
         setScanning(false);
-      }, 7000);
+      }, 3500);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to start HuggingFace scan");
       setScanning(false);

@@ -111,15 +111,13 @@ async def execute_tests(
             passed = result.get("passed", 0)
             failed = result.get("failed", 0)
             errors = result.get("errors", 0)
-            total = result.get("total", 0)
-            coverage_pct = result.get("coverage", 0.0)
-            if not coverage_pct and "coverage" in result and isinstance(result["coverage"], (int, float)):
-                coverage_pct = float(result["coverage"])
+            total = result.get("total", 0) or (passed + failed + errors)
+            coverage_pct = float(result.get("coverage", 0.0) or 0.0)
 
             test_run = TestRun(
                 project_id=p_id,
                 triggered_by=_user_id,
-                status=TestRunStatus.PASSED if failed == 0 and errors == 0 else TestRunStatus.FAILED,
+                status=TestRunStatus.PASSED if (failed == 0 and errors == 0 and total > 0) else TestRunStatus.FAILED,
                 total_tests=total,
                 passed=passed,
                 failed=failed,
@@ -129,18 +127,35 @@ async def execute_tests(
                 logs=result.get("logs", ""),
             )
             await test_run.insert()
+
+            # Sync updated test count & coverage percentage back to Project document
+            proj = await Project.get(p_id)
+            if proj:
+                if coverage_pct > 0:
+                    proj.coverage_percentage = round(coverage_pct, 2)
+                if total > 0:
+                    proj.total_test_cases = max(proj.total_test_cases, total)
+                await proj.save()
+
         except Exception as db_err:
             logger.warning("failed_to_save_test_run_to_db", error=str(db_err))
+
+    passed = result.get("passed", 0)
+    failed = result.get("failed", 0)
+    errors = result.get("errors", 0)
+    total = result.get("total", 0) or (passed + failed + errors)
+    coverage_pct = float(result.get("coverage", 0.0) or 0.0)
 
     return ExecutionResultResponse(
         run_id=run_id,
         framework=payload.framework,
-        passed=result.get("passed", 0),
-        failed=result.get("failed", 0),
-        errors=result.get("errors", 0),
-        total=result.get("total", 0),
+        passed=passed,
+        failed=failed,
+        errors=errors,
+        total=total,
         duration_ms=result.get("duration_ms", 0.0),
-        coverage_pct=result.get("coverage", 0.0),
+        coverage_pct=round(coverage_pct, 2),
         failures=result.get("failures", []),
         logs=result.get("logs", ""),
     )
+

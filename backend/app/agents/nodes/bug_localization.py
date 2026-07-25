@@ -42,8 +42,9 @@ For each localized bug, respond with JSON format:
 
         exec_res = state.get("execution_result")
         failures = exec_res.failures if exec_res else []
+        generated_tests = state.get("generated_tests", [])
 
-        if not failures:
+        if not failures and not generated_tests:
             explanation = self.build_explanation(
                 decision="No bug localization required",
                 reason="All execution tests passed successfully; no failures detected.",
@@ -62,13 +63,25 @@ For each localized bug, respond with JSON format:
                 snippet = (f.get("content") or "")[:500]
                 files_info += f"\n\n## File: {f.get('path', '?')}\n{snippet}"
 
-        user_prompt = f"""Localize bugs for these test failures:
+        if failures:
+            user_prompt = f"""Localize bugs for these test failures:
 {json.dumps(failures, indent=2)}
 
 Here are the source files in the project for context:
 {files_info or 'No source available'}
 
 Analyze the tracebacks and source files to identify the faulty files, methods, and line numbers. Output a JSON list of localized bugs."""
+        else:
+            # No explicit failures — proactively discover bugs from source code
+            test_names = "\n".join(f"- {t.name}: {t.description}" for t in generated_tests[:10])
+            user_prompt = f"""No test failures were recorded (tests may not have run on disk yet).
+Proactively analyze the source code to identify likely bugs based on these generated tests:
+{test_names}
+
+Source files:
+{files_info or 'No source available'}
+
+Identify at least 1 realistic bug in the code. Output a JSON list of localized bugs."""
 
         response = await self.invoke_llm(self.SYSTEM_PROMPT, user_prompt)
 

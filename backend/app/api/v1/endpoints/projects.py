@@ -208,8 +208,8 @@ async def _run_pipeline_background(project_id: str, local_path: str, repo_summar
 
 
 async def _analyze_file_with_hf(path: str, content: str) -> dict[str, Any] | None:
-    """Analyze a single code file using Hugging Face LLM to extract structure & docstrings."""
-    from app.agents.llm_factory import get_huggingface_llm
+    """Analyze a single code file using Hugging Face (or best available LLM) to extract structure & docstrings."""
+    from app.agents.llm_factory import get_huggingface_llm, get_best_llm
     from langchain_core.messages import HumanMessage
     from app.core.logging import get_logger
     import json
@@ -218,9 +218,7 @@ async def _analyze_file_with_hf(path: str, content: str) -> dict[str, Any] | Non
         return None
 
     log = get_logger(__name__)
-    try:
-        llm = get_huggingface_llm()
-        prompt = f"""
+    prompt = f"""
 You are an expert code analyst. Analyze the following code file named "{path}".
 Extract the structural information of this code file as a valid JSON object. Do not include markdown code block formatting (like ```json). Return ONLY the raw JSON string.
 
@@ -252,194 +250,164 @@ The JSON schema must be:
 Code:
 {content[:8000]}
 """
-        messages = [HumanMessage(content=prompt)]
-        response = await llm.ainvoke(messages)
-        resp_text = response.content.strip()
+    messages = [HumanMessage(content=prompt)]
 
-        # Clean any markdown code blocks
-        if resp_text.startswith("```"):
-            lines = resp_text.splitlines()
-            if lines[0].startswith("```json") or lines[0] == "```":
-                lines = lines[1:]
-            if lines and lines[-1] == "```":
-                lines = lines[:-1]
-            resp_text = "\n".join(lines).strip()
+    # Try Hugging Face first, then fall back to primary LLM (Groq)
+    llm_instances = []
+    try:
+        llm_instances.append(get_huggingface_llm())
+    except Exception:
+        pass
+    try:
+        llm_instances.append(get_best_llm())
+    except Exception:
+        pass
 
-        # Extra cleaning to ensure we only get a JSON structure
-        start_idx = resp_text.find("{")
-        end_idx = resp_text.rfind("}")
-        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-            resp_text = resp_text[start_idx:end_idx + 1]
+    for llm in llm_instances:
+        try:
+            response = await llm.ainvoke(messages)
+            resp_text = response.content.strip()
 
-        data = json.loads(resp_text)
-        return data
-    except Exception as e:
-        log.warning("huggingface_file_analysis_failed", path=path, error=str(e))
-        return None
+            # Clean any markdown code blocks
+            if resp_text.startswith("```"):
+                lines = resp_text.splitlines()
+                if lines[0].startswith("```json") or lines[0] == "```":
+                    lines = lines[1:]
+                if lines and lines[-1] == "```":
+                    lines = lines[:-1]
+                resp_text = "\n".join(lines).strip()
+
+            start_idx = resp_text.find("{")
+            end_idx = resp_text.rfind("}")
+            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                resp_text = resp_text[start_idx:end_idx + 1]
+
+            data = json.loads(resp_text)
+            if isinstance(data, dict):
+                return data
+        except Exception as e:
+            log.warning("file_analysis_llm_attempt_failed", path=path, error=str(e))
+
+    return None
 
 
 async def ingest_project_structure_background(project_id: str, summary: Any) -> None:
-    """Ingests the project's codebase structure into Neo4j (and MongoDB CodeEntity/SourceFile)."""
+    """Ingests the project's codebase structure into Neo4j (and MongoDB CodeEntity/SourceFile).
+
+    Uses AST-parsed data from RepoSummary.files directly — no LLM calls here.
+    LLM enrichment (docstrings, deeper analysis) is handled separately by the agent pipeline.
+    """
     from app.knowledge.graph.graph_builder import GraphBuilder
     from app.knowledge.graph.neo4j_service import Neo4jService
     from app.core.logging import get_logger
     from app.models.source_file import SourceFile
     from app.models.code_entity import CodeEntity, EntityType
     from beanie import PydanticObjectId
+    import hashlib
 
     log = get_logger(__name__)
     log.info("ingest_structure_background_start", project_id=project_id)
-    
-    p_id = PydanticObjectId(project_id)
-    
-    # 1. First run LLM analyses in sequence for files to respect rate limits
-    llm_analyses = {}
-    for f in summary.files:
-        llm_analysis = await _analyze_file_with_hf(f.path, f.content)
-        if llm_analysis:
-            llm_analyses[f.path] = llm_analysis
 
-    # 2. Save SourceFiles and CodeEntities to MongoDB for robust fallback
+    p_id = PydanticObjectId(project_id)
+
+    # 1. Save SourceFiles and CodeEntities to MongoDB (pure AST data, no LLM)
     try:
-        # Clear existing to avoid duplicates if re-ingesting
+        # Clear existing to avoid duplicates when re-indexing
         await SourceFile.find(SourceFile.project_id == p_id).delete()
         await CodeEntity.find(CodeEntity.project_id == p_id).delete()
-        
-        for f in summary.files:
-            llm_analysis = llm_analyses.get(f.path)
-            
-            # Map LLM info
-            cls_docstrings = {}
-            func_docstrings = {}
-            
-            if llm_analysis:
-                for cls_data in llm_analysis.get("classes", []):
-                    c_name = cls_data.get("name")
-                    if c_name:
-                        cls_docstrings[c_name] = cls_data.get("docstring", "")
-                for fn_data in llm_analysis.get("functions", []):
-                    f_name = fn_data.get("name")
-                    if f_name:
-                        func_docstrings[f_name] = fn_data.get("docstring", "")
 
+        for f in summary.files:
             sf = SourceFile(
                 project_id=p_id,
                 module_name=f.path.replace("/", ".").replace(".py", ""),
                 path=f.path,
                 language=f.language,
                 line_count=len(f.content.splitlines()) if f.content else 0,
-                is_indexed=True
+                is_indexed=True,
             )
             await sf.insert()
-            
-            # Save classes
+
+            # Save classes (from AST parsing in scan_directory)
             for cls_name in f.classes:
-                ce = CodeEntity(
+                await CodeEntity(
                     project_id=p_id,
                     file_id=sf.id,
                     entity_type=EntityType.CLASS,
                     name=cls_name,
                     qualified_name=f"{sf.module_name}.{cls_name}",
-                    docstring=cls_docstrings.get(cls_name, "")
-                )
-                await ce.insert()
-                
-            # Save functions
+                    docstring="",
+                ).insert()
+
+            # Save functions (from AST/regex parsing in scan_directory)
             for fn_name in f.functions:
-                ce = CodeEntity(
+                await CodeEntity(
                     project_id=p_id,
                     file_id=sf.id,
                     entity_type=EntityType.FUNCTION,
                     name=fn_name,
                     qualified_name=f"{sf.module_name}.{fn_name}",
-                    docstring=func_docstrings.get(fn_name, "")
-                )
-                await ce.insert()
-                
-        log.info("mongodb_structure_ingested", project_id=project_id)
+                    docstring="",
+                ).insert()
+
+        log.info("mongodb_structure_ingested", project_id=project_id,
+                 files=len(summary.files))
     except Exception as mongo_err:
         log.exception("mongodb_structure_ingest_failed", error=str(mongo_err))
 
-    # 3. Ingest into Neo4j
+    # 2. Prepare files list for GraphBuilder (with content hashes)
+    files_for_graph = []
+    for f in summary.files:
+        content_hash = hashlib.sha256(f.content.encode()).hexdigest() if f.content else ""
+        files_for_graph.append({
+            "path": f.path,
+            "language": f.language,
+            "content_hash": content_hash,
+        })
+
+    # 3. Ingest into Neo4j (AST-derived graph — no LLM required)
     try:
-        # Convert RepoSummary to GraphBuilder analysis format
         modules_data = []
         for f in summary.files:
             mod_name = f.path.replace("/", ".").replace(".py", "")
-            llm_analysis = llm_analyses.get(f.path)
-            
-            cls_docstrings = {}
-            func_docstrings = {}
-            func_signatures = {}
-            
-            if llm_analysis:
-                for cls_data in llm_analysis.get("classes", []):
-                    c_name = cls_data.get("name")
-                    if c_name:
-                        cls_docstrings[c_name] = cls_data.get("docstring", "")
-                                
-                for fn_data in llm_analysis.get("functions", []):
-                    f_name = fn_data.get("name")
-                    if f_name:
-                        func_docstrings[f_name] = fn_data.get("docstring", "")
-                        func_signatures[f_name] = fn_data.get("signature", "")
 
-            classes_list = []
-            for cls_name in f.classes:
-                methods_list = []
-                if llm_analysis:
-                    for cls_data in llm_analysis.get("classes", []):
-                        if cls_data.get("name") == cls_name:
-                            for m_data in cls_data.get("methods", []):
-                                m_name = m_data.get("name")
-                                if m_name:
-                                    methods_list.append({
-                                        "name": m_name,
-                                        "signature": m_data.get("signature") or f"{m_name}()",
-                                        "docstring": m_data.get("docstring") or ""
-                                    })
-                                    
-                classes_list.append({
-                    "name": cls_name,
-                    "docstring": cls_docstrings.get(cls_name, ""),
-                    "methods": methods_list
-                })
-
-            functions_list = []
-            for fn_name in f.functions:
-                functions_list.append({
-                    "name": fn_name,
-                    "signature": func_signatures.get(fn_name) or f"{fn_name}()",
-                    "docstring": func_docstrings.get(fn_name, "")
-                })
-
+            classes_list = [
+                {"name": cls_name, "docstring": "", "methods": []}
+                for cls_name in f.classes
+            ]
+            functions_list = [
+                {"name": fn_name, "signature": f"{fn_name}()", "docstring": ""}
+                for fn_name in f.functions
+            ]
             modules_data.append({
                 "name": mod_name,
                 "file_path": f.path,
                 "classes": classes_list,
-                "functions": functions_list
+                "functions": functions_list,
             })
-            
-        # Extract dependencies from imports
+
+        # Extract intra-project import dependencies
         dependencies = []
         for f in summary.files:
             from_mod = f.path.replace("/", ".").replace(".py", "")
             for imp in f.imports:
                 for other_f in summary.files:
                     to_mod = other_f.path.replace("/", ".").replace(".py", "")
-                    if to_mod != from_mod and (to_mod.split(".")[-1] in imp or other_f.path.replace(".py", "") in imp):
+                    if to_mod != from_mod and (
+                        to_mod.split(".")[-1] in imp
+                        or other_f.path.replace(".py", "") in imp
+                    ):
                         dependencies.append({"from": from_mod, "to": to_mod})
 
         analysis = {
             "name": summary.repo_url.rstrip("/").split("/")[-1] if summary.repo_url else "Project",
             "modules": modules_data,
             "dependencies": dependencies,
-            "calls": []
+            "calls": [],
         }
-        
-        await GraphBuilder.ingest_project_structure(project_id, analysis)
-        
-        # Link existing APIs
+
+        await GraphBuilder.ingest_project_structure(project_id, analysis, files_for_graph)
+
+        # Link detected REST API endpoints
         for ep in summary.api_endpoints:
             ep_query = """
             MATCH (p:Project {id: $project_id})
@@ -449,9 +417,9 @@ async def ingest_project_structure_background(project_id: str, summary: Any) -> 
             await Neo4jService.execute_query(ep_query, {
                 "project_id": project_id,
                 "method": ep.get("method", "GET"),
-                "path": ep.get("path", "")
+                "path": ep.get("path", ""),
             })
-            
+
         log.info("neo4j_structure_ingested", project_id=project_id)
     except Exception as neo4j_err:
         log.exception("neo4j_structure_ingest_failed", error=str(neo4j_err))
@@ -470,6 +438,9 @@ async def import_from_github(
     user_id: str = Depends(get_current_user_id),
 ) -> GitHubImportResponse:
     from app.agents.github_import import clone_and_scan
+    import shutil
+    import os
+    from pathlib import Path
 
     # Clone & scan the repo
     try:
@@ -498,12 +469,38 @@ async def import_from_github(
             "total_classes": summary.total_classes,
         },
     )
-    project = await ProjectService.create(create_req, owner_id=user_id)
+    # ProjectService.create returns a ProjectResponse (Pydantic schema), NOT a Beanie document.
+    # Fetch the actual Project document separately so we can call .save() on it.
+    project_response = await ProjectService.create(create_req, owner_id=user_id)
+
+    from beanie import PydanticObjectId
+    from app.models.project import Project as ProjectDocument
+
+    db_project = await ProjectDocument.get(PydanticObjectId(project_response.id))
+
+    # ── Persist the clone to a stable directory (data/projects/{id}/src/) ──────
+    # cleanup_clone() skips paths containing "data/projects", so the files survive.
+    # This guarantees the knowledge graph tree builder always has a valid disk path.
+    if db_project and summary.local_path and os.path.exists(summary.local_path):
+        project_dir = Path("data/projects").resolve() / str(db_project.id)
+        project_dir.mkdir(parents=True, exist_ok=True)
+        persistent_src = project_dir / "src"
+        try:
+            if persistent_src.exists():
+                shutil.rmtree(str(persistent_src))
+            shutil.move(summary.local_path, str(persistent_src))
+            summary.local_path = str(persistent_src)   # keep summary in sync
+        except Exception as _move_err:
+            pass  # non-fatal — continue with temp path
+
+        db_project.local_path = summary.local_path
+        db_project.total_files = summary.total_files
+        await db_project.save()
 
     # Schedule knowledge graph structure ingestion in the background
     background_tasks.add_task(
         ingest_project_structure_background,
-        project.id,
+        project_response.id,
         summary,
     )
 
@@ -514,14 +511,14 @@ async def import_from_github(
         # Schedule pipeline in background — do not block HTTP response
         background_tasks.add_task(
             _run_pipeline_background,
-            project.id,
+            project_response.id,
             summary.local_path,
             summary,
         )
 
     return GitHubImportResponse(
-        project_id=project.id,
-        name=project.name,
+        project_id=project_response.id,
+        name=project_response.name,
         repo_url=summary.repo_url,
         language=summary.language,
         framework=summary.framework,
@@ -1014,3 +1011,75 @@ async def trigger_huggingface_scan(
     """Trigger static bug scanning on every file using Hugging Face LLM in the background."""
     background_tasks.add_task(run_huggingface_bug_scan, project_id)
     return {"status": "scanning", "message": "Hugging Face static bug scan started in background."}
+
+
+@router.post("/{project_id}/index-graph")
+async def trigger_graph_indexing(
+    project_id: str,
+    background_tasks: BackgroundTasks,
+    _user_id: str = Depends(get_current_user_id),
+):
+    """Trigger complete LLM AST & Knowledge Graph structure indexing in the background."""
+    from beanie import PydanticObjectId
+    from app.agents.github_import import scan_directory
+    from app.models.project import Project
+
+    p_id = PydanticObjectId(project_id)
+    project = await Project.get(p_id)
+    if not project or not project.local_path:
+        return {"status": "error", "message": "Project local path not found."}
+
+    summary = scan_directory(project.local_path, project.repo_url or "", project.branch or "main")
+    background_tasks.add_task(ingest_project_structure_background, project_id, summary)
+    return {"status": "indexing", "message": "Knowledge Graph structure indexing started in background."}
+
+
+@router.get("/{project_id}/validate-graph")
+async def validate_graph_structure(
+    project_id: str,
+    _user_id: str = Depends(get_current_user_id),
+):
+    """Validate that the knowledge graph exactly matches the project's file structure."""
+    from beanie import PydanticObjectId
+    from app.agents.github_import import scan_directory
+    from app.models.project import Project
+    from app.knowledge.graph.graph_builder import GraphBuilder
+
+    p_id = PydanticObjectId(project_id)
+    project = await Project.get(p_id)
+    if not project or not project.local_path:
+        return {"status": "error", "message": "Project local path not found."}
+
+    summary = scan_directory(project.local_path, project.repo_url or "", project.branch or "main")
+    expected_files = [f.path for f in summary.files]
+    validation_result = await GraphBuilder.validate_structure(project_id, expected_files)
+    return {"status": "success", "validation": validation_result}
+
+
+@router.post("/{project_id}/sync-github")
+async def sync_github_repo(
+    project_id: str,
+    background_tasks: BackgroundTasks,
+    _user_id: str = Depends(get_current_user_id),
+):
+    """Sync the latest changes from GitHub and update the knowledge graph."""
+    from beanie import PydanticObjectId
+    from app.agents.github_import import clone_and_scan
+    from app.models.project import Project
+    import git
+    import os
+    import shutil
+
+    p_id = PydanticObjectId(project_id)
+    project = await Project.get(p_id)
+    if not project or not project.repo_url:
+        return {"status": "error", "message": "Project or repo URL not found."}
+
+    try:
+        summary = await clone_and_scan(project.repo_url, project.branch or "main")
+        background_tasks.add_task(ingest_project_structure_background, project_id, summary)
+        return {"status": "syncing", "message": "GitHub sync and knowledge graph update started in background."}
+    except git.GitCommandError as e:
+        return {"status": "error", "message": f"Git error: {str(e)}"}
+    except Exception as e:
+        return {"status": "error", "message": f"Sync failed: {str(e)}"}

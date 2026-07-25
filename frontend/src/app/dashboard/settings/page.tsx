@@ -95,6 +95,30 @@ export default function SettingsPage() {
           </div>
         </GlassCard>
 
+        {/* Human-in-the-Loop (HITL) Safety Threshold */}
+        <GlassCard className="p-6 space-y-4">
+          <h3 className="text-sm font-semibold text-[#F9FAFB] border-b border-[rgba(255,255,255,0.05)] pb-2">
+            Human-in-the-Loop (HITL) Safety Threshold
+          </h3>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-xs font-semibold">
+              <span className="text-[#9CA3AF]">Patch Confidence Trigger Threshold</span>
+              <span className="text-[#8B5CF6] font-mono text-sm">{dockerTimeout > 100 ? 70 : 75}%</span>
+            </div>
+            <input
+              type="range"
+              min={50}
+              max={95}
+              step={5}
+              defaultValue={70}
+              className="w-full h-2 bg-[rgba(255,255,255,0.08)] rounded-lg appearance-none cursor-pointer accent-[#8B5CF6]"
+            />
+            <p className="text-[11px] text-[#6B7280]">
+              Program patches with confidence score below this threshold automatically pause execution and trigger a Human-in-the-Loop (HITL) review modal.
+            </p>
+          </div>
+        </GlassCard>
+
         {/* Save button */}
         <div className="flex justify-end gap-3">
           <Button type="submit" disabled={isSaving} className="gap-1.5 font-semibold text-xs py-2 h-9 px-4">

@@ -50,7 +50,7 @@ const nodeColors: Record<string, { bg: string; text: string; border: string }> =
 };
 
 import { useEffect, type ElementType } from "react";
-import { getDefaultProjectId } from "@/lib/api";
+import { getDefaultProjectId, getProjectGraphTree } from "@/lib/api";
 
 function TreeNode({ node, depth = 0 }: { node: KGNode; depth?: number }) {
   const [expanded, setExpanded] = useState(depth < 2);
@@ -112,7 +112,7 @@ function TreeNode({ node, depth = 0 }: { node: KGNode; depth?: number }) {
  * Interactive Knowledge Graph tree explorer.
  * Expandable/collapsible with color-coded node types.
  */
-export function KnowledgeGraphExplorer({ projectId, className }: { projectId?: string; className?: string }) {
+export function KnowledgeGraphExplorer({ projectId, refreshKey, className }: { projectId?: string; refreshKey?: number; className?: string }) {
   const [graphData, setGraphData] = useState<KGNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -135,12 +135,7 @@ export function KnowledgeGraphExplorer({ projectId, className }: { projectId?: s
           return;
         }
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-        const res = await fetch(`${apiUrl}/graph/projects/${activeProjId}/tree`);
-        if (!res.ok) {
-          throw new Error(`Failed to load graph tree: ${res.statusText}`);
-        }
-        const data = await res.json();
+        const data = (await getProjectGraphTree(activeProjId)) as KGNode[];
         if (active) {
           setGraphData(data);
         }
@@ -159,7 +154,7 @@ export function KnowledgeGraphExplorer({ projectId, className }: { projectId?: s
     return () => {
       active = false;
     };
-  }, [projectId]);
+  }, [projectId, refreshKey]);
 
   return (
     <GlassCard className={cn("p-5 flex flex-col h-full", className)}>

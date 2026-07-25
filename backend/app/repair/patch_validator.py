@@ -170,28 +170,72 @@ class PatchValidator:
 
         # ── Slow path: real project exists → sandbox + pytest ─────────────────
         try:
-            from app.execution.sandbox import DockerSandbox
+            from app.execution.sandbox import DockerSandbox, _DockerBackend
 
             async with DockerSandbox(
                 framework="pytest",
                 project_path=project_path,
                 run_id=f"{run_id}-val-{patch_id}",
             ) as sb:
-                workdir = sb._workdir
-                if workdir is None:
-                    result["reason"] = "Sandbox workdir not initialised."
-                    return result
+                workdir = sb._workdir  # None when Docker backend is active
 
-                patch_ok, patch_err = _apply_unified_diff(patch_diff, workdir)
-                if not patch_ok:
-                    result["reason"] = f"Patch failed to apply: {patch_err}"
-                    return result
+                if workdir is not None:
+                    # ── Local backend: apply diff to temp dir on disk ──────────
+                    project_dir = workdir / Path(project_path).name
+                    patch_workdir = project_dir if project_dir.exists() else workdir
+                    patch_ok, patch_err = _apply_unified_diff(patch_diff, patch_workdir)
+                    if not patch_ok:
+                        result["reason"] = f"Patch failed to apply: {patch_err}"
+                        return result
 
-                if file_path.endswith(".py"):
-                    compile_result = await sb.exec([
-                        sys.executable, "-m", "py_compile",
-                        str(workdir / file_path),
-                    ])
+                    compile_path = str(patch_workdir / file_path) if file_path.endswith(".py") else None
+                    python_exe = sys.executable
+                else:
+                    # ── Docker backend: write patch into container via stdin ───
+                    import tempfile as _tf, os as _os
+                    # Write diff to a host-side temp file then stream it into the
+                    # container so we don't need the `patch` utility.
+                    # Instead, apply via a small Python script exec'd inside container.
+                    escaped = patch_diff.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "")
+                    apply_script = (
+                        "import sys, re, pathlib\n"
+                        "diff = '''{}'''\n"
+                        "lines = diff.split('\\\\n')\n"
+                        "i = 0\n"
+                        "while i < len(lines):\n"
+                        "    if lines[i].startswith('--- ') and i+1<len(lines) and lines[i+1].startswith('+++ '):\n"
+                        "        tgt = re.sub(r'^[ab]/', '', lines[i+1][4:].strip().split('\\t')[0])\n"
+                        "        p = pathlib.Path('/workspace') / tgt\n"
+                        "        p.parent.mkdir(parents=True, exist_ok=True)\n"
+                        "        orig = p.read_text(errors='replace').splitlines() if p.exists() else []\n"
+                        "        patched = list(orig); offset = 0; i += 2\n"
+                        "        while i < len(lines) and lines[i].startswith('@@'):\n"
+                        "            m = __import__('re').match(r'@@ -(\\d+)(?:,\\d+)? \\+(\\d+)(?:,\\d+)? @@', lines[i])\n"
+                        "            start = int(m.group(1))-1 if m else 0; i += 1\n"
+                        "            ho=[]; hn=[]\n"
+                        "            while i<len(lines) and not lines[i].startswith('@@') and not lines[i].startswith('--- '):\n"
+                        "                l=lines[i]\n"
+                        "                if l.startswith('-'): ho.append(l[1:])\n"
+                        "                elif l.startswith('+'): hn.append(l[1:])\n"
+                        "                else: c=l[1:] if l.startswith(' ') else ''; ho.append(c); hn.append(c)\n"
+                        "                i+=1\n"
+                        "            pos=start+offset; patched[pos:pos+len(ho)]=hn; offset+=len(hn)-len(ho)\n"
+                        "        p.write_text('\\n'.join(patched)+'\\n')\n"
+                        "    else: i+=1\n"
+                        "print('patch_ok')\n"
+                    ).format(patch_diff.replace("'", "\\'"))
+
+                    apply_result = await sb.exec(["python3", "-c", apply_script])
+                    if "patch_ok" not in apply_result.stdout:
+                        result["reason"] = f"Docker patch apply failed: {apply_result.stderr[:300]}"
+                        return result
+
+                    compile_path = f"/workspace/{file_path}" if file_path.endswith(".py") else None
+                    python_exe = "python3"
+
+                # ── Compile check ─────────────────────────────────────────────
+                if compile_path:
+                    compile_result = await sb.exec([python_exe, "-m", "py_compile", compile_path])
                     result["compilation_ok"] = compile_result.exit_code == 0
                     if not result["compilation_ok"]:
                         result["reason"] = f"Syntax error after patch: {compile_result.stderr}"
@@ -199,9 +243,10 @@ class PatchValidator:
                 else:
                     result["compilation_ok"] = True
 
+                # ── Run failing test + regression ─────────────────────────────
                 if failing_test:
                     test_result = await sb.exec([
-                        sys.executable, "-m", "pytest",
+                        python_exe, "-m", "pytest",
                         failing_test, "--tb=short", "-q",
                     ])
                     result["failing_test_passes"] = test_result.exit_code == 0
@@ -212,7 +257,7 @@ class PatchValidator:
                         result["reason"] = f"Test still fails:\n{test_result.stdout[:400]}"
 
                     regression = await sb.exec([
-                        sys.executable, "-m", "pytest",
+                        python_exe, "-m", "pytest",
                         "--tb=no", "-q",
                         "--ignore", failing_test.split("::")[0],
                     ])

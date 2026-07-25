@@ -50,6 +50,7 @@ class ResultParser:
             "total": total,
             "duration_ms": round(duration_ms, 2),
             "failures": failures,
+            "logs": "",   # BUG-2 fix: always include "logs" key for consistent contract
         }
 
     @classmethod

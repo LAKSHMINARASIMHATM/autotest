@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.project import ProjectStatus
 
@@ -41,6 +41,8 @@ class ProjectUpdateRequest(BaseModel):
 class ProjectResponse(BaseModel):
     """Full project representation."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     name: str
     description: str
@@ -59,9 +61,6 @@ class ProjectResponse(BaseModel):
     local_path: str = ""
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class ProjectListResponse(BaseModel):

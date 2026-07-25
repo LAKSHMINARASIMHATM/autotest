@@ -148,3 +148,30 @@ def test_neo4j_serialization() -> None:
     assert res_rel["start_node_id"] == "node-2"
     assert res_rel["end_node_id"] == "node-1"
     assert res_rel["properties"]["weight"] == 0.9
+
+
+def test_result_parser_junit_xml_has_logs_key() -> None:
+    """from_junit_xml must always include 'logs' key — regression for BUG-2."""
+    from app.execution.result_parser import ResultParser
+
+    # Valid XML
+    xml = """<?xml version="1.0"?>
+    <testsuite tests="1" failures="0" errors="0" time="0.1">
+      <testcase classname="tests.test_foo" name="test_bar" time="0.1"/>
+    </testsuite>"""
+    result = ResultParser.from_junit_xml(xml)
+    assert "logs" in result, "from_junit_xml must return a 'logs' key"
+    assert result["logs"] == ""
+
+    # Invalid XML (parse fallback)
+    result_bad = ResultParser.from_junit_xml("not xml")
+    assert "logs" in result_bad, "from_junit_xml must include 'logs' even on parse error"
+
+
+def test_pydantic_schemas_no_class_config() -> None:
+    """UserResponse and ProjectResponse should not raise deprecation warnings — regression for BUG-1."""
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")   # Turn any DeprecationWarning into an error
+        from app.schemas.auth import UserResponse  # noqa: F401 — import triggers validators
+        from app.schemas.project import ProjectResponse  # noqa: F401

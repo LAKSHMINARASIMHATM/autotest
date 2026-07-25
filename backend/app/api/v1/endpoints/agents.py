@@ -281,21 +281,26 @@ async def _run_full_pipeline(project_id: str, session_id: str, max_iterations: i
                     provider="groq" if use_groq else "auto",
                     files=repo_summary_dict["total_files"])
 
-        # ── Stream graph execution, updating agents_run after each node ──────
-        # LangGraph's .astream() yields events; we collect them to update the
-        # live session status so the frontend polling sees real progress.
+        # ── Single-pass stream with full accumulated state ──────────────────────
+        # stream_mode="values" yields the COMPLETE state (with all LangGraph
+        # list reducers applied) after each node — not just the delta.
+        # This means generated_tests / bug_localizations / patches accumulate
+        # correctly, and the last yielded state is the authoritative final state.
+        # We also extract which agents ran for the live progress display.
         final_state: dict = {}
-        async for event in graph.astream(initial_state):  # type: ignore[call-overload]
-            # Each event is {node_name: state_delta}
-            for node_name, state_delta in event.items():
-                if node_name == "__end__":
-                    continue
-                if node_name not in _sessions[session_id]["agents_run"]:
-                    _sessions[session_id]["agents_run"].append(node_name)
-                    logger.info("agent_completed", session_id=session_id, agent=node_name)
-                # Merge delta into final_state
-                if isinstance(state_delta, dict):
-                    final_state.update(state_delta)
+        prev_agents_seen: set = set()
+        async for full_state in graph.astream(  # type: ignore[call-overload]
+            initial_state, stream_mode="values"
+        ):
+            final_state = full_state  # always overwrite — last value is final
+            # Detect newly completed agents by comparing agent_trace lengths
+            for action in full_state.get("agent_trace", []):
+                agent_name = action.agent if hasattr(action, "agent") else action.get("agent", "")
+                if agent_name and agent_name not in prev_agents_seen:
+                    prev_agents_seen.add(agent_name)
+                    if agent_name not in _sessions[session_id]["agents_run"]:
+                        _sessions[session_id]["agents_run"].append(agent_name)
+                        logger.info("agent_completed", session_id=session_id, agent=agent_name)
 
         # ── Persist results ───────────────────────────────────────────────────
         tests_saved   = await _save_test_cases(project, final_state.get("generated_tests", []))
@@ -313,10 +318,11 @@ async def _run_full_pipeline(project_id: str, session_id: str, max_iterations: i
         project.total_patches_applied = (project.total_patches_applied or 0) + patches_saved
         await project.save()
 
-        # Final agents_run from actual trace (authoritative)
-        agents_run = [a.agent for a in final_state.get("agent_trace", [])]
+        # Use the agent_trace for authoritative agents_run, fall back to streaming list
+        agents_run = [a.agent if hasattr(a, 'agent') else a.get('agent', '') for a in final_state.get("agent_trace", [])]
+        agents_run = [a for a in agents_run if a]  # strip empty strings
         if not agents_run:
-            agents_run = _sessions[session_id]["agents_run"]  # fallback to streaming list
+            agents_run = _sessions[session_id]["agents_run"]
 
         _sessions[session_id].update({
             "status": "complete",
@@ -448,24 +454,28 @@ async def _run_test_generation(project_id: str, session_id: str) -> None:
         logger.info("test_gen_started", session_id=session_id, project=project.name,
                     files=repo_summary_dict["total_files"])
 
-        # Stream for live per-agent updates
+        # Single-pass stream: stream_mode='values' yields full accumulated state
         final_state: dict = {}
-        async for event in graph.astream(initial_state):  # type: ignore[call-overload]
-            for node_name, state_delta in event.items():
-                if node_name == "__end__":
-                    continue
-                if node_name not in _sessions[session_id]["agents_run"]:
-                    _sessions[session_id]["agents_run"].append(node_name)
-                    logger.info("agent_completed", session_id=session_id, agent=node_name)
-                if isinstance(state_delta, dict):
-                    final_state.update(state_delta)
+        prev_agents_seen: set = set()
+        async for full_state in graph.astream(  # type: ignore[call-overload]
+            initial_state, stream_mode="values"
+        ):
+            final_state = full_state
+            for action in full_state.get("agent_trace", []):
+                agent_name = action.agent if hasattr(action, "agent") else action.get("agent", "")
+                if agent_name and agent_name not in prev_agents_seen:
+                    prev_agents_seen.add(agent_name)
+                    if agent_name not in _sessions[session_id]["agents_run"]:
+                        _sessions[session_id]["agents_run"].append(agent_name)
+                        logger.info("agent_completed", session_id=session_id, agent=agent_name)
 
         tests_saved = await _save_test_cases(project, final_state.get("generated_tests", []))
 
         project.total_test_cases = (project.total_test_cases or 0) + tests_saved
         await project.save()
 
-        agents_run = [a.agent for a in final_state.get("agent_trace", [])]
+        agents_run = [a.agent if hasattr(a, 'agent') else a.get('agent', '') for a in final_state.get("agent_trace", [])]
+        agents_run = [a for a in agents_run if a]
         if not agents_run:
             agents_run = _sessions[session_id]["agents_run"]
 

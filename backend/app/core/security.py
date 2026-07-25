@@ -15,12 +15,20 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Initialize Firebase Admin SDK if not already done
+# Initialize Firebase Admin SDK only if credentials / project are available
+_firebase_ready = False
 try:
     if not firebase_admin._apps:
         firebase_admin.initialize_app()
+    # Quick probe: if no project is set, Firebase will fail on every call anyway
+    _app = firebase_admin.get_app()
+    _firebase_ready = bool(getattr(_app, '_options', {}).get('projectId') or
+                           __import__('os').environ.get('GOOGLE_CLOUD_PROJECT') or
+                           __import__('os').environ.get('GCLOUD_PROJECT'))
 except Exception:
-    pass
+    _firebase_ready = False
+
+_firebase_warning_logged = False  # warn only once per process
 
 # ── Password Hashing ────────────────────────────────────────────
 
@@ -172,42 +180,62 @@ async def get_current_user_payload(
 
     if credentials is not None:
         token = credentials.credentials
-        if token and token not in ("undefined", "null", "none", ""):
+        # Ignore obviously invalid / dev placeholder tokens
+        _is_dev_token = not token or token in ("undefined", "null", "none", "") or token.startswith("dev-")
+        if not _is_dev_token:
             try:
-                # Try decoding as a local JWT token first
+                # ── Local JWT first (fastest, no network) ─────────────
                 try:
                     return decode_token(token, settings)
                 except HTTPException:
                     pass
 
-                # Verify Firebase token
-                decoded_token = auth.verify_id_token(token)
-                email = decoded_token.get("email", "")
+                # ── Firebase token — only attempt if SDK is configured ─
+                global _firebase_warning_logged
+                if _firebase_ready:
+                    decoded_token = auth.verify_id_token(token)
+                    email = decoded_token.get("email", "")
 
-                # Retrieve or sync user in MongoDB
-                from app.models.user import User
-                user = await User.find_one(User.email == email)
-                if not user:
-                    user = User(
-                        email=email,
-                        password_hash="",  # Firebase handles password security
-                        full_name=decoded_token.get("name", email.split("@")[0]),
-                        role=Role.ENGINEER,
-                        is_active=True
+                    # Retrieve or sync user in MongoDB
+                    from app.models.user import User
+                    user = await User.find_one(User.email == email)
+                    if not user:
+                        user = User(
+                            email=email,
+                            password_hash="",  # Firebase handles password security
+                            full_name=decoded_token.get("name", email.split("@")[0]),
+                            role=Role.ENGINEER,
+                            is_active=True
+                        )
+                        await user.insert()
+
+                    exp_val = decoded_token.get("exp", 0)
+                    exp_dt = datetime.fromtimestamp(exp_val, UTC) if exp_val else datetime.now(UTC) + timedelta(hours=1)
+
+                    return TokenPayload(
+                        sub=str(user.id),
+                        role=user.role,
+                        exp=exp_dt
                     )
-                    await user.insert()
+                else:
+                    # Firebase not configured — skip silently in dev, raise in prod
+                    if settings.APP_ENV != "development":
+                        if not _firebase_warning_logged:
+                            logger.warning("firebase_not_configured_skipping_verify")
+                            _firebase_warning_logged = True
+                        raise HTTPException(
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Firebase authentication is not configured.",
+                            headers={"WWW-Authenticate": "Bearer"},
+                        )
 
-                exp_val = decoded_token.get("exp", 0)
-                exp_dt = datetime.fromtimestamp(exp_val, UTC) if exp_val else datetime.now(UTC) + timedelta(hours=1)
-
-                return TokenPayload(
-                    sub=str(user.id),
-                    role=user.role,
-                    exp=exp_dt
-                )
+            except HTTPException:
+                raise
             except Exception as e:
                 if settings.APP_ENV == "development":
-                    logger.warning("token_verification_failed_using_dev_fallback", error=str(e))
+                    if not _firebase_warning_logged:
+                        logger.warning("token_verification_failed_using_dev_fallback", error=str(e))
+                        _firebase_warning_logged = True
                 else:
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,

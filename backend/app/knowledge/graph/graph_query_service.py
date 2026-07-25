@@ -187,17 +187,22 @@ class GraphQueryService:
                         current_children.append(file_node)
 
         try:
-            # 1. Fetch Project and structure details from Neo4j
+            # 1. Fetch Project and structure details from Neo4j using new Directory/File nodes
             query = """
             MATCH (p:Project {id: $project_id})
-            OPTIONAL MATCH (p)-[:CONTAINS]->(m:Module)
-            OPTIONAL MATCH (m)-[:CONTAINS]->(c:Class)
-            OPTIONAL MATCH (c)-[:CONTAINS]->(f1:Function)
-            OPTIONAL MATCH (m)-[:CONTAINS]->(f2:Function)
             OPTIONAL MATCH (p)-[:EXPOSES_API]->(e:API)
+            
+            // Fetch Files and their Defined entities
+            OPTIONAL MATCH (p)-[:CONTAINS*]->(f:File)
+            OPTIONAL MATCH (f)-[:DEFINES]->(m:Module)
+            OPTIONAL MATCH (f)-[:DEFINES]->(c:Class)
+            OPTIONAL MATCH (c)-[:DEFINES]->(f1:Function)
+            OPTIONAL MATCH (f)-[:DEFINES]->(f2:Function)
+            
             RETURN 
                 p.name AS project_name,
-                m.name AS module_name, m.file_path AS module_path,
+                f.path AS file_path, f.name AS file_name, f.language AS file_language,
+                m.name AS module_name,
                 c.name AS class_name, c.docstring AS class_docstring,
                 f1.name AS class_func_name, f1.signature AS class_func_sig,
                 f2.name AS mod_func_name, f2.signature AS mod_func_sig,
@@ -207,12 +212,12 @@ class GraphQueryService:
             
             # Fetch bugs separately, scoping the Function nodes to the specific project path.
             bug_query = """
-            MATCH (p:Project {id: $project_id})-[:CONTAINS*1..3]->(f:Function)
+            MATCH (p:Project {id: $project_id})-[:CONTAINS*]->(:File)-[:DEFINES*1..2]->(f:Function)
             MATCH (b:Bug)-[:LOCALIZED_IN]->(f)
             RETURN f.name AS function_name, b.id AS bug_id, b.severity AS severity
             """
             bug_rows = await Neo4jService.execute_query(bug_query, {"project_id": project_id})
-            bugs_by_func = {}
+            bugs_by_func: dict[str, list[dict[str, str]]] = {}
             for br in bug_rows:
                 f_name = br["function_name"]
                 if f_name not in bugs_by_func:
@@ -223,17 +228,17 @@ class GraphQueryService:
                     "type": "requirement"
                 })
  
-            if rows and any(r.get("module_name") or r.get("api_path") for r in rows):
+            if rows and any(r.get("file_path") or r.get("api_path") for r in rows):
                 project_name = rows[0]["project_name"] or "Project"
                 
-                project_node = {
+                project_node: dict[str, Any] = {
                     "id": project_id,
                     "label": project_name,
                     "type": "project",
                     "children": []
                 }
  
-                files_map = {}
+                files_map: dict[str, Any] = {}
                 apis_set = set()
  
                 for row in rows:
@@ -250,22 +255,22 @@ class GraphQueryService:
                                 "type": "api"
                             })
  
-                    # Module
-                    module_path = row.get("module_path")
-                    if not module_path:
+                    # File
+                    file_path = row.get("file_path")
+                    if not file_path:
                         continue
                         
-                    if is_test_file(module_path):
+                    if is_test_file(file_path):
                         continue
  
-                    if module_path not in files_map:
-                        files_map[module_path] = {
-                            "path": module_path,
+                    if file_path not in files_map:
+                        files_map[file_path] = {
+                            "path": file_path,
                             "classes": {},
                             "functions": []
                         }
  
-                    file_entry = files_map[module_path]
+                    file_entry = files_map[file_path]
  
                     # Class
                     class_name = row.get("class_name")
@@ -362,7 +367,7 @@ class GraphQueryService:
         source_files = [sf for sf in source_files if not is_test_file(sf.path)]
         
         # Pre-group code entities by file_id
-        entities_by_file = {}
+        entities_by_file: dict[str, Any] = {}
         for ce in code_entities:
             f_id_str = str(ce.file_id)
             if f_id_str not in entities_by_file:
@@ -370,7 +375,7 @@ class GraphQueryService:
             entities_by_file[f_id_str].append(ce)
             
         # Pre-group bugs by file path
-        bugs_by_file = {}
+        bugs_by_file: dict[str, Any] = {}
         for bug in bugs:
             if not bug.file_path:
                 continue
@@ -382,94 +387,184 @@ class GraphQueryService:
         bugs_by_func = {}
         files_data = []
 
+        # Resolve target directory for disk scanner — only use the project's recorded local_path.
+        # Never fall back to a generic/hardcoded path so that unrelated codebases are never shown.
+        import os
+        target_dir = ""
+        if project.local_path and os.path.exists(project.local_path):
+            target_dir = project.local_path
+
+        # Build a path-keyed index of MongoDB SourceFile records for enrichment
+        source_file_by_path: dict[str, Any] = {}
         for sf in source_files:
-            sf_path_normalized = sf.path.replace("\\", "/").strip("/")
-            file_entities = entities_by_file.get(str(sf.id), [])
-            file_bugs = bugs_by_file.get(sf_path_normalized, [])
-            
-            # Find classes in this file
-            classes = []
-            classes_entities = [e for e in file_entities if e.entity_type == EntityType.CLASS]
-            
-            for cls_ce in classes_entities:
-                cls_prefix = f"{cls_ce.qualified_name}."
-                method_entities = [
-                    e for e in file_entities
-                    if e.entity_type in (EntityType.FUNCTION, EntityType.METHOD)
-                    and e.qualified_name.startswith(cls_prefix)
-                ]
-                
-                methods = []
-                for m_ce in method_entities:
-                    methods.append({
-                        "name": m_ce.name,
-                        "signature": f"{m_ce.name}()"
-                    })
-                
-                # Find bugs localized in this class/methods
-                class_bugs = []
-                for bug in file_bugs:
-                    if bug.class_name == cls_ce.name:
-                        bug_info = {
+            norm = sf.path.replace("\\", "/").strip("/")
+            source_file_by_path[norm] = sf
+
+        # ALWAYS scan the disk when local_path is available — this guarantees every
+        # folder/file in the repo appears in the tree even before LLM ingestion compl        # If no disk path, fall back to MongoDB SourceFile records only.
+        if target_dir:
+            import re
+            root_dir = target_dir
+            file_limit_reached = False
+
+            # All file types to show in the tree (exclude obvious binary/generated dirs)
+            SHOW_EXTENSIONS = {
+                ".py", ".ts", ".tsx", ".js", ".jsx", ".java", ".go", ".cs",
+                ".md", ".txt", ".json", ".yaml", ".yml", ".toml", ".ini",
+                ".cfg", ".env", ".sh", ".bat", ".dockerfile", ".html", ".css",
+                ".rs", ".cpp", ".c", ".h", ".rb", ".php", ".swift", ".kt",
+            }
+            CODE_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".jsx", ".java", ".go", ".cs", ".rs", ".cpp", ".c", ".rb"}
+
+            for r, dirs, files in os.walk(root_dir):
+                if file_limit_reached:
+                    break
+                dirs[:] = sorted([
+                    d for d in dirs
+                    if d not in (".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build", ".next", ".pytest_cache", "*.egg-info")
+                    and not d.startswith(".")
+                ])
+                for f in sorted(files):
+                    ext = os.path.splitext(f)[1].lower()
+                    if ext not in SHOW_EXTENSIONS and "dockerfile" not in f.lower():
+                        continue
+
+                    full_f = os.path.join(r, f)
+                    rel_f = os.path.relpath(full_f, root_dir).replace("\\", "/")
+
+                    if is_test_file(rel_f):
+                        continue
+
+                    mod_funcs: list[dict] = []
+                    mod_classes: list[dict] = []
+
+                    # Check if MongoDB has richer entity info for this file
+                    sf_record = source_file_by_path.get(rel_f)
+                    if sf_record and entities_by_file.get(str(sf_record.id)):
+                        file_entities = entities_by_file[str(sf_record.id)]
+                        classes_ents = [e for e in file_entities if e.entity_type == EntityType.CLASS]
+                        for cls_e in classes_ents:
+                            cls_prefix = f"{cls_e.qualified_name}."
+                            meth_ents = [
+                                e for e in file_entities
+                                if e.entity_type in (EntityType.FUNCTION, EntityType.METHOD)
+                                and e.qualified_name.startswith(cls_prefix)
+                            ]
+                            mod_classes.append({
+                                "name": cls_e.name,
+                                "methods": [{"name": m.name, "signature": f"{m.name}()"} for m in meth_ents],
+                                "bugs": [],
+                            })
+                        cls_prefixes = [f"{c.qualified_name}." for c in classes_ents]
+                        for fn_e in file_entities:
+                            if fn_e.entity_type in (EntityType.FUNCTION, EntityType.METHOD):
+                                if not any(fn_e.qualified_name.startswith(p) for p in cls_prefixes):
+                                    mod_funcs.append({"name": fn_e.name, "signature": f"{fn_e.name}()"})
+                    elif ext in CODE_EXTENSIONS:
+                        # Fast AST/regex parse for enrichment when no MongoDB data
+                        try:
+                            content = open(full_f, "r", encoding="utf-8", errors="ignore").read()
+                            if ext == ".py":
+                                import ast as _ast
+                                _tree = _ast.parse(content)
+                                for item in _tree.body:
+                                    if isinstance(item, _ast.FunctionDef):
+                                        mod_funcs.append({"name": item.name, "signature": f"{item.name}()"})
+                                    elif isinstance(item, _ast.ClassDef):
+                                        methods = [
+                                            {"name": n.name, "signature": f"{n.name}()"}
+                                            for n in item.body if isinstance(n, _ast.FunctionDef)
+                                        ]
+                                        mod_classes.append({"name": item.name, "methods": methods, "bugs": []})
+                            else:
+                                for fn_name in re.findall(r"(?:function|const|let)\s+([a-zA-Z0-9_]+)\s*=", content):
+                                    mod_funcs.append({"name": fn_name, "signature": f"{fn_name}()"})
+                        except Exception:
+                            pass
+
+                    # Add bug annotations from MongoDB
+                    file_bugs_list = bugs_by_file.get(rel_f, [])
+                    bug_annotations: list[dict] = []
+                    for bug in file_bugs_list:
+                        bug_annotations.append({
                             "id": str(bug.id),
                             "severity": bug.severity,
-                            "method_name": bug.method_name
-                        }
-                        class_bugs.append(bug_info)
+                            "method_name": bug.method_name or "",
+                        })
                         if bug.method_name:
-                            if bug.method_name not in bugs_by_func:
-                                bugs_by_func[bug.method_name] = []
-                            bugs_by_func[bug.method_name].append({
+                            bugs_by_func.setdefault(bug.method_name, []).append({
                                 "id": f"bug-{bug.id}",
                                 "label": f"Bug: {bug.severity}",
-                                "type": "requirement"
+                                "type": "requirement",
                             })
-                
-                classes.append({
-                    "name": cls_ce.name,
-                    "methods": methods,
-                    "bugs": class_bugs
+
+                    files_data.append({
+                        "path": rel_f,
+                        "classes": mod_classes,
+                        "functions": mod_funcs[:15],
+                        "bugs": bug_annotations,
+                    })
+
+                    if len(files_data) >= 500:
+                        file_limit_reached = True
+                        break
+
+        elif source_files:
+            # No disk path available — build tree from MongoDB SourceFile records only
+            for sf in source_files:
+                sf_path_normalized = sf.path.replace("\\", "/").strip("/")
+                file_entities = entities_by_file.get(str(sf.id), [])
+                file_bugs_list = bugs_by_file.get(sf_path_normalized, [])
+
+                classes = []
+                classes_entities = [e for e in file_entities if e.entity_type == EntityType.CLASS]
+                for cls_ce in classes_entities:
+                    cls_prefix = f"{cls_ce.qualified_name}."
+                    method_entities = [
+                        e for e in file_entities
+                        if e.entity_type in (EntityType.FUNCTION, EntityType.METHOD)
+                        and e.qualified_name.startswith(cls_prefix)
+                    ]
+                    class_bugs: list[dict] = []
+                    for bug in file_bugs_list:
+                        if bug.class_name == cls_ce.name:
+                            class_bugs.append({"id": str(bug.id), "severity": bug.severity, "method_name": bug.method_name})
+                            if bug.method_name:
+                                bugs_by_func.setdefault(bug.method_name, []).append({
+                                    "id": f"bug-{bug.id}",
+                                    "label": f"Bug: {bug.severity}",
+                                    "type": "requirement",
+                                })
+                    classes.append({
+                        "name": cls_ce.name,
+                        "methods": [{"name": m.name, "signature": f"{m.name}()"} for m in method_entities],
+                        "bugs": class_bugs,
+                    })
+
+                class_prefixes = [f"{c.qualified_name}." for c in classes_entities]
+                mod_funcs = [
+                    {"name": e.name, "signature": f"{e.name}()"}
+                    for e in file_entities
+                    if e.entity_type in (EntityType.FUNCTION, EntityType.METHOD)
+                    and not any(e.qualified_name.startswith(p) for p in class_prefixes)
+                ]
+                mod_bugs: list[dict] = []
+                for bug in file_bugs_list:
+                    if not bug.class_name:
+                        mod_bugs.append({"id": str(bug.id), "severity": bug.severity, "method_name": bug.method_name})
+                        if bug.method_name:
+                            bugs_by_func.setdefault(bug.method_name, []).append({
+                                "id": f"bug-{bug.id}",
+                                "label": f"Bug: {bug.severity}",
+                                "type": "requirement",
+                            })
+
+                files_data.append({
+                    "path": sf.path,
+                    "classes": classes,
+                    "functions": mod_funcs,
+                    "bugs": mod_bugs,
                 })
-                
-            # Find module-level functions
-            class_prefixes = [f"{c.qualified_name}." for c in classes_entities]
-            mod_funcs = []
-            func_entities = [
-                e for e in file_entities
-                if e.entity_type in (EntityType.FUNCTION, EntityType.METHOD)
-                and not any(e.qualified_name.startswith(pref) for pref in class_prefixes)
-            ]
-            for f_ce in func_entities:
-                mod_funcs.append({
-                    "name": f_ce.name,
-                    "signature": f"{f_ce.name}()"
-                })
-                
-            # Find module-level bugs
-            mod_bugs = []
-            for bug in file_bugs:
-                if not bug.class_name:
-                    bug_info = {
-                        "id": str(bug.id),
-                        "severity": bug.severity,
-                        "method_name": bug.method_name
-                    }
-                    mod_bugs.append(bug_info)
-                    if bug.method_name:
-                        if bug.method_name not in bugs_by_func:
-                            bugs_by_func[bug.method_name] = []
-                        bugs_by_func[bug.method_name].append({
-                            "id": f"bug-{bug.id}",
-                            "label": f"Bug: {bug.severity}",
-                            "type": "requirement"
-                        })
-            
-            files_data.append({
-                "path": sf.path,
-                "classes": classes,
-                "functions": mod_funcs,
-                "bugs": mod_bugs
-            })
 
         # Build directory tree structure under project_node
         build_directory_tree(project_node, files_data, bugs_by_func)

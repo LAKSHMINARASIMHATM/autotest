@@ -201,8 +201,8 @@ export async function generatePatches(payload: GeneratePatchRequest): Promise<Pa
 
 // ─── Knowledge Graph / Cypher ────────────────────────────────────────────────
 
-export async function executeCypherQuery(query: string): Promise<Record<string, unknown>[]> {
-  return request<Record<string, unknown>[]>("/graph/query", {
+export async function executeCypherQuery(query: string): Promise<unknown> {
+  return request<unknown>("/graph/query", {
     method: "POST",
     body: JSON.stringify({ query }),
   });
@@ -364,6 +364,13 @@ export interface UserResponse {
   is_active: boolean;
 }
 
+export interface TokenResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  user: UserResponse;
+}
+
 export async function loginUser(payload: LoginPayload): Promise<TokenResponse> {
   return request<TokenResponse>("/auth/login", {
     method: "POST",
@@ -382,4 +389,98 @@ export async function getMe(): Promise<UserResponse> {
   return request<UserResponse>("/auth/me");
 }
 
+// ─── API Keys ─────────────────────────────────────────────────────────────────
 
+export interface ApiKeyItem {
+  id: string;
+  name: string;
+  token: string;
+  key_prefix: string;
+  role: string;
+  created: string;
+}
+
+export async function listApiKeys(): Promise<ApiKeyItem[]> {
+  return request<ApiKeyItem[]>("/auth/api-keys");
+}
+
+export async function createApiKey(name: string, role: string): Promise<ApiKeyItem> {
+  return request<ApiKeyItem>("/auth/api-keys", {
+    method: "POST",
+    body: JSON.stringify({ name, role }),
+  });
+}
+
+export async function revokeApiKey(keyId: string): Promise<void> {
+  // DELETE returns 204 no content
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("access_token");
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+  }
+  const res = await fetch(`${BASE}/auth/api-keys/${keyId}`, { method: "DELETE", headers });
+  if (!res.ok && res.status !== 204) {
+    throw new Error(`API ${res.status}`);
+  }
+}
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+
+export interface AuditLogEntry {
+  id: string;
+  action: string;
+  resource_type: string;
+  resource_id: string;
+  details: Record<string, unknown>;
+  ip_address: string;
+  timestamp: string;
+}
+
+export async function getAuditLog(limit = 50): Promise<AuditLogEntry[]> {
+  return request<AuditLogEntry[]>(`/auth/audit-log?limit=${limit}`);
+}
+
+// ─── Monitoring Health ────────────────────────────────────────────────────────
+
+export interface MonitoringHealth {
+  uptime_seconds: number;
+  host: {
+    cpu_pct: number;
+    ram_used_mb: number;
+    ram_total_mb: number;
+    ram_pct: number;
+  };
+  database: {
+    mongodb: Record<string, number>;
+    neo4j_status: string;
+    neo4j_nodes: number;
+  };
+  pipeline: {
+    total_sessions: number;
+    recent_sessions: {
+      session_id: string;
+      project_id: string;
+      status: string;
+      agents_run: string[];
+      test_cases_generated: number;
+      bugs_found: number;
+      patches_generated: number;
+    }[];
+  };
+}
+
+export async function getMonitoringHealth(): Promise<MonitoringHealth> {
+  return request<MonitoringHealth>("/monitoring/health");
+}
+
+// ─── Knowledge Graph ──────────────────────────────────────────────────────────
+
+export async function getProjectGraphTree(projectId: string): Promise<unknown[]> {
+  return request<unknown[]>(`/graph/projects/${projectId}/tree`);
+}
+
+export async function indexGraph(projectId: string): Promise<{ status: string; message: string }> {
+  return request<{ status: string; message: string }>(`/projects/${projectId}/index-graph`, {
+    method: "POST",
+  });
+}

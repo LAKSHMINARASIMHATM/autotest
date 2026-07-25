@@ -36,6 +36,7 @@ async def init_mongodb() -> None:
     _database = _client[settings.MONGODB_DB_NAME]
 
     # Import all document models so Beanie can discover them
+    from app.models.api_key import ApiKey
     from app.models.audit_log import AuditLog
     from app.models.bug_report import BugReport
     from app.models.code_entity import CodeEntity
@@ -51,6 +52,7 @@ async def init_mongodb() -> None:
 
     document_models = [
         User,
+        ApiKey,
         Project,
         SourceFile,
         CodeEntity,

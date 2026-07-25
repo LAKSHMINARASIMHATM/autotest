@@ -39,12 +39,14 @@ class MetricsService:
             total_bugs = await BugReport.find(BugReport.project_id == pid).count()
             total_patches = await Patch.find(Patch.project_id == pid).count()
 
-            # If DB has nothing yet, fall back to project-level counters
-            if total_tests == 0 and total_bugs == 0:
-                project = await Project.get(pid)
-                if project:
+            # If DB counts are zero, fall back to project-level counters individually
+            project = await Project.get(pid)
+            if project:
+                if total_tests == 0:
                     total_tests = project.total_test_cases or 0
+                if total_bugs == 0:
                     total_bugs = project.total_bugs_found or 0
+                if total_patches == 0:
                     total_patches = project.total_patches_applied or 0
 
             # Latest test run

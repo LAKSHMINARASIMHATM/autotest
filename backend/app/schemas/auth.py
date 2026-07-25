@@ -1,6 +1,6 @@
 """Authentication request/response schemas."""
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.core.security import Role
 
@@ -43,11 +43,10 @@ class TokenResponse(BaseModel):
 class UserResponse(BaseModel):
     """Public user information."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     email: str
     full_name: str
     role: Role
     is_active: bool
-
-    class Config:
-        from_attributes = True
