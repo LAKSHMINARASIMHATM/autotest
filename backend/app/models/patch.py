@@ -12,6 +12,7 @@ class PatchStrategy(StrEnum):
     """Strategy used to generate the patch."""
 
     MINIMAL = "minimal"
+    DEFENSIVE = "defensive"
     SAFE = "safe"
     REFACTOR = "refactor"
     TEMPLATE_BASED = "template_based"
@@ -33,7 +34,8 @@ class Patch(BaseDocument):
     """
 
     project_id: PydanticObjectId
-    bug_report_id: PydanticObjectId
+    project_name: str = ""
+    bug_report_id: PydanticObjectId | None = None
     strategy: PatchStrategy
     status: PatchStatus = Field(default=PatchStatus.CANDIDATE)
     diff: str = Field(description="Unified diff of the patch")
@@ -41,6 +43,7 @@ class Patch(BaseDocument):
     description: str = ""
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     rejection_reason: str = ""
+    commit_sha: str = ""
 
     class Settings:
         name = "patches"

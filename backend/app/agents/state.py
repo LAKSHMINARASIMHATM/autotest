@@ -185,6 +185,50 @@ class PatchValidation(BaseModel):
     reason: str = ""
 
 
+class CodeUnderstanding(BaseModel):
+    """AST symbol table and call graph built by the Code Understanding agent."""
+
+    symbol_table: dict[str, Any] = Field(default_factory=dict)   # {name: {type, file, line, ...}}
+    call_graph_edges: list[dict[str, str]] = Field(default_factory=list)  # [{caller, callee, file}]
+    cfg_summary: list[dict[str, Any]] = Field(default_factory=list)       # [{function, branches, loops}]
+    total_symbols: int = 0
+    total_call_edges: int = 0
+
+
+class CoverageReport(BaseModel):
+    """Line/branch coverage report produced by the Coverage Analyst agent."""
+
+    line_coverage_pct: float = 0.0
+    branch_coverage_pct: float = 0.0
+    files: list[dict[str, Any]] = Field(default_factory=list)   # [{filename, line_rate, missing_lines}]
+    uncovered_lines: list[dict[str, Any]] = Field(default_factory=list)  # [{file, line_numbers}]
+    meets_threshold: bool = False
+    threshold_pct: float = 70.0
+
+
+class RegressionReport(BaseModel):
+    """Result of a full regression sweep after a patch is applied."""
+
+    ok: bool = False
+    passed: int = 0
+    failed: int = 0
+    delta: int = 0          # passed - baseline_passed
+    message: str = ""
+    logs: str = ""
+
+
+class XAIReport(BaseModel):
+    """Synthesized explainability audit report for a complete pipeline run."""
+
+    session_id: str = ""
+    total_agents: int = 0
+    agent_decisions: list[dict[str, Any]] = Field(default_factory=list)
+    pipeline_confidence: float = 0.0
+    key_decisions: list[str] = Field(default_factory=list)
+    risk_factors: list[str] = Field(default_factory=list)
+    audit_summary: str = ""
+
+
 class Explanation(BaseModel):
     """XAI explanation for any agent decision."""
 
@@ -254,6 +298,7 @@ class AgentState(TypedDict, total=False):
     # Phase outputs
     project_context: ProjectContext
     requirements: Annotated[list[Requirement], _merge_lists]
+    code_understanding: CodeUnderstanding                              # Agent 3
     architecture: ArchitectureGraph
     retrieved_context: Annotated[list[RetrievedDoc], _merge_lists]
     kg_context: Annotated[list[KGTriple], _merge_lists]
@@ -261,10 +306,13 @@ class AgentState(TypedDict, total=False):
     generated_tests: Annotated[list[GeneratedTest], _merge_lists]
     verification_result: VerificationResult
     execution_result: ExecutionResult
+    coverage_report: CoverageReport                                    # Agent 8
     bug_localizations: Annotated[list[BugLocalization], _merge_lists]
     root_causes: Annotated[list[RootCause], _merge_lists]
     patches: Annotated[list[Patch], _merge_lists]
     patch_validations: Annotated[list[PatchValidation], _merge_lists]
+    regression_report: RegressionReport                                # Agent 13
+    xai_report: XAIReport                                             # Agent 14
 
     # XAI + Audit
     explanations: Annotated[list[Explanation], _merge_lists]

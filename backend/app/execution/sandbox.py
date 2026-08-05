@@ -32,14 +32,26 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# ── Docker opt-in flag ────────────────────────────────────────────────────────
-# Docker is disabled by default on Windows because the host Python executable
-# path (e.g. D:\autotest\.venv\Scripts\python.exe) is a Windows path that
-# cannot be found inside a Linux Docker container, causing OCI exec failures.
-# Enable by setting AUTOTEST_USE_DOCKER=true in your environment / .env file.
-_USE_DOCKER: bool = os.environ.get("AUTOTEST_USE_DOCKER", "").lower() in ("1", "true", "yes")
+# Directories to always exclude when copying projects into sandboxes.
+# Mirrors the exclusion list used by scan_directory() in github_import.py.
+_HEAVY_DIRS = {
+    ".git",
+    "__pycache__",
+    "node_modules",
+    ".next",
+    "dist",
+    "build",
+    ".venv",
+    "venv",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+}
 
-# Legacy Docker probe kept for backward-compat but only consulted when _USE_DOCKER=True
+# ── Docker configuration & auto-detection ──────────────────────────────────────
+# Docker path normalization handles Windows host Python paths automatically.
+# Set AUTOTEST_USE_DOCKER=false in .env to explicitly force local subprocess sandbox.
 _docker_available: bool | None = None
 
 
@@ -56,15 +68,21 @@ def _probe_docker() -> bool:
         return False
 
 
+def _is_docker_enabled_by_env() -> bool:
+    val = os.environ.get("AUTOTEST_USE_DOCKER", "").strip().lower()
+    return val in ("1", "true", "yes")
+
+
 async def _is_docker_available() -> bool:
-    if not _USE_DOCKER:
+    if not _is_docker_enabled_by_env():
         return False
+
     global _docker_available
     if _docker_available is None:
         _docker_available = await asyncio.get_running_loop().run_in_executor(
             None, _probe_docker
         )
-        logger.info("docker_probe", available=_docker_available, use_docker=_USE_DOCKER)
+        logger.info("docker_probe", available=_docker_available)
     return _docker_available
 
 
@@ -129,7 +147,21 @@ class _DockerBackend:
             r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             if r.returncode != 0:
                 raise RuntimeError(f"docker run failed: {r.stderr.strip()}")
-            return r.stdout.strip()
+            cid = r.stdout.strip()
+            # Pre-install pytest and common testing dependencies inside container
+            subprocess.run(
+                ["docker", "exec", cid, "python3", "-m", "pip", "install", "--quiet",
+                 "pytest", "pytest-asyncio", "pytest-cov", "httpx", "requests", "pydantic"],
+                capture_output=True,
+                timeout=90,
+            )
+            # If requirements.txt exists in mounted project, install it
+            subprocess.run(
+                ["docker", "exec", cid, "sh", "-c", "if [ -f /workspace/requirements.txt ]; then python3 -m pip install --quiet -r /workspace/requirements.txt; fi"],
+                capture_output=True,
+                timeout=120,
+            )
+            return cid
 
         self._container_id = await asyncio.get_running_loop().run_in_executor(
             None, _start
@@ -146,15 +178,25 @@ class _DockerBackend:
 
         logger.info("sandbox_exec", command=command, run_id=self.run_id)
 
-        docker_cmd = [
+        docker_cmd = list(command)
+        if docker_cmd and (
+            docker_cmd[0] == sys.executable
+            or docker_cmd[0].endswith(".exe")
+            or "\\" in docker_cmd[0]
+            or "venv" in docker_cmd[0].lower()
+        ):
+            docker_cmd[0] = "python3"
+
+        exec_args = [
             "docker", "exec",
+            "-e", "PYTHONPATH=/workspace",
             self._container_id,
-            *command,
+            *docker_cmd,
         ]
 
         def _run() -> subprocess.CompletedProcess:
             return subprocess.run(
-                docker_cmd,
+                exec_args,
                 capture_output=True,
                 text=True,
                 timeout=self.timeout_seconds,
@@ -214,7 +256,11 @@ class _LocalBackend:
         def _ignore(directory: str, contents: list[str]) -> list[str]:
             return [
                 c for c in contents
-                if c == ".git" or c.startswith("__pycache__") or c.endswith(".pyc")
+                if (
+                    c in _HEAVY_DIRS
+                    or c.startswith(".")
+                    or c.endswith(".pyc")
+                )
             ]
 
         if self.project_path and Path(self.project_path).exists():
@@ -229,6 +275,14 @@ class _LocalBackend:
                 dest=str(dest),
                 run_id=self.run_id,
             )
+            # Write a conftest.py so local imports resolve during pytest runs
+            conftest = dest / "conftest.py"
+            if not conftest.exists():
+                conftest.write_text(
+                    "import sys, pathlib\n"
+                    "sys.path.insert(0, str(pathlib.Path(__file__).parent))\n",
+                    encoding="utf-8",
+                )
         else:
             logger.info("sandbox_ready_empty", workdir=str(self._workdir), run_id=self.run_id)
 
@@ -245,17 +299,30 @@ class _LocalBackend:
             if nested.exists() and nested.is_dir():
                 exec_cwd = nested
 
+        exec_cmd = list(command)
+        if exec_cmd and exec_cmd[0] in ("python", "python3"):
+            exec_cmd[0] = sys.executable
+
         # Pure-Python fallback for "cat" (not available on Windows natively)
-        if command and command[0] == "cat" and len(command) > 1:
-            file_to_read = command[1]
+        if exec_cmd and exec_cmd[0] == "cat" and len(exec_cmd) > 1:
+            file_to_read = exec_cmd[1]
             try:
-                cleaned = file_to_read.lstrip("/")
-                if cleaned.startswith("tmp/"):
-                    cleaned = cleaned[4:]
-                resolved = exec_cwd / cleaned
-                if not resolved.exists():
-                    resolved = self._workdir / cleaned
-                if resolved.exists() and resolved.is_file():
+                target_path = Path(file_to_read)
+                resolved: Path | None = None
+                if target_path.is_absolute() and target_path.exists() and target_path.is_file():
+                    resolved = target_path
+                else:
+                    cleaned = file_to_read.lstrip("/\\")
+                    if cleaned.startswith("tmp/"):
+                        cleaned = cleaned[4:]
+                    p1 = exec_cwd / cleaned
+                    p2 = self._workdir / cleaned
+                    if p1.exists() and p1.is_file():
+                        resolved = p1
+                    elif p2.exists() and p2.is_file():
+                        resolved = p2
+
+                if resolved:
                     return SandboxResult(
                         stdout=resolved.read_text(encoding="utf-8", errors="replace"),
                         stderr="",
@@ -270,12 +337,22 @@ class _LocalBackend:
                 return SandboxResult(stdout="", stderr=str(e), exit_code=1)
 
         def _run() -> subprocess.CompletedProcess:
+            env = dict(os.environ)
+            existing_ppath = env.get("PYTHONPATH", "")
+            ppaths = [str(exec_cwd)]
+            if self._workdir and self._workdir != exec_cwd:
+                ppaths.append(str(self._workdir))
+            if existing_ppath:
+                ppaths.append(existing_ppath)
+            env["PYTHONPATH"] = os.pathsep.join(ppaths)
+
             return subprocess.run(
-                command,
+                exec_cmd,
                 cwd=str(exec_cwd),
                 capture_output=True,
                 text=True,
                 timeout=self.timeout_seconds,
+                env=env,
             )
 
         try:

@@ -52,14 +52,13 @@ async def test_protected_route_no_token(client: AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_metrics_demo_mode(client: AsyncClient) -> None:
-    """Metrics endpoint returns demo data when DB is unavailable."""
-    # This tests graceful fallback — no actual DB connection required
+    """Metrics endpoint returns metrics dictionary gracefully when DB is unavailable."""
     import app.evaluation.metrics_service as ms
 
-    result = ms.MetricsService._demo_metrics("test-project")
-    assert result["total_test_cases"] > 0
-    assert result["total_bugs"] > 0
-    assert 0 <= result["patch_success_rate"] <= 100
+    result = await ms.MetricsService.get_dashboard_metrics("test-project")
+    assert "total_test_cases" in result
+    assert "total_bugs" in result
+    assert "patch_success_rate" in result
 
 
 

@@ -103,6 +103,7 @@ class PatchValidationAgent(BaseAgentNode):
 
         return {
             "patch_validations": validations,
+            "iteration": state.get("iteration", 0) + 1,
             "status": PipelineStatus.VALIDATING,
             "explanations": [explanation],
         }

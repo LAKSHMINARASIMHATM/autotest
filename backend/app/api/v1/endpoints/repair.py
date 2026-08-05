@@ -42,6 +42,7 @@ class PatchResponse(BaseModel):
     diff: str
     description: str
     confidence: float
+    project_name: str = ""
 
 
 class ValidatePatchRequest(BaseModel):
@@ -86,6 +87,7 @@ async def approve_patch(
     """Approve a patch candidate, apply it to project source code, commit to git, and update DB."""
     try:
         import os
+        import re
         import git
         from pathlib import Path
         from beanie import PydanticObjectId
@@ -106,52 +108,143 @@ async def approve_patch(
         # Determine target project directory
         workdir_path = None
         project = await Project.get(patch.project_id)
-        if project and project.local_path and Path(project.local_path).exists():
-            workdir_path = Path(project.local_path)
-        else:
-            # Fallback to current working directory root if local_path is unassigned
-            workdir_path = Path.cwd()
+
+        if project and project.local_path and Path(project.local_path).exists() and Path(project.local_path).is_dir():
+            target_p = Path(project.local_path)
+            if any(target_p.iterdir()):
+                workdir_path = target_p
+
+        if not workdir_path:
+            raise HTTPException(
+                status_code=400,
+                detail="Target project directory not found. Cannot apply patch without a valid target project path."
+            )
+
+        workdir_path = workdir_path.resolve()
 
         # 1. Apply patch diff to codebase
-        patch_ok, patch_err = _apply_unified_diff(patch.diff, workdir_path)
+        patch_ok, patch_err = _apply_unified_diff(patch.diff, workdir_path, target_file_hint=patch.file_path)
         if not patch_ok:
-            logger.error("approve_patch_apply_failed", patch_id=patch_id, error=patch_err)
+            logger.warning("approve_patch_apply_warning", patch_id=patch_id, error=patch_err)
+            raise HTTPException(status_code=400, detail=f"Cannot apply patch: {patch_err}")
 
         # 2. Git Stage, Commit, and Push
         commit_sha = None
         commit_msg = f"fix(autotest): apply patch [{patch.strategy}] for {patch.file_path or 'bug'}"
         try:
-            target_dir = workdir_path.resolve()
-            if not (target_dir / ".git").exists():
-                git.Repo.init(target_dir)
+            target_dir = workdir_path
+            target_dir_str = str(target_dir)
 
-            repo = git.Repo(target_dir)
-            repo.git.add(A=True)
-            if repo.is_dirty(untracked_files=True):
-                commit_obj = repo.index.commit(commit_msg)
+            # Open existing repo or initialize a fresh one — never blindly re-init
+            try:
+                repo = git.Repo(target_dir_str)
+            except git.InvalidGitRepositoryError:
+                logger.info("git_repo_not_found_initializing", patch_id=patch_id, path=target_dir_str)
+                repo = git.Repo.init(target_dir_str)
+            except Exception:
+                repo = git.Repo.init(target_dir_str)
+
+            os.environ["GIT_AUTHOR_NAME"] = os.environ.get("GIT_AUTHOR_NAME", "AutoTest AI")
+            os.environ["GIT_AUTHOR_EMAIL"] = os.environ.get("GIT_AUTHOR_EMAIL", "autotest-ai@local")
+            os.environ["GIT_COMMITTER_NAME"] = os.environ.get("GIT_COMMITTER_NAME", "AutoTest AI")
+            os.environ["GIT_COMMITTER_EMAIL"] = os.environ.get("GIT_COMMITTER_EMAIL", "autotest-ai@local")
+
+            from git import Actor
+            bot_author = Actor("AutoTest AI", "autotest-ai@local")
+
+            # Ensure git origin remote is configured
+            if project and project.repo_url:
+                try:
+                    target_url = project.repo_url
+                    gh_token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+                    if gh_token and "github.com" in target_url and "@github.com" not in target_url:
+                        target_url = re.sub(r"https://", f"https://{gh_token}@", target_url)
+
+                    if "origin" not in [r.name for r in repo.remotes]:
+                        repo.create_remote("origin", target_url)
+                    else:
+                        repo.remotes.origin.set_url(target_url)
+                except Exception as remote_err:
+                    logger.warning("git_remote_config_warning", patch_id=patch_id, error=str(remote_err))
+
+            # Stage ONLY the specific file affected by the patch (never -A on whole repo)
+            staged_file = False
+            if patch.file_path:
+                rel_path = patch.file_path.replace("\\", "/").lstrip("/")
+                target_file = (target_dir / rel_path).resolve()
+                if target_file.exists():
+                    repo.git.add(str(target_file))
+                    staged_file = True
+                else:
+                    basename = Path(patch.file_path).name
+                    matches = [m for m in target_dir.glob(f"**/{basename}") if ".git" not in str(m)]
+                    if matches:
+                        repo.git.add(str(matches[0]))
+                        staged_file = True
+            if not staged_file and patch.file_path:
+                try:
+                    repo.git.add(patch.file_path)
+                except Exception:
+                    pass
+
+            # Commit — is_dirty() is safe on empty repos; avoid diff("HEAD") which throws BadName
+            try:
+                has_changes = repo.is_dirty(index=True, working_tree=False)
+            except Exception:
+                has_changes = staged_file
+
+            if has_changes:
+                commit_obj = repo.index.commit(commit_msg, author=bot_author, committer=bot_author)
                 commit_sha = commit_obj.hexsha[:8]
                 logger.info("git_commit_successful", patch_id=patch_id, commit_sha=commit_sha)
-
-                # Push to remote origin (e.g., GitHub) if origin remote is configured
-                try:
-                    if repo.remotes and "origin" in repo.remotes:
-                        branch_name = project.branch if project and project.branch else "main"
-                        repo.remotes.origin.push(refspec=f"HEAD:{branch_name}")
-                        logger.info("git_push_successful", patch_id=patch_id, branch=branch_name)
-                except Exception as push_err:
-                    logger.warning("git_push_skipped_or_failed", patch_id=patch_id, error=str(push_err))
             else:
                 try:
                     commit_sha = repo.head.commit.hexsha[:8]
                 except Exception:
-                    commit_sha = "HEAD"
+                    commit_sha = "local"
+
+            # Push — fetch+rebase first to preserve all remote files, never force-push
+            if repo.remotes and "origin" in [r.name for r in repo.remotes]:
+                try:
+                    branch_name = project.branch if project and project.branch else "main"
+                    # Fetch remote state
+                    try:
+                        repo.git.fetch("origin", branch_name)
+                        logger.info("git_fetch_successful", patch_id=patch_id, branch=branch_name)
+                    except Exception as fetch_err:
+                        logger.warning("git_fetch_failed", patch_id=patch_id, error=str(fetch_err))
+                    # Rebase onto remote (preserves all remote files)
+                    try:
+                        repo.git.rebase(f"origin/{branch_name}")
+                        logger.info("git_rebase_successful", patch_id=patch_id)
+                    except Exception as rebase_err:
+                        logger.warning("git_rebase_failed", patch_id=patch_id, error=str(rebase_err))
+                        try:
+                            repo.git.rebase("--abort")
+                        except Exception:
+                            pass
+                        try:
+                            repo.git.merge(f"origin/{branch_name}", "--no-edit", "--strategy-option=theirs")
+                        except Exception as merge_err:
+                            logger.warning("git_merge_failed", patch_id=patch_id, error=str(merge_err))
+                    # Push (fast-forward, no force)
+                    try:
+                        repo.git.push("origin", f"HEAD:{branch_name}")
+                        logger.info("git_push_successful", patch_id=patch_id, branch=branch_name)
+                    except Exception as push_err:
+                        logger.warning("git_push_skipped_or_failed", patch_id=patch_id, error=str(push_err))
+                except Exception as push_outer_err:
+                    logger.warning("git_push_skipped_or_failed", patch_id=patch_id, error=str(push_outer_err))
+            else:
+                logger.info("git_push_skipped_no_remote", patch_id=patch_id)
         except Exception as git_err:
             logger.warning("git_commit_failed", patch_id=patch_id, error=str(git_err))
             commit_msg = f"Applied diff to file (Git commit note: {git_err})"
 
-
         # 3. Update DB records
         patch.status = PatchStatus.ACCEPTED
+        if commit_sha:
+            patch.commit_sha = commit_sha
         await patch.save()
 
         if patch.bug_report_id:

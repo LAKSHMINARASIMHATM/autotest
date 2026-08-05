@@ -82,7 +82,7 @@ Respond with JSON:
         project_path = (
             (project_ctx.repo_path if project_ctx else None)
             or state.get("local_path")
-            or os.getcwd()
+            or ""
         )
 
         result: ExecutionResult | None = None
@@ -147,12 +147,16 @@ Respond with JSON:
             # ── 2. Copy project source into workspace ─────────────────────────
             src = Path(project_path)
             if src.exists() and src.is_dir():
+                from app.execution.sandbox import _HEAVY_DIRS as _SANDBOX_HEAVY_DIRS
                 project_dest = workspace / src.name
                 def _copy():
                     shutil.copytree(
                         str(src),
                         str(project_dest),
-                        ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc", "node_modules"),
+                        ignore=lambda d, contents: [
+                            c for c in contents
+                            if c in _SANDBOX_HEAVY_DIRS or c.startswith(".") or c.endswith(".pyc")
+                        ],
                         dirs_exist_ok=False,
                     )
                 await loop.run_in_executor(None, _copy)
@@ -174,6 +178,10 @@ Respond with JSON:
                 )
 
             test_file_paths: list[str] = []
+            src_tests_dir = src / "tests" / "generated" if (src.exists() and src.is_dir()) else None
+            if src_tests_dir:
+                src_tests_dir.mkdir(parents=True, exist_ok=True)
+
             for t in tests:
                 code = (t.code or "").strip()
                 if not code:
@@ -185,6 +193,9 @@ Respond with JSON:
                 file_path = tests_dir / file_name
                 file_path.write_text(code, encoding="utf-8")
                 test_file_paths.append(str(file_path.relative_to(cwd)))
+
+                if src_tests_dir:
+                    (src_tests_dir / file_name).write_text(code, encoding="utf-8")
 
             if not test_file_paths:
                 logger.warning("no_test_files_written", run_id=run_id)
@@ -201,7 +212,7 @@ Respond with JSON:
             def _pip_install():
                 subprocess.run(
                     [sys.executable, "-m", "pip", "install", "--quiet",
-                     "pytest", "pytest-json-report", "pytest-asyncio"],
+                     "pytest", "pytest-json-report", "pytest-asyncio", "pytest-cov"],
                     capture_output=True,
                     timeout=120,
                 )
@@ -209,6 +220,7 @@ Respond with JSON:
 
             # ── 5. Run pytest ─────────────────────────────────────────────────
             report_path = workspace / "report.json"
+            cov_xml_path = workspace / "coverage.xml"
             pytest_cmd = [
                 sys.executable, "-m", "pytest",
                 "--tb=short",
@@ -216,6 +228,10 @@ Respond with JSON:
                 "--json-report",
                 f"--json-report-file={report_path}",
                 "-p", "no:cacheprovider",
+                f"--cov={cwd}",
+                "--cov-branch",
+                f"--cov-report=xml:{cov_xml_path}",
+                "--cov-report=term-missing",
             ] + test_file_paths
 
             def _run_pytest() -> subprocess.CompletedProcess:
@@ -252,16 +268,35 @@ Respond with JSON:
                 )
                 return None
 
+            # ── 6b. Append Cobertura XML to logs so CoverageAnalystAgent can parse it
+            if cov_xml_path.exists():
+                try:
+                    cov_xml = cov_xml_path.read_text(encoding="utf-8")
+                    logs = logs + "\n\n" + cov_xml
+                    logger.info("coverage_xml_appended", run_id=run_id, xml_bytes=len(cov_xml))
+                except Exception as cov_err:
+                    logger.warning("coverage_xml_read_failed", run_id=run_id, error=str(cov_err))
+
+            # Extract coverage percentage from xml if present
+            cov_pct = 0.0
+            if cov_xml_path.exists():
+                try:
+                    import xml.etree.ElementTree as ET
+                    tree = ET.parse(str(cov_xml_path))
+                    cov_pct = float(tree.getroot().get("line-rate", 0)) * 100
+                except Exception:
+                    pass
+
             return ExecutionResult(
                 test_run_id=run_id,
                 total=summary["total"],
                 passed=summary["passed"],
                 failed=summary["failed"],
                 errors=summary["errors"],
-                coverage=0.0,
+                coverage=round(cov_pct, 2),
                 duration_ms=summary["duration_ms"],
                 failures=summary["failures"],
-                logs=logs[:2000],
+                logs=logs[:8000],
             )
 
         except (asyncio.TimeoutError, subprocess.TimeoutExpired):

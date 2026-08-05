@@ -55,6 +55,10 @@ class ProgramRepairAgent(BaseAgentNode):
                 )
 
                 for p in raw_patches:
+                    diff_str = p.get("diff", "")
+                    if "/dev/null" in diff_str or not diff_str.strip():
+                        logger.warning("patch_skipped_deletion", bug_id=loc.id, strategy=p.get("strategy"))
+                        continue
                     all_patches.append(Patch(
                         id=p["id"],
                         bug_id=p["bug_id"],

@@ -733,24 +733,53 @@ async def get_project_patches(
     project_id: str,
     _user_id: str = Depends(get_current_user_id),
 ):
-    """Retrieve all patches for a project."""
+    """Retrieve all patches for a project (or all projects if project_id == 'all')."""
     from beanie import PydanticObjectId
-
     from app.models.patch import Patch
+    from app.models.project import Project
+
+    if project_id == "all":
+        patches = await Patch.find_all().to_list()
+        projects = await Project.find_all().to_list()
+        proj_map = {p.id: p.name for p in projects}
+        return [
+            {
+                "id": str(p.id),
+                "projectId": str(p.project_id),
+                "projectName": getattr(p, "project_name", "") or proj_map.get(p.project_id, "Project"),
+                "bugId": str(p.bug_report_id) if p.bug_report_id else "",
+                "strategy": p.strategy,
+                "status": p.status,
+                "confidence": p.confidence,
+                "file": p.file_path,
+                "diff": p.diff,
+                "commitSha": getattr(p, "commit_sha", "") or "",
+                "timestamp": "Just now",
+            }
+            for p in patches
+        ]
+
     try:
         p_id = PydanticObjectId(project_id)
     except Exception:
         return []
+
+    project = await Project.get(p_id)
+    project_name = project.name if project else ""
+
     patches = await Patch.find(Patch.project_id == p_id).to_list()
     return [
         {
             "id": str(p.id),
-            "bugId": str(p.bug_report_id),
+            "projectId": str(p.project_id),
+            "projectName": getattr(p, "project_name", "") or project_name or "Project",
+            "bugId": str(p.bug_report_id) if p.bug_report_id else "",
             "strategy": p.strategy,
             "status": p.status,
             "confidence": p.confidence,
             "file": p.file_path,
             "diff": p.diff,
+            "commitSha": getattr(p, "commit_sha", "") or "",
             "timestamp": "Just now",
         }
         for p in patches

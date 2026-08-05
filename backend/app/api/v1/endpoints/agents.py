@@ -44,6 +44,7 @@ class PipelineStatusResponse(BaseModel):
     bugs_found: int = 0
     patches_generated: int = 0
     error: str | None = None
+    xai_report: dict | None = None
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -117,10 +118,11 @@ def _get_code_snippet(project_path: str, file_path: str, line_number: int) -> st
     return ""
 
 
-async def _save_bugs(project, bug_localizations: list, root_causes: list = [], patches: list = [], project_path: str = "") -> int:
+async def _save_bugs(project, bug_localizations: list, root_causes: list = [], patches: list = [], project_path: str = "") -> tuple[int, dict[str, Any]]:
     from app.models.bug_report import BugReport, BugSeverity, BugStatus
     from app.models.source_file import SourceFile
     count = 0
+    bug_map = {}
     for b in bug_localizations:
         try:
             # b is a BugLocalization object from agent state
@@ -166,28 +168,58 @@ async def _save_bugs(project, bug_localizations: list, root_causes: list = [], p
                 },
             )
             await bug.insert()
+            bug_map[getattr(b, "id", "")] = bug.id
             count += 1
         except Exception as e:
             logger.warning("save_bug_failed", error=str(e))
-    return count
+    return count, bug_map
 
 
-async def _save_patches(project, patches: list) -> int:
+async def _save_patches(project, patches: list, validations: list = [], bug_map: dict = {}) -> int:
     from app.models.patch import Patch, PatchStrategy
     from app.models.patch import PatchStatus as PS
     count = 0
+    val_map = {getattr(v, "patch_id", ""): v for v in validations}
     for p in patches:
         try:
+            p_id = getattr(p, "id", "")
             strat = getattr(p, "strategy", "minimal")
+            val = val_map.get(p_id)
+            
+            # In Human-In-The-Loop (HITL) mode, candidate patches are kept as CANDIDATE
+            # so human operators can inspect the diffs and manually approve or reject them.
+            status = PS.CANDIDATE
+            rejection_reason = ""
+            if val:
+                verdict = getattr(val, "verdict", "pending")
+                rejection_reason = getattr(val, "reason", "")
+                if verdict == "accepted":
+                    status = PS.ACCEPTED
+                elif verdict == "validating":
+                    status = PS.VALIDATING
+                else:
+                    # Keep as CANDIDATE with automated validator feedback for HITL review
+                    status = PS.CANDIDATE
+
+            # Get enum value safely
+            try:
+                patch_strat = PatchStrategy(str(strat).lower())
+            except Exception:
+                patch_strat = PatchStrategy.MINIMAL
+
+            bug_id = bug_map.get(getattr(p, "bug_id", ""))
+
             patch = Patch(
                 project_id=project.id,
-                bug_report_id=None,
-                strategy=getattr(PatchStrategy, str(strat).upper(), PatchStrategy.MINIMAL),
-                status=PS.CANDIDATE,
+                project_name=getattr(project, "name", "") or "",
+                bug_report_id=bug_id,
+                strategy=patch_strat,
+                status=status,
                 diff=getattr(p, "diff", ""),
                 file_path=getattr(p, "file_path", "unknown"),
                 description=getattr(p, "description", "AI generated patch"),
                 confidence=getattr(p, "confidence", 0.7),
+                rejection_reason=rejection_reason,
             )
             await patch.insert()
             count += 1
@@ -302,25 +334,62 @@ async def _run_full_pipeline(project_id: str, session_id: str, max_iterations: i
                         _sessions[session_id]["agents_run"].append(agent_name)
                         logger.info("agent_completed", session_id=session_id, agent=agent_name)
 
-        # ── Persist results ───────────────────────────────────────────────────
-        tests_saved   = await _save_test_cases(project, final_state.get("generated_tests", []))
-        bugs_saved    = await _save_bugs(
+        # ── Extract XAI report from Explainability agent output ────────────────
+        xai_report_raw = final_state.get("xai_report")
+        xai_report_dict: dict | None = None
+        if xai_report_raw is not None:
+            try:
+                xai_report_dict = (
+                    xai_report_raw.dict()
+                    if hasattr(xai_report_raw, "dict")
+                    else xai_report_raw.model_dump()
+                    if hasattr(xai_report_raw, "model_dump")
+                    else dict(xai_report_raw)
+                )
+            except Exception:
+                xai_report_dict = None
+
+        # ── Serialize explanations list ─────────────────────────────────────────
+        explanations_raw = final_state.get("explanations", [])
+        explanations_list: list = []
+        for exp in explanations_raw:
+            try:
+                explanations_list.append(
+                    exp.dict() if hasattr(exp, "dict") else
+                    exp.model_dump() if hasattr(exp, "model_dump") else
+                    dict(exp)
+                )
+            except Exception:
+                pass
+
+        # ── Persist pipeline outputs to MongoDB ────────────────────────────────
+        tests_saved = await _save_test_cases(project, final_state.get("generated_tests", []))
+        bugs_saved, bug_map = await _save_bugs(
             project,
             final_state.get("bug_localizations", []),
             final_state.get("root_causes", []),
             final_state.get("patches", []),
-            clone_path or project.local_path or ""
+            project_path=clone_path or project.local_path or "",
         )
-        patches_saved = await _save_patches(project, final_state.get("patches", []))
+        patches_saved = await _save_patches(
+            project,
+            final_state.get("patches", []),
+            validations=final_state.get("patch_validations", []),
+            bug_map=bug_map,
+        )
 
-        project.total_test_cases      = (project.total_test_cases or 0) + tests_saved
-        project.total_bugs_found      = (project.total_bugs_found or 0) + bugs_saved
+        # Update project aggregate counters
+        project.total_test_cases = (project.total_test_cases or 0) + tests_saved
+        project.total_bugs_found = (project.total_bugs_found or 0) + bugs_saved
         project.total_patches_applied = (project.total_patches_applied or 0) + patches_saved
         await project.save()
 
-        # Use the agent_trace for authoritative agents_run, fall back to streaming list
-        agents_run = [a.agent if hasattr(a, 'agent') else a.get('agent', '') for a in final_state.get("agent_trace", [])]
-        agents_run = [a for a in agents_run if a]  # strip empty strings
+        # Build agents_run list from agent_trace
+        agents_run = [
+            a.agent if hasattr(a, "agent") else a.get("agent", "")
+            for a in final_state.get("agent_trace", [])
+        ]
+        agents_run = [a for a in agents_run if a]
         if not agents_run:
             agents_run = _sessions[session_id]["agents_run"]
 
@@ -330,6 +399,8 @@ async def _run_full_pipeline(project_id: str, session_id: str, max_iterations: i
             "test_cases_generated": tests_saved,
             "bugs_found": bugs_saved,
             "patches_generated": patches_saved,
+            "xai_report": xai_report_dict,
+            "explanations": explanations_list,
         })
         logger.info("full_pipeline_complete", session_id=session_id,
                     tests=tests_saved, bugs=bugs_saved, patches=patches_saved)
@@ -526,8 +597,8 @@ async def generate_tests(
     "/trigger",
     response_model=TriggerPipelineResponse,
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Run full 13-agent pipeline with Groq",
-    description="Runs the full agent pipeline using Groq llama-3.3-70b. Tests, bugs, and patches are saved to MongoDB.",
+    summary="Run full 14-agent pipeline with Groq",
+    description="Runs the full 14-agent pipeline using Groq llama-3.3-70b. Tests, bugs, patches, and XAI audit reports are saved to MongoDB.",
 )
 async def trigger_agent_pipeline(
     payload: TriggerPipelineRequest,
@@ -568,3 +639,37 @@ async def get_pipeline_status(
 )
 async def list_sessions(_user_id: str = Depends(get_current_user_id)) -> Any:
     return [{"session_id": sid, **info} for sid, info in _sessions.items()]
+
+
+@router.get(
+    "/xai/{session_id}",
+    summary="Get XAI audit report for a completed pipeline session",
+)
+async def get_xai_report(
+    session_id: str,
+    _user_id: str = Depends(get_current_user_id),
+) -> Any:
+    """Returns the XAI audit report produced by the Explainability agent.
+
+    Available only after the pipeline has completed (status=complete).
+    Returns the structured XAIReport with agent_decisions, risk_factors,
+    pipeline_confidence, key_decisions, and audit_summary.
+    """
+    session = _sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
+    if session.get("status") not in ("complete",):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Pipeline still running or errored (status={session.get('status')}). XAI report not yet available.",
+        )
+    xai = session.get("xai_report")
+    explanations = session.get("explanations", [])
+    return {
+        "session_id": session_id,
+        "project_id": session.get("project_id", ""),
+        "status": session.get("status"),
+        "xai_report": xai,
+        "explanations": explanations,
+        "agents_run": session.get("agents_run", []),
+    }

@@ -49,6 +49,7 @@ export interface BugEntry {
 /** Patch entry. */
 export interface PatchEntry {
   id: string;
+  projectName?: string;
   bugId: string;
   strategy: string;
   status: "candidate" | "accepted" | "rejected";

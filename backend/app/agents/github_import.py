@@ -213,6 +213,9 @@ def scan_directory(dir_path: str, repo_url: str = "", branch: str = "") -> RepoS
 async def clone_and_scan(repo_url: str, branch: str | None = None) -> RepoSummary:
     """Clone a GitHub repo (or download a ZIP url) to a temp dir and extract its code structure."""
     # Normalise URL
+    repo_url = repo_url.strip() if repo_url else ""
+    if branch:
+        branch = branch.strip()
     if not repo_url.startswith("http"):
         repo_url = "https://" + repo_url
 

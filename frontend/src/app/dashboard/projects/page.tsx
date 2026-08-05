@@ -268,8 +268,8 @@ export default function ProjectsPage() {
                       {session.status === "running"
                         ? `⚡ Pipeline running… ${session.agents_run.length} agents done`
                         : session.status === "complete"
-                        ? `✅ ${session.test_cases_generated} tests · ${session.bugs_found} bugs · ${session.patches_generated} patches`
-                        : session.status}
+                          ? `✅ ${session.test_cases_generated} tests · ${session.bugs_found} bugs · ${session.patches_generated} patches`
+                          : session.status}
                     </div>
                   )}
 
@@ -360,11 +360,10 @@ export default function ProjectsPage() {
                     <button
                       type="button"
                       onClick={() => setActiveTab("link")}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
-                        activeTab === "link"
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === "link"
                           ? "bg-[#3B82F6] text-white shadow-lg shadow-[#3B82F6]/20"
                           : "text-[#9CA3AF] hover:text-white"
-                      }`}
+                        }`}
                     >
                       <LinkIcon className="w-3.5 h-3.5" />
                       Git / ZIP Link
@@ -372,11 +371,10 @@ export default function ProjectsPage() {
                     <button
                       type="button"
                       onClick={() => setActiveTab("file")}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
-                        activeTab === "file"
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === "file"
                           ? "bg-[#3B82F6] text-white shadow-lg shadow-[#3B82F6]/20"
                           : "text-[#9CA3AF] hover:text-white"
-                      }`}
+                        }`}
                     >
                       <Upload className="w-3.5 h-3.5" />
                       ZIP File Upload

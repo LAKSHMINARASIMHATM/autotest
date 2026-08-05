@@ -1,0 +1,41 @@
+# Python virtual environment — rebuilt inside the image
+.venv/
+venv/
+env/
+
+# Byte-compiled / cached
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Test / coverage artefacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Dev/scratch files — not needed in the image
+scratch_*.py
+simple_test.py
+test_clear_and_index.py
+test_graph_query.py
+test_neo4j.py
+
+# Git
+.git/
+.gitignore
+
+# Temp autotest execution dirs written back by the pipeline
+autotest_*/
+tests/generated/
+
+# Secrets — loaded from env_file at runtime, never baked in
+.env
+.env.*

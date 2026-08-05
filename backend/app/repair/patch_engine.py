@@ -17,9 +17,7 @@ from typing import Any
 from uuid import uuid4
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_groq import ChatGroq
 
-from app.core.config import get_settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -40,24 +38,23 @@ Rules:
 1. Output ONLY a valid unified diff (--- / +++ / @@ lines).
 2. Do NOT include markdown fences.
 3. The patch must compile and make the failing test pass.
-4. Minimal diffs preferred — do not reformat unrelated code.
-5. Add brief inline comments where the fix is non-obvious.
+4. Minimal diffs preferred — do NOT reformat or rewrite unrelated code.
+5. NEVER delete files or target /dev/null in diffs.
+6. NEVER wipe out file contents or delete entire classes/functions unless instructed. Only modify the specific buggy lines.
+7. Add brief inline comments where the fix is non-obvious.
 
 Strategy definitions:
   minimal   — Smallest possible code change.
   defensive — Add null/range checks, guard clauses.
-  refactor  — Rewrite the method cleanly.
+  refactor  — Rewrite ONLY the buggy method cleanly.
   boundary  — Add input boundary / sanitization validation.
 """
 
 
-def _build_llm() -> ChatGroq:
-    settings = get_settings()
-    return ChatGroq(
-        model=settings.DEFAULT_LLM_MODEL,
-        temperature=0.1,
-        api_key=settings.GROQ_API_KEY,
-    )
+def _build_llm():
+    """Return the best available rotating LLM (Groq with key rotation → HuggingFace fallback)."""
+    from app.agents.llm_factory import get_best_llm
+    return get_best_llm()
 
 
 class PatchEngine:

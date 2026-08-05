@@ -169,12 +169,15 @@ export async function getProjectBugs(projectId: string): Promise<BugItem[]> {
 
 export interface PatchItem {
   id: string;
+  projectId?: string;
+  projectName?: string;
   bugId: string;
   strategy: string;
   status: string;
   confidence: number;
   file: string;
   diff: string;
+  commitSha?: string;
   timestamp: string;
 }
 
@@ -283,6 +286,43 @@ export interface PipelineStatusResponse {
   test_cases_generated: number;
   bugs_found: number;
   patches_generated: number;
+  xai_report?: XAIReport | null;
+}
+
+// ─── XAI / Explainability ─────────────────────────────────────────────────────
+
+export interface AgentDecision {
+  agent: string;
+  decision: string;
+  reason: string;
+  confidence: number;
+  supporting_evidence: string[];
+  alternatives_considered: string[];
+  retrieved_context_count: number;
+}
+
+export interface XAIReport {
+  session_id: string;
+  total_agents: number;
+  agent_decisions: AgentDecision[];
+  pipeline_confidence: number;
+  key_decisions: string[];
+  risk_factors: string[];
+  audit_summary: string;
+}
+
+export interface XAISessionResponse {
+  session_id: string;
+  project_id: string;
+  status: string;
+  xai_report: XAIReport | null;
+  explanations: AgentDecision[];
+  agents_run: string[];
+}
+
+/** Fetch the XAI audit report from the Explainability agent for a completed session. */
+export async function getXAIReport(sessionId: string): Promise<XAISessionResponse> {
+  return request<XAISessionResponse>(`/agents/xai/${sessionId}`);
 }
 
 export async function triggerAgentPipeline(projectId: string, maxIterations = 2) {
@@ -307,6 +347,8 @@ export async function getPipelineStatus(sessionId: string): Promise<PipelineStat
 export async function listPipelineSessions(): Promise<PipelineStatusResponse[]> {
   return request<PipelineStatusResponse[]>("/agents/sessions");
 }
+
+
 
 export interface ExecuteTestsResponse {
   run_id: string;

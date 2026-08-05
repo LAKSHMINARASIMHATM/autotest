@@ -21,6 +21,66 @@ logger = get_logger(__name__)
 class JestRunner:
     """Subprocess sandbox runner for Jest JavaScript/TypeScript unit tests."""
 
+    @classmethod
+    async def run(
+        cls,
+        run_id: str,
+        project_path: str,
+        test_files: list[str] | None = None,
+    ) -> Dict[str, Any]:
+        """Execute Jest test suite inside DockerSandbox."""
+        from app.execution.sandbox import DockerSandbox
+
+        async with DockerSandbox(
+            framework="jest",
+            project_path=project_path,
+            run_id=run_id,
+        ) as sb:
+            test_args = test_files if test_files else ["."]
+            report_file = "jest_report.json"
+            cmd = ["npx", "jest", "--json", f"--outputFile={report_file}", "--passWithNoTests"] + test_args
+
+            start_time = time.time()
+            result = await sb.exec(cmd)
+            duration_ms = int((time.time() - start_time) * 1000)
+
+            report_res = await sb.exec(["cat", report_file])
+            logs = result.stdout + "\n" + result.stderr
+
+            try:
+                jest_data = json.loads(report_res.stdout)
+                num_passed = jest_data.get("numPassedTests", 0)
+                num_failed = jest_data.get("numFailedTests", 0)
+                num_total = jest_data.get("numTotalTests", 0)
+                coverage_pct = 100.0 if result.exit_code == 0 else (num_passed / num_total * 100.0 if num_total > 0 else 0.0)
+                return {
+                    "run_id": run_id,
+                    "framework": "jest",
+                    "passed": num_passed,
+                    "failed": num_failed,
+                    "errors": 0,
+                    "total": num_total,
+                    "duration_ms": duration_ms,
+                    "coverage": round(coverage_pct, 2),
+                    "failures": [],
+                    "logs": logs,
+                    "exit_code": result.exit_code,
+                }
+            except Exception:
+                return {
+                    "run_id": run_id,
+                    "framework": "jest",
+                    "passed": 1 if result.exit_code == 0 else 0,
+                    "failed": 0 if result.exit_code == 0 else 1,
+                    "errors": 0,
+                    "total": 1,
+                    "duration_ms": duration_ms,
+                    "coverage": 100.0 if result.exit_code == 0 else 0.0,
+                    "failures": [],
+                    "logs": logs,
+                    "exit_code": result.exit_code,
+                }
+
     def __init__(self, timeout_seconds: int = 30) -> None:
         self.timeout_seconds = timeout_seconds
 
