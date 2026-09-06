@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, Save, CheckCircle2, RefreshCw } from "lucide-react";
+import { IconSettings, IconSave, IconCheckCircle, IconRefreshCw } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 
@@ -28,10 +28,10 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight">
+          <h1 className="text-[28px] font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
             <span className="gradient-text">Workspace</span> Settings
           </h1>
-          <p className="text-sm text-[#6B7280] mt-1">
+          <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
             Configure third-party LLM providers, database URLs, and sandbox execution parameters.
           </p>
         </div>
@@ -40,24 +40,26 @@ export default function SettingsPage() {
       <form onSubmit={saveSettings} className="space-y-6">
         {/* AI Providers */}
         <GlassCard className="p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-[#F9FAFB] border-b border-[rgba(255,255,255,0.05)] pb-2">AI Providers</h3>
+          <h3 className="text-sm font-semibold border-b border-[var(--color-border)] pb-2" style={{ color: "var(--color-text-primary)" }}>AI Providers</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#9CA3AF]">OpenAI API Key</label>
+              <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>OpenAI API Key</label>
               <input
                 type="password"
                 value={openaiKey}
                 onChange={(e) => setOpenaiKey(e.target.value)}
-                className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3B82F6]"
+                className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-brown-primary)]"
+                style={{ color: "var(--color-text-primary)" }}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#9CA3AF]">Anthropic API Key</label>
+              <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Anthropic API Key</label>
               <input
                 type="password"
                 value={anthropicKey}
                 onChange={(e) => setAnthropicKey(e.target.value)}
-                className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3B82F6]"
+                className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-brown-primary)]"
+                style={{ color: "var(--color-text-primary)" }}
               />
             </div>
           </div>
@@ -65,15 +67,16 @@ export default function SettingsPage() {
 
         {/* Database layer */}
         <GlassCard className="p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-[#F9FAFB] border-b border-[rgba(255,255,255,0.05)] pb-2">Knowledge Layer</h3>
+          <h3 className="text-sm font-semibold border-b border-[var(--color-border)] pb-2" style={{ color: "var(--color-text-primary)" }}>Knowledge Layer</h3>
           <div className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#9CA3AF]">Neo4j Connection URI</label>
+              <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Neo4j Connection URI</label>
               <input
                 type="text"
                 value={neo4jUri}
                 onChange={(e) => setNeo4jUri(e.target.value)}
-                className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3B82F6] font-mono"
+                className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-brown-primary)] font-mono"
+                style={{ color: "var(--color-text-primary)" }}
               />
             </div>
           </div>
@@ -81,15 +84,16 @@ export default function SettingsPage() {
 
         {/* Docker sandbox timeout */}
         <GlassCard className="p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-[#F9FAFB] border-b border-[rgba(255,255,255,0.05)] pb-2">Execution Sandbox</h3>
+          <h3 className="text-sm font-semibold border-b border-[var(--color-border)] pb-2" style={{ color: "var(--color-text-primary)" }}>Execution Sandbox</h3>
           <div className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#9CA3AF]">Sandbox Execution Timeout (seconds)</label>
+              <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Sandbox Execution Timeout (seconds)</label>
               <input
                 type="number"
                 value={dockerTimeout}
                 onChange={(e) => setDockerTimeout(Number(e.target.value))}
-                className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3B82F6]"
+                className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-brown-primary)]"
+                style={{ color: "var(--color-text-primary)" }}
               />
             </div>
           </div>
@@ -97,13 +101,13 @@ export default function SettingsPage() {
 
         {/* Human-in-the-Loop (HITL) Safety Threshold */}
         <GlassCard className="p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-[#F9FAFB] border-b border-[rgba(255,255,255,0.05)] pb-2">
+          <h3 className="text-sm font-semibold border-b border-[var(--color-border)] pb-2" style={{ color: "var(--color-text-primary)" }}>
             Human-in-the-Loop (HITL) Safety Threshold
           </h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center text-xs font-semibold">
-              <span className="text-[#9CA3AF]">Patch Confidence Trigger Threshold</span>
-              <span className="text-[#8B5CF6] font-mono text-sm">{dockerTimeout > 100 ? 70 : 75}%</span>
+              <span style={{ color: "var(--color-text-muted)" }}>Patch Confidence Trigger Threshold</span>
+              <span className="font-mono text-sm" style={{ color: "var(--color-brown-primary)" }}>{dockerTimeout > 100 ? 70 : 75}%</span>
             </div>
             <input
               type="range"
@@ -111,9 +115,9 @@ export default function SettingsPage() {
               max={95}
               step={5}
               defaultValue={70}
-              className="w-full h-2 bg-[rgba(255,255,255,0.08)] rounded-lg appearance-none cursor-pointer accent-[#8B5CF6]"
+              className="w-full h-2 bg-[var(--color-border)] rounded-lg appearance-none cursor-pointer accent-[var(--color-brown-primary)]"
             />
-            <p className="text-[11px] text-[#6B7280]">
+            <p className="text-[11px]" style={{ color: "var(--color-text-muted)" }}>
               Program patches with confidence score below this threshold automatically pause execution and trigger a Human-in-the-Loop (HITL) review modal.
             </p>
           </div>
@@ -123,11 +127,11 @@ export default function SettingsPage() {
         <div className="flex justify-end gap-3">
           <Button type="submit" disabled={isSaving} className="gap-1.5 font-semibold text-xs py-2 h-9 px-4">
             {isSaving ? (
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              <IconRefreshCw size={14} className="animate-spin" />
             ) : saved ? (
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <IconCheckCircle size={14} className="text-[var(--color-success)]" />
             ) : (
-              <Save className="w-3.5 h-3.5" />
+              <IconSave size={14} />
             )}
             {isSaving ? "Saving..." : saved ? "Settings Saved" : "Save Changes"}
           </Button>

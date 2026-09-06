@@ -3,11 +3,11 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FlaskConical, FileCode, Code2, RefreshCw, Zap,
-  CheckCircle2, AlertCircle, Loader2, Brain, ClipboardCheck,
-  Network, Target, Play, Bug, Wrench, Shield, BookOpen,
-  Search, Cpu, TestTube, ChevronRight, X,
-} from "lucide-react";
+  IconFlask, IconFileCode, IconCode, IconRefreshCw, IconZap,
+  IconCheckCircle, IconAlertCircle, IconLoader, IconBrain, IconClipboardCheck,
+  IconNetwork, IconTarget, IconPlay, IconBug, IconWrench, IconShield,
+  IconSearch, IconCpu, IconChevronRight, IconClose,
+} from "@/components/icons";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -18,26 +18,26 @@ import {
 
 // ── All 12 agents in the full pipeline ───────────────────────────────────────
 const ALL_AGENTS = [
-  { key: "planner",        label: "Planner",          icon: Brain,         phase: "analyze" },
-  { key: "requirement",    label: "Requirement",       icon: ClipboardCheck, phase: "analyze" },
-  { key: "architecture",   label: "Architecture",      icon: Network,       phase: "analyze" },
-  { key: "test_strategy",  label: "Test Strategy",     icon: Target,        phase: "generate" },
-  { key: "test_generation",label: "Test Generator",    icon: Code2,         phase: "generate" },
-  { key: "verification",   label: "Verification",      icon: Shield,        phase: "generate" },
-  { key: "execution",      label: "Execution",         icon: Play,          phase: "execute" },
-  { key: "bug_localization",label: "Bug Localization",  icon: Bug,           phase: "repair" },
-  { key: "root_cause",     label: "Root Cause",        icon: Search,        phase: "repair" },
-  { key: "program_repair", label: "Program Repair",    icon: Wrench,        phase: "repair" },
-  { key: "patch_validation",label: "Patch Validation", icon: TestTube,      phase: "repair" },
-  { key: "learning",       label: "Learning",          icon: BookOpen,      phase: "learn"  },
+  { key: "planner",        label: "Planner",          icon: IconBrain,         phase: "analyze" },
+  { key: "requirement",    label: "Requirement",       icon: IconClipboardCheck, phase: "analyze" },
+  { key: "architecture",   label: "Architecture",      icon: IconNetwork,       phase: "analyze" },
+  { key: "test_strategy",  label: "Test Strategy",     icon: IconTarget,        phase: "generate" },
+  { key: "test_generation",label: "Test Generator",    icon: IconCode,          phase: "generate" },
+  { key: "verification",   label: "Verification",      icon: IconShield,        phase: "generate" },
+  { key: "execution",      label: "Execution",         icon: IconPlay,          phase: "execute" },
+  { key: "bug_localization",label: "Bug Localization",  icon: IconBug,           phase: "repair" },
+  { key: "root_cause",     label: "Root Cause",        icon: IconSearch,        phase: "repair" },
+  { key: "program_repair", label: "Program Repair",    icon: IconWrench,        phase: "repair" },
+  { key: "patch_validation",label: "Patch Validation", icon: IconShield,        phase: "repair" },
+  { key: "learning",       label: "Learning",          icon: IconFlask,         phase: "learn"  },
 ];
 
 const PHASE_COLORS: Record<string, string> = {
-  analyze:  "text-[#3B82F6]",
-  generate: "text-[#8B5CF6]",
-  execute:  "text-[#F59E0B]",
-  repair:   "text-[#EF4444]",
-  learn:    "text-[#10B981]",
+  analyze:  "text-[var(--color-brown-primary)]",
+  generate: "text-[var(--color-brown-secondary)]",
+  execute:  "text-[var(--color-warning)]",
+  repair:   "text-[var(--color-danger)]",
+  learn:    "text-[var(--color-success)]",
 };
 
 type GenStatus = "idle" | "running" | "complete" | "error";
@@ -149,10 +149,10 @@ export default function TestsPage() {
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight">
+          <h1 className="text-[28px] font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
             <span className="gradient-text">Test</span> Suites
           </h1>
-          <p className="text-sm text-[#6B7280] mt-1">
+          <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
             {testCases.length > 0
               ? `${testCases.length} test case${testCases.length !== 1 ? "s" : ""} generated`
               : "Run the 13-agent pipeline to generate & execute test cases"}
@@ -165,17 +165,17 @@ export default function TestsPage() {
             disabled={loading}
             className="gap-2 text-xs"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <IconRefreshCw size={14} className={loading ? "animate-spin" : ""} />
             Refresh
           </Button>
           <Button
             onClick={handleRunPipeline}
             disabled={genStatus === "running"}
-            className="gap-2 text-[13px] font-semibold shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+            className="gap-2 text-[13px] font-semibold shadow-md"
           >
             {genStatus === "running"
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Running Pipeline…</>
-              : <><Zap className="w-4 h-4" /> Run 13-Agent Pipeline</>
+              ? <><IconLoader size={16} className="animate-spin" /> Running Pipeline…</>
+              : <><IconZap size={16} /> Run 13-Agent Pipeline</>
             }
           </Button>
         </div>
@@ -183,7 +183,7 @@ export default function TestsPage() {
 
       {/* ── Fetch error ────────────────────────────────────────────────────── */}
       {fetchError && (
-        <div className="bg-red-900/20 border border-red-700/30 text-red-400 text-sm px-4 py-3 rounded-xl">
+        <div className="bg-[rgba(139,26,26,0.1)] border border-[rgba(139,26,26,0.3)] text-[var(--color-danger)] text-sm px-4 py-3 rounded-xl">
           {fetchError}
         </div>
       )}
@@ -201,30 +201,30 @@ export default function TestsPage() {
               {/* Panel header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
-                  {genStatus === "running"  && <Loader2 className="w-4 h-4 text-[#3B82F6] animate-spin" />}
-                  {genStatus === "complete" && <CheckCircle2 className="w-4 h-4 text-[#10B981]" />}
-                  {genStatus === "error"    && <AlertCircle className="w-4 h-4 text-[#EF4444]" />}
-                  <span className="text-sm font-semibold text-[#F9FAFB]">
+                  {genStatus === "running"  && <IconLoader size={16} className="text-[var(--color-brown-primary)] animate-spin" />}
+                  {genStatus === "complete" && <IconCheckCircle size={16} className="text-[var(--color-success)]" />}
+                  {genStatus === "error"    && <IconAlertCircle size={16} className="text-[var(--color-danger)]" />}
+                  <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
                     {genStatus === "running"  && `Running 13-agent pipeline… (${agentsRun.length}/${ALL_AGENTS.length} agents done)`}
                     {genStatus === "complete" && "Pipeline complete"}
                     {genStatus === "error"    && "Pipeline failed"}
                   </span>
                   {genSessionId && (
-                    <span className="text-[10px] font-mono text-[#4B5563]">
+                    <span className="text-[10px] font-mono" style={{ color: "var(--color-text-muted)" }}>
                       #{genSessionId.slice(0, 8)}
                     </span>
                   )}
                 </div>
                 <button
                   onClick={dismissPanel}
-                  className="p-1 rounded-lg hover:bg-white/5 transition-colors"
+                  className="p-1 rounded-lg hover:bg-[rgba(107,79,47,0.1)] transition-colors cursor-pointer"
                 >
-                  <X className="w-4 h-4 text-[#6B7280]" />
+                  <IconClose size={16} style={{ color: "var(--color-text-muted)" }} />
                 </button>
               </div>
 
               {genError && (
-                <p className="text-xs text-[#EF4444] mb-3 px-1">{genError}</p>
+                <p className="text-xs text-[var(--color-danger)] mb-3 px-1">{genError}</p>
               )}
 
               {/* Results row — visible after completion */}
@@ -232,32 +232,32 @@ export default function TestsPage() {
                 <motion.div
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex flex-wrap items-center gap-4 mb-4 p-3.5 rounded-xl bg-[#10B981]/5 border border-[#10B981]/15"
+                  className="flex flex-wrap items-center gap-4 mb-4 p-3.5 rounded-xl bg-[rgba(46,107,62,0.06)] border border-[rgba(46,107,62,0.2)]"
                 >
                   <div className="flex items-center gap-1.5 text-sm">
-                    <FlaskConical className="w-4 h-4 text-[#3B82F6]" />
-                    <span className="font-bold text-[#3B82F6]">{genTestCount}</span>
-                    <span className="text-[#6B7280] text-xs">tests generated</span>
+                    <IconFlask size={16} className="text-[var(--color-brown-primary)]" />
+                    <span className="font-bold text-[var(--color-brown-primary)]">{genTestCount}</span>
+                    <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>tests generated</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm">
-                    <Bug className="w-4 h-4 text-[#EF4444]" />
-                    <span className="font-bold text-[#EF4444]">{bugsFound}</span>
-                    <span className="text-[#6B7280] text-xs">bugs reported</span>
+                    <IconBug size={16} className="text-[var(--color-danger)]" />
+                    <span className="font-bold text-[var(--color-danger)]">{bugsFound}</span>
+                    <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>bugs reported</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm">
-                    <Wrench className="w-4 h-4 text-[#8B5CF6]" />
-                    <span className="font-bold text-[#8B5CF6]">{patchesGen}</span>
-                    <span className="text-[#6B7280] text-xs">patches generated</span>
+                    <IconWrench size={16} className="text-[var(--color-brown-secondary)]" />
+                    <span className="font-bold text-[var(--color-brown-secondary)]">{patchesGen}</span>
+                    <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>patches generated</span>
                   </div>
                   {bugsFound > 0 && (
                     <Button
                       onClick={() => router.push("/dashboard/bugs")}
-                      className="ml-auto gap-1.5 text-xs bg-[#EF4444]/10 hover:bg-[#EF4444]/20 text-[#EF4444] border border-[#EF4444]/20"
+                      className="ml-auto gap-1.5 text-xs bg-[rgba(139,26,26,0.1)] hover:bg-[rgba(139,26,26,0.2)] text-[var(--color-danger)] border border-[rgba(139,26,26,0.2)]"
                       variant="secondary"
                     >
-                      <Bug className="w-3.5 h-3.5" />
+                      <IconBug size={14} />
                       View in Bug Tracker
-                      <ChevronRight className="w-3.5 h-3.5" />
+                      <IconChevronRight size={14} />
                     </Button>
                   )}
                 </motion.div>
@@ -265,7 +265,6 @@ export default function TestsPage() {
 
               {/* 13 agent steps — grouped by phase */}
               <div className="space-y-2">
-                {/* Phase labels + agent pills */}
                 {(["analyze", "generate", "execute", "repair", "learn"] as const).map((phase) => {
                   const phaseAgents = ALL_AGENTS.filter(a => a.phase === phase);
                   const phaseLabels: Record<string, string> = {
@@ -290,20 +289,20 @@ export default function TestsPage() {
                           <div key={agent.key} className="flex items-center gap-1">
                             <div
                               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-300 ${
-                                done    ? "bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20"  :
-                                active  ? `bg-white/5 ${PHASE_COLORS[phase]} border border-current/20` :
-                                "bg-white/3 text-[#4B5563] border border-white/5"
+                                done    ? "bg-[rgba(46,107,62,0.1)] text-[var(--color-success)] border border-[rgba(46,107,62,0.3)]"  :
+                                active  ? `bg-[rgba(107,79,47,0.1)] ${PHASE_COLORS[phase]} border border-[rgba(107,79,47,0.3)]` :
+                                "bg-[rgba(107,79,47,0.03)] text-[var(--color-text-muted)] border border-[var(--color-border)]"
                               }`}
                             >
                               {active
-                                ? <Loader2 className="w-3 h-3 animate-spin" />
-                                : <Icon className="w-3 h-3" />
+                                ? <IconLoader size={12} className="animate-spin" />
+                                : <Icon size={12} />
                               }
                               {agent.label}
-                              {done && <CheckCircle2 className="w-3 h-3" />}
+                              {done && <IconCheckCircle size={12} />}
                             </div>
                             {i < phaseAgents.length - 1 && (
-                              <div className={`w-3 h-px ${done ? "bg-[#10B981]/30" : "bg-white/8"}`} />
+                              <div className={`w-3 h-px ${done ? "bg-[rgba(46,107,62,0.3)]" : "bg-[var(--color-border)]"}`} />
                             )}
                           </div>
                         );
@@ -315,9 +314,9 @@ export default function TestsPage() {
 
               {/* Progress bar */}
               {genStatus === "running" && (
-                <div className="mt-4 h-1 rounded-full bg-white/5 overflow-hidden">
+                <div className="mt-4 h-1 rounded-full bg-[var(--color-border)] overflow-hidden">
                   <motion.div
-                    className="h-full bg-gradient-to-r from-[#3B82F6] via-[#8B5CF6] to-[#10B981] rounded-full"
+                    className="h-full bg-[var(--color-brown-primary)] rounded-full"
                     initial={{ width: "0%" }}
                     animate={{ width: `${progressPct}%` }}
                     transition={{ duration: 0.5, ease: "easeOut" }}
@@ -335,11 +334,11 @@ export default function TestsPage() {
         <div className="lg:col-span-1 space-y-4">
           <GlassCard className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
                 Generated Tests
               </h3>
               {testCases.length > 0 && (
-                <span className="text-[10px] font-semibold text-[#3B82F6] bg-[#3B82F6]/10 px-2 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-[var(--color-brown-primary)] bg-[rgba(107,79,47,0.1)] px-2 py-0.5 rounded-md">
                   {testCases.length}
                 </span>
               )}
@@ -348,17 +347,17 @@ export default function TestsPage() {
             {loading ? (
               <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-12 rounded-xl bg-white/5 animate-pulse" />
+                  <div key={i} className="h-12 rounded-xl bg-[rgba(107,79,47,0.06)] animate-pulse" />
                 ))}
               </div>
             ) : testCases.length === 0 ? (
               <div className="py-8 text-center space-y-3">
-                <FlaskConical className="w-8 h-8 text-[#374151] mx-auto" />
-                <p className="text-xs text-[#6B7280]">No test cases yet.</p>
+                <IconFlask size={32} className="mx-auto text-[var(--color-brown-primary)] opacity-40" />
+                <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>No test cases yet.</p>
                 <button
                   onClick={handleRunPipeline}
                   disabled={genStatus === "running"}
-                  className="text-xs text-[#3B82F6] hover:text-[#60A5FA] font-semibold transition-colors"
+                  className="text-xs font-semibold text-[var(--color-brown-primary)] hover:underline cursor-pointer"
                 >
                   Run pipeline now →
                 </button>
@@ -369,24 +368,24 @@ export default function TestsPage() {
                   <button
                     key={tc.id}
                     onClick={() => setSelectedCase(tc)}
-                    className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${
+                    className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all cursor-pointer ${
                       selectedCase?.id === tc.id
-                        ? "bg-[rgba(59,130,246,0.12)] border-[rgba(59,130,246,0.2)] text-[#3B82F6]"
-                        : "bg-transparent border-transparent text-[#9CA3AF] hover:text-[#F9FAFB] hover:bg-[rgba(255,255,255,0.03)]"
+                        ? "bg-[rgba(107,79,47,0.12)] border-[rgba(107,79,47,0.3)] text-[var(--color-brown-primary)]"
+                        : "bg-transparent border-transparent text-[var(--color-text-secondary)] hover:bg-[rgba(107,79,47,0.04)]"
                     }`}
                   >
                     <div
                       className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                         selectedCase?.id === tc.id
-                          ? "bg-[#3B82F6]/15 text-[#3B82F6]"
-                          : "bg-[rgba(255,255,255,0.06)] text-[#6B7280]"
+                          ? "bg-[rgba(107,79,47,0.15)] text-[var(--color-brown-primary)]"
+                          : "bg-[rgba(107,79,47,0.06)] text-[var(--color-text-muted)]"
                       }`}
                     >
-                      <FileCode className="w-4 h-4" />
+                      <IconFileCode size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold truncate">{tc.name}</p>
-                      <p className="text-[11px] text-[#6B7280] font-mono truncate">{tc.file}</p>
+                      <p className="text-[13px] font-semibold truncate" style={{ color: "var(--color-text-primary)" }}>{tc.name}</p>
+                      <p className="text-[11px] font-mono truncate" style={{ color: "var(--color-text-muted)" }}>{tc.file}</p>
                     </div>
                   </button>
                 ))}
@@ -397,19 +396,19 @@ export default function TestsPage() {
           {/* Stats card */}
           {selectedCase && (
             <GlassCard className="p-5 space-y-3">
-              <h3 className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
                 Suite Overview
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { label: "Assertions", value: selectedCase.assertions,                               color: "text-[#F9FAFB]" },
-                  { label: "Confidence", value: `${(selectedCase.confidence * 100).toFixed(0)}%`,     color: "text-[#F9FAFB]" },
-                  { label: "Pass Rate",  value: `${selectedCase.pass_rate}%`,                          color: "text-[#10B981]" },
-                  { label: "Framework",  value: selectedCase.framework.toUpperCase(),                  color: "text-[#F59E0B] font-mono" },
+                  { label: "Assertions", value: selectedCase.assertions,                               color: "var(--color-text-primary)" },
+                  { label: "Confidence", value: `${(selectedCase.confidence * 100).toFixed(0)}%`,     color: "var(--color-text-primary)" },
+                  { label: "Pass Rate",  value: `${selectedCase.pass_rate}%`,                          color: "var(--color-success)" },
+                  { label: "Framework",  value: selectedCase.framework.toUpperCase(),                  color: "var(--color-warning)" },
                 ].map(({ label, value, color }) => (
                   <div key={label}>
-                    <span className="text-[10px] text-[#6B7280] block">{label}</span>
-                    <span className={`text-lg font-bold ${color}`}>{value}</span>
+                    <span className="text-[10px] block" style={{ color: "var(--color-text-muted)" }}>{label}</span>
+                    <span className="text-lg font-bold" style={{ color }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -422,24 +421,24 @@ export default function TestsPage() {
           <GlassCard className="p-6 h-full flex flex-col min-h-[400px]">
             {selectedCase ? (
               <>
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-[rgba(255,255,255,0.05)]">
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-[var(--color-border)]">
                   <div>
-                    <h3 className="text-base font-semibold text-[#F9FAFB]">{selectedCase.name}</h3>
-                    <span className="text-xs font-mono text-[#6B7280]">{selectedCase.file}</span>
+                    <h3 className="text-base font-semibold" style={{ color: "var(--color-text-primary)" }}>{selectedCase.name}</h3>
+                    <span className="text-xs font-mono" style={{ color: "var(--color-text-muted)" }}>{selectedCase.file}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs bg-[#10B981]/10 text-[#10B981] px-2 py-0.5 rounded-md border border-[#10B981]/20">
+                    <span className="text-xs bg-[rgba(46,107,62,0.1)] text-[var(--color-success)] px-2 py-0.5 rounded-md border border-[rgba(46,107,62,0.2)]">
                       {selectedCase.framework}
                     </span>
-                    <span className="text-xs bg-[#3B82F6]/10 text-[#3B82F6] px-2 py-0.5 rounded-md border border-[#3B82F6]/20">
+                    <span className="text-xs bg-[rgba(107,79,47,0.1)] text-[var(--color-brown-primary)] px-2 py-0.5 rounded-md border border-[rgba(107,79,47,0.2)]">
                       {(selectedCase.confidence * 100).toFixed(0)}% confidence
                     </span>
                   </div>
                 </div>
-                <div className="flex-1 bg-[#09090B] border border-[rgba(255,255,255,0.06)] rounded-xl p-4 font-mono text-[12px] leading-relaxed overflow-auto text-[#9CA3AF]">
+                <div className="flex-1 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-4 font-mono text-[12px] leading-relaxed overflow-auto" style={{ color: "var(--color-text-secondary)" }}>
                   {(selectedCase.code || "# No code available").split("\n").map((line, idx) => (
                     <div key={idx} className="table-row">
-                      <span className="table-cell text-right pr-4 select-none opacity-20 text-xs w-8">{idx + 1}</span>
+                      <span className="table-cell text-right pr-4 select-none opacity-40 text-xs w-8" style={{ color: "var(--color-text-muted)" }}>{idx + 1}</span>
                       <span className="table-cell whitespace-pre">{line || " "}</span>
                     </div>
                   ))}
@@ -447,18 +446,18 @@ export default function TestsPage() {
               </>
             ) : !loading && (
               <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-[rgba(59,130,246,0.06)] border border-[rgba(59,130,246,0.1)] flex items-center justify-center">
-                  <Cpu className="w-8 h-8 text-[#3B82F6]/40" />
+                <div className="w-16 h-16 rounded-2xl bg-[rgba(107,79,47,0.08)] border border-[rgba(107,79,47,0.15)] flex items-center justify-center">
+                  <IconCpu size={32} className="text-[var(--color-brown-primary)] opacity-60" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#F9FAFB] mb-1">No test cases yet</p>
-                  <p className="text-xs text-[#6B7280] max-w-xs">
-                    Click <strong className="text-[#3B82F6]">Run 13-Agent Pipeline</strong> to generate tests,
+                  <p className="text-sm font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>No test cases yet</p>
+                  <p className="text-xs max-w-xs" style={{ color: "var(--color-text-muted)" }}>
+                    Click <strong className="text-[var(--color-brown-primary)]">Run 13-Agent Pipeline</strong> to generate tests,
                     execute them, and auto-report failures to the Bug Tracker.
                   </p>
                 </div>
                 <Button onClick={handleRunPipeline} disabled={genStatus === "running"} className="gap-2">
-                  <Zap className="w-4 h-4" /> Run 13-Agent Pipeline
+                  <IconZap size={16} /> Run 13-Agent Pipeline
                 </Button>
               </div>
             )}

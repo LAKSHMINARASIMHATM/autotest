@@ -1,7 +1,7 @@
 """Sandbox — runs tests in isolation using a local temp-directory subprocess.
 
 Docker is opt-in (set AUTOTEST_USE_DOCKER=true) because on Windows the host
-Python path (D:\\autotest\\backend\.venv\\Scripts\\python.exe) is a Windows path
+Python path (D:\\autotest\\backend\\.venv\\Scripts\\python.exe) is a Windows path
 that does not exist inside a Linux Docker container, causing OCI exec failures.
 
 Default (and recommended on Windows): local subprocess sandbox.

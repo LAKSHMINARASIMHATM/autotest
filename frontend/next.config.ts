@@ -1,7 +1,22 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  reactStrictMode: true,
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.huggingface.co",
+      },
+      {
+        protocol: "https",
+        hostname: "**.hf.space",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

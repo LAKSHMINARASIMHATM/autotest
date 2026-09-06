@@ -6,28 +6,28 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import type { ActivityItem } from "@/types";
 import { getProjectBugs, getProjectPatches, getProjectTestCases, getDefaultProjectId, listPipelineSessions } from "@/lib/api";
 import {
-  Bot,
-  Brain,
-  Bug,
-  Code2,
-  FileSearch,
-  FlaskConical,
-  Network,
-  Shield,
-  Wrench,
-  Zap,
-} from "lucide-react";
+  IconBot,
+  IconBrain,
+  IconBug,
+  IconCode,
+  IconFileSearch,
+  IconFlask,
+  IconNetwork,
+  IconShield,
+  IconWrench,
+  IconZap,
+} from "@/components/icons";
 
 const iconMap: Record<string, React.ElementType> = {
-  planner: Brain,
-  architecture: Network,
-  "test-gen": Code2,
-  execution: Zap,
-  "bug-loc": Bug,
-  "root-cause": FileSearch,
-  repair: Wrench,
-  verification: Shield,
-  learning: FlaskConical,
+  planner:      IconBrain,
+  architecture: IconNetwork,
+  "test-gen":   IconCode,
+  execution:    IconZap,
+  "bug-loc":    IconBug,
+  "root-cause": IconFileSearch,
+  repair:       IconWrench,
+  verification: IconShield,
+  learning:     IconFlask,
 };
 
 /**
@@ -87,7 +87,7 @@ export function ActivityFeed() {
             agent: "repair",
             action: isCommitted ? "Patch Approved & Committed" : "Patch Candidate Generated",
             detail: `${patch.strategy.toUpperCase()} strategy on ${patch.file} (Confidence: ${(patch.confidence * 100).toFixed(0)}%)`,
-            timestamp: patch.timestamp ? new Date(patch.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now",
+            timestamp: patch.timestamp ? new Date(patch.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Just now",
             status: isCommitted ? "success" : "running",
           });
         });
@@ -115,7 +115,7 @@ export function ActivityFeed() {
               detail: "No autonomous pipeline activities recorded yet. Trigger a scan or test run to view live agent actions.",
               timestamp: "now",
               status: "idle",
-            }
+            },
           ]);
         }
       } catch (err) {
@@ -129,39 +129,68 @@ export function ActivityFeed() {
   }, []);
 
   return (
-    <div className="glass-card p-6">
+    <div
+      className="rounded-2xl p-6 border"
+      style={{
+        backgroundColor: "var(--color-bg-secondary)",
+        borderColor: "var(--color-border)",
+        boxShadow: "var(--shadow-depth-card)",
+      }}
+    >
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="text-[15px] font-semibold text-[#F9FAFB]">Activity Feed</h3>
-          <p className="text-xs text-[#6B7280] mt-0.5">Real-time agent actions & MongoDB metrics</p>
+          <h3 className="text-[15px] font-semibold" style={{ color: "var(--color-text-primary)" }}>
+            Activity Feed
+          </h3>
+          <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+            Real-time agent actions & MongoDB metrics
+          </p>
         </div>
       </div>
 
       <div className="space-y-1">
         {loading ? (
-          <div className="text-xs text-[#6B7280] p-4 text-center">Loading live feed activity...</div>
+          <div className="text-xs p-4 text-center" style={{ color: "var(--color-text-muted)" }}>
+            Loading live feed activity...
+          </div>
         ) : (
           activities.map((activity, i) => {
-            const Icon = iconMap[activity.agent] || Bot;
+            const Icon = iconMap[activity.agent] || IconBot;
             return (
               <motion.div
                 key={activity.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.3 }}
-                className="flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-[rgba(255,255,255,0.03)] transition-colors duration-200 group"
+                className="flex items-start gap-3 px-3 py-2.5 rounded-xl transition-colors duration-200 group cursor-default"
+                style={{ borderRadius: "0.75rem" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--color-surface)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "";
+                }}
               >
-                <div className="w-7 h-7 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[rgba(255,255,255,0.1)] transition-colors">
-                  <Icon className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors duration-200"
+                  style={{ backgroundColor: "var(--color-surface)" }}
+                >
+                  <Icon size={14} style={{ color: "var(--color-brown-secondary)" }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-[13px] font-medium text-[#F9FAFB] truncate">{activity.action}</p>
+                    <p className="text-[13px] font-medium truncate" style={{ color: "var(--color-text-primary)" }}>
+                      {activity.action}
+                    </p>
                     <StatusBadge status={activity.status} />
                   </div>
-                  <p className="text-[11px] text-[#6B7280] mt-0.5 line-clamp-1">{activity.detail}</p>
+                  <p className="text-[11px] mt-0.5 line-clamp-1" style={{ color: "var(--color-text-muted)" }}>
+                    {activity.detail}
+                  </p>
                 </div>
-                <span className="text-[10px] text-[#4B5563] whitespace-nowrap mt-1">{activity.timestamp}</span>
+                <span className="text-[10px] whitespace-nowrap mt-1" style={{ color: "var(--color-text-placeholder)" }}>
+                  {activity.timestamp}
+                </span>
               </motion.div>
             );
           })

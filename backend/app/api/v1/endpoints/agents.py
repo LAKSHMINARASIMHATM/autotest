@@ -207,18 +207,28 @@ async def _save_patches(project, patches: list, validations: list = [], bug_map:
             except Exception:
                 patch_strat = PatchStrategy.MINIMAL
 
-            bug_id = bug_map.get(getattr(p, "bug_id", ""))
+            raw_bug_id = bug_map.get(getattr(p, "bug_id", ""))
+            bug_obj_id = None
+            if isinstance(raw_bug_id, PydanticObjectId):
+                bug_obj_id = raw_bug_id
+            elif isinstance(raw_bug_id, str) and raw_bug_id:
+                try:
+                    bug_obj_id = PydanticObjectId(raw_bug_id)
+                except Exception:
+                    bug_obj_id = None
+
+            proj_obj_id = project.id if isinstance(project.id, PydanticObjectId) else PydanticObjectId(str(project.id))
 
             patch = Patch(
-                project_id=project.id,
+                project_id=proj_obj_id,
                 project_name=getattr(project, "name", "") or "",
-                bug_report_id=bug_id,
+                bug_report_id=bug_obj_id,
                 strategy=patch_strat,
                 status=status,
                 diff=getattr(p, "diff", ""),
                 file_path=getattr(p, "file_path", "unknown"),
                 description=getattr(p, "description", "AI generated patch"),
-                confidence=getattr(p, "confidence", 0.7),
+                confidence=float(getattr(p, "confidence", 0.7) or 0.7),
                 rejection_reason=rejection_reason,
             )
             await patch.insert()

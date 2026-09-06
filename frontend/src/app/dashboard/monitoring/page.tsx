@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Activity, Database, Server, RefreshCw, Cpu, BarChart2 } from "lucide-react";
+import { IconActivity, IconDatabase, IconServer, IconRefreshCw, IconCpu, IconBarChart2 } from "@/components/icons";
 import { GlassCard } from "@/components/ui/glass-card";
 import { getMonitoringHealth, type MonitoringHealth } from "@/lib/api";
 
@@ -10,10 +10,10 @@ function StatBar({ label, value, max, color }: { label: string; value: string; p
   return (
     <div>
       <div className="flex justify-between text-xs mb-1">
-        <span className="text-[#9CA3AF]">{label}</span>
-        <span className="font-semibold text-white">{value}{max ? ` / ${max}` : "%"}</span>
+        <span style={{ color: "var(--color-text-muted)" }}>{label}</span>
+        <span className="font-semibold" style={{ color: "var(--color-text-primary)" }}>{value}{max ? ` / ${max}` : "%"}</span>
       </div>
-      <div className="h-1.5 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+      <div className="h-1.5 rounded-full bg-[rgba(107,79,47,0.1)] overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(pct, 100)}%`, transition: "width 0.6s ease" }} />
       </div>
     </div>
@@ -104,24 +104,25 @@ export default function MonitoringPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight">
+          <h1 className="text-[28px] font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
             <span className="gradient-text">System</span> Telemetry
           </h1>
-          <p className="text-sm text-[#6B7280] mt-1">
+          <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
             Monitor host performance, Neo4j connection pools, MongoDB collections, and agent pipeline activity.
           </p>
         </div>
         <button
           onClick={refresh}
           disabled={loading}
-          className="flex items-center gap-1.5 text-xs text-[#6B7280] hover:text-white transition-colors"
+          className="flex items-center gap-1.5 text-xs transition-colors cursor-pointer"
+          style={{ color: "var(--color-text-muted)" }}
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
+          <IconRefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
         </button>
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+        <div className="p-3 rounded-xl bg-[rgba(139,26,26,0.1)] border border-[rgba(139,26,26,0.3)] text-[var(--color-danger)] text-xs">
           {error}
         </div>
       )}
@@ -133,35 +134,35 @@ export default function MonitoringPage() {
             label: "Uptime",
             value: health ? formatUptime(health.uptime_seconds) : "—",
             sub: "API server",
-            icon: <Server className="w-4 h-4 text-[#3B82F6]" />,
+            icon: <IconServer size={18} className="text-[var(--color-brown-primary)]" />,
           },
           {
             label: "Pipeline Sessions",
             value: health ? String(health.pipeline.total_sessions) : "—",
             sub: "all time",
-            icon: <Activity className="w-4 h-4 text-[#10B981]" />,
+            icon: <IconActivity size={18} className="text-[var(--color-success)]" />,
           },
           {
             label: "MongoDB Docs",
             value: health ? totalMongoDocuments.toLocaleString() : "—",
             sub: "across all collections",
-            icon: <Database className="w-4 h-4 text-[#8B5CF6]" />,
+            icon: <IconDatabase size={18} className="text-[var(--color-brown-secondary)]" />,
           },
           {
             label: "Neo4j Nodes",
             value: health ? health.database.neo4j_nodes.toLocaleString() : "—",
             sub: health?.database.neo4j_status ?? "—",
-            icon: <BarChart2 className="w-4 h-4 text-[#F59E0B]" />,
+            icon: <IconBarChart2 size={18} className="text-[var(--color-warning)]" />,
           },
         ].map(({ label, value, sub, icon }) => (
           <GlassCard key={label} className="p-4 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-[rgba(107,79,47,0.08)] border border-[rgba(107,79,47,0.15)] flex items-center justify-center shrink-0">
               {icon}
             </div>
             <div>
-              <p className="text-[10px] text-[#6B7280] uppercase tracking-wider">{label}</p>
-              <p className="text-lg font-bold text-white">{value}</p>
-              <p className="text-[10px] text-[#6B7280]">{sub}</p>
+              <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "var(--color-text-muted)" }}>{label}</p>
+              <p className="text-lg font-bold" style={{ color: "var(--color-text-primary)" }}>{value}</p>
+              <p className="text-[10px]" style={{ color: "var(--color-text-muted)" }}>{sub}</p>
             </div>
           </GlassCard>
         ))}
@@ -173,8 +174,8 @@ export default function MonitoringPage() {
           {/* Host stats */}
           <GlassCard className="p-5 space-y-4">
             <div className="flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-[#3B82F6]" />
-              <h3 className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">Host Infrastructure</h3>
+              <IconCpu size={16} className="text-[var(--color-brown-primary)]" />
+              <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>Host Infrastructure</h3>
             </div>
             {health ? (
               <div className="space-y-3">
@@ -182,38 +183,38 @@ export default function MonitoringPage() {
                   label="CPU Load"
                   value={`${health.host.cpu_pct}`}
                   pct={health.host.cpu_pct}
-                  color="bg-blue-500"
+                  color="bg-[var(--color-brown-primary)]"
                 />
                 <StatBar
                   label="RAM"
                   value={`${health.host.ram_used_mb} MB`}
                   max={`${health.host.ram_total_mb} MB`}
                   pct={health.host.ram_pct}
-                  color="bg-purple-500"
+                  color="bg-[var(--color-brown-secondary)]"
                 />
               </div>
             ) : (
-              <p className="text-xs text-[#6B7280]">{loading ? "Loading…" : "No data"}</p>
+              <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>{loading ? "Loading…" : "No data"}</p>
             )}
           </GlassCard>
 
           {/* MongoDB collection counts */}
           <GlassCard className="p-5 space-y-4">
             <div className="flex items-center gap-2">
-              <Database className="w-4 h-4 text-[#8B5CF6]" />
-              <h3 className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">MongoDB Collections</h3>
+              <IconDatabase size={16} className="text-[var(--color-brown-primary)]" />
+              <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>MongoDB Collections</h3>
             </div>
             {health ? (
               <div className="space-y-2">
                 {Object.entries(mongo).map(([col, count]) => (
                   <div key={col} className="flex justify-between text-xs">
-                    <span className="text-[#9CA3AF] capitalize">{col.replace("_", " ")}</span>
-                    <span className="font-semibold text-white">{count.toLocaleString()}</span>
+                    <span className="capitalize" style={{ color: "var(--color-text-secondary)" }}>{col.replace("_", " ")}</span>
+                    <span className="font-semibold" style={{ color: "var(--color-text-primary)" }}>{count.toLocaleString()}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-[#6B7280]">{loading ? "Loading…" : "No data"}</p>
+              <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>{loading ? "Loading…" : "No data"}</p>
             )}
           </GlassCard>
         </div>
@@ -221,28 +222,29 @@ export default function MonitoringPage() {
         {/* Right: Live log stream */}
         <div className="lg:col-span-2">
           <GlassCard className="p-6 h-[480px] flex flex-col">
-            <div className="flex items-center justify-between mb-4 border-b border-[rgba(255,255,255,0.05)] pb-3">
+            <div className="flex items-center justify-between mb-4 border-b border-[var(--color-border)] pb-3">
               <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#10B981]" />
-                <h3 className="text-sm font-semibold text-[#F9FAFB]">Streaming Telemetry Log</h3>
+                <IconActivity size={16} className="text-[var(--color-success)]" />
+                <h3 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>Streaming Telemetry Log</h3>
               </div>
-              <span className="flex items-center gap-1.5 text-xs text-[#9CA3AF]">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Live feed · refreshes every 10s
+              <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--color-text-muted)" }}>
+                <IconRefreshCw size={12} className="animate-spin" /> Live feed · refreshes every 10s
               </span>
             </div>
 
-            <div className="flex-1 bg-[#09090B] border border-[rgba(255,255,255,0.06)] rounded-xl p-5 font-mono text-[11px] leading-relaxed overflow-y-auto text-[#6B7280] space-y-1">
+            <div className="flex-1 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-5 font-mono text-[11px] leading-relaxed overflow-y-auto space-y-1" style={{ color: "var(--color-text-secondary)" }}>
               {logs.map((log, idx) => (
                 <div key={idx} className="flex gap-2">
-                  <span className="select-none opacity-20 text-xs w-6">{idx + 1}</span>
+                  <span className="select-none opacity-40 text-xs w-6" style={{ color: "var(--color-text-muted)" }}>{idx + 1}</span>
                   <span
-                    className={
-                      log.includes("ERROR")
-                        ? "text-[#EF4444]"
+                    style={{
+                      color: log.includes("ERROR")
+                        ? "var(--color-danger)"
                         : log.includes("INFO")
-                        ? "text-[#10B981]"
-                        : "text-[#9CA3AF]"
-                    }
+                        ? "var(--color-success)"
+                        : "var(--color-text-secondary)",
+                      fontWeight: log.includes("ERROR") || log.includes("INFO") ? 600 : 400,
+                    }}
                   >
                     {log}
                   </span>
@@ -257,11 +259,11 @@ export default function MonitoringPage() {
       {/* Recent pipeline sessions table */}
       {health && health.pipeline.recent_sessions.length > 0 && (
         <GlassCard className="p-6">
-          <h3 className="text-sm font-semibold text-[#F9FAFB] mb-4">Recent Pipeline Sessions</h3>
+          <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--color-text-primary)" }}>Recent Pipeline Sessions</h3>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="w-full text-xs border-collapse">
               <thead>
-                <tr className="text-[#6B7280] border-b border-[rgba(255,255,255,0.05)]">
+                <tr className="border-b border-[var(--color-border)]" style={{ color: "var(--color-text-muted)" }}>
                   <th className="text-left pb-2 font-medium">Session ID</th>
                   <th className="text-left pb-2 font-medium">Status</th>
                   <th className="text-left pb-2 font-medium">Agents Run</th>
@@ -270,22 +272,22 @@ export default function MonitoringPage() {
                   <th className="text-right pb-2 font-medium">Patches</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
+              <tbody className="divide-y divide-[var(--color-border)]">
                 {health.pipeline.recent_sessions.slice(0, 10).map((s) => (
                   <tr key={s.session_id} className="py-2">
-                    <td className="py-2 font-mono text-[#9CA3AF]">{s.session_id.slice(0, 12)}…</td>
+                    <td className="py-2 font-mono" style={{ color: "var(--color-text-muted)" }}>{s.session_id.slice(0, 12)}…</td>
                     <td className="py-2">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                        s.status === "complete" ? "bg-emerald-500/15 text-emerald-400" :
-                        s.status === "running"  ? "bg-blue-500/15 text-blue-400" :
-                        s.status === "error"    ? "bg-red-500/15 text-red-400" :
-                                                  "bg-[rgba(255,255,255,0.06)] text-[#6B7280]"
+                        s.status === "complete" ? "bg-[rgba(46,107,62,0.15)] text-[var(--color-success)]" :
+                        s.status === "running"  ? "bg-[rgba(107,79,47,0.15)] text-[var(--color-brown-primary)]" :
+                        s.status === "error"    ? "bg-[rgba(139,26,26,0.15)] text-[var(--color-danger)]" :
+                                                  "bg-[rgba(107,79,47,0.06)] text-[var(--color-text-muted)]"
                       }`}>{s.status}</span>
                     </td>
-                    <td className="py-2 text-[#6B7280]">{s.agents_run.join(", ") || "—"}</td>
-                    <td className="py-2 text-right text-white font-semibold">{s.test_cases_generated}</td>
-                    <td className="py-2 text-right text-white font-semibold">{s.bugs_found}</td>
-                    <td className="py-2 text-right text-white font-semibold">{s.patches_generated}</td>
+                    <td className="py-2" style={{ color: "var(--color-text-muted)" }}>{s.agents_run.join(", ") || "—"}</td>
+                    <td className="py-2 text-right font-semibold" style={{ color: "var(--color-text-primary)" }}>{s.test_cases_generated}</td>
+                    <td className="py-2 text-right font-semibold" style={{ color: "var(--color-text-primary)" }}>{s.bugs_found}</td>
+                    <td className="py-2 text-right font-semibold" style={{ color: "var(--color-text-primary)" }}>{s.patches_generated}</td>
                   </tr>
                 ))}
               </tbody>

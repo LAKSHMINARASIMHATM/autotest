@@ -1,106 +1,162 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { type LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface MetricTileProps {
   label: string;
   value: string | number;
   change?: number;
-  icon: LucideIcon;
-  color?: "blue" | "purple" | "cyan" | "success" | "warning" | "danger";
+  icon: React.ElementType;
+  color?: "brand" | "brown" | "success" | "danger" | "warning" | "info" | "muted" | "navy" | "emerald" | "maroon";
   className?: string;
+  subtext?: string;
 }
 
 const colorMap = {
-  blue: {
-    icon: "text-[#3B82F6]",
-    bg: "bg-[#3B82F6]/10",
-    glow: "group-hover:shadow-[0_0_24px_rgba(59,130,246,0.12)]",
+  brand: {
+    icon:       "var(--color-brand-primary)",
+    iconBg:     "var(--color-brand-subtle)",
+    iconBorder: "rgba(201, 169, 110, 0.28)",
+    glow:       "group-hover:shadow-[0_12px_32px_rgba(201,169,110,0.18)] group-hover:border-[rgba(201,169,110,0.45)]",
+    gradient:   "rgba(201, 169, 110, 0.1)",
   },
-  purple: {
-    icon: "text-[#8B5CF6]",
-    bg: "bg-[#8B5CF6]/10",
-    glow: "group-hover:shadow-[0_0_24px_rgba(139,92,246,0.12)]",
+  brown: {
+    icon:       "var(--color-brand-primary)",
+    iconBg:     "var(--color-brand-subtle)",
+    iconBorder: "rgba(201, 169, 110, 0.28)",
+    glow:       "group-hover:shadow-[0_12px_32px_rgba(201,169,110,0.18)] group-hover:border-[rgba(201,169,110,0.45)]",
+    gradient:   "rgba(201, 169, 110, 0.1)",
   },
-  cyan: {
-    icon: "text-[#06B6D4]",
-    bg: "bg-[#06B6D4]/10",
-    glow: "group-hover:shadow-[0_0_24px_rgba(6,182,212,0.12)]",
+  navy: {
+    icon:       "var(--color-navy-accent)",
+    iconBg:     "var(--color-navy-subtle)",
+    iconBorder: "rgba(96, 165, 250, 0.35)",
+    glow:       "group-hover:shadow-[0_12px_32px_rgba(30,58,138,0.3)] group-hover:border-[rgba(96,165,250,0.45)]",
+    gradient:   "rgba(30, 58, 138, 0.15)",
+  },
+  maroon: {
+    icon:       "var(--color-maroon-primary)",
+    iconBg:     "var(--color-maroon-subtle)",
+    iconBorder: "rgba(226, 92, 128, 0.35)",
+    glow:       "group-hover:shadow-[0_12px_32px_rgba(128,0,32,0.35)] group-hover:border-[rgba(226,92,128,0.45)]",
+    gradient:   "rgba(128, 0, 32, 0.15)",
+  },
+  emerald: {
+    icon:       "var(--color-accent-primary)",
+    iconBg:     "var(--color-accent-subtle)",
+    iconBorder: "rgba(63, 167, 122, 0.25)",
+    glow:       "group-hover:shadow-[0_12px_32px_rgba(63,167,122,0.18)] group-hover:border-[rgba(63,167,122,0.4)]",
+    gradient:   "rgba(63, 167, 122, 0.08)",
   },
   success: {
-    icon: "text-[#10B981]",
-    bg: "bg-[#10B981]/10",
-    glow: "group-hover:shadow-[0_0_24px_rgba(16,185,129,0.12)]",
-  },
-  warning: {
-    icon: "text-[#F59E0B]",
-    bg: "bg-[#F59E0B]/10",
-    glow: "group-hover:shadow-[0_0_24px_rgba(245,158,11,0.12)]",
+    icon:       "var(--color-success)",
+    iconBg:     "var(--color-accent-subtle)",
+    iconBorder: "rgba(63, 167, 122, 0.25)",
+    glow:       "group-hover:shadow-[0_12px_32px_rgba(63,167,122,0.18)] group-hover:border-[rgba(63,167,122,0.4)]",
+    gradient:   "rgba(63, 167, 122, 0.08)",
   },
   danger: {
-    icon: "text-[#EF4444]",
-    bg: "bg-[#EF4444]/10",
-    glow: "group-hover:shadow-[0_0_24px_rgba(239,68,68,0.12)]",
+    icon:       "var(--color-danger)",
+    iconBg:     "rgba(201, 91, 91, 0.1)",
+    iconBorder: "rgba(201, 91, 91, 0.25)",
+    glow:       "group-hover:shadow-[0_12px_32px_rgba(201,91,91,0.18)] group-hover:border-[rgba(201,91,91,0.4)]",
+    gradient:   "rgba(201, 91, 91, 0.08)",
+  },
+  warning: {
+    icon:       "var(--color-warning)",
+    iconBg:     "rgba(196, 146, 69, 0.1)",
+    iconBorder: "rgba(196, 146, 69, 0.25)",
+    glow:       "group-hover:shadow-[0_12px_32px_rgba(196,146,69,0.18)] group-hover:border-[rgba(196,146,69,0.4)]",
+    gradient:   "rgba(196, 146, 69, 0.08)",
+  },
+  info: {
+    icon:       "var(--color-info)",
+    iconBg:     "rgba(58, 126, 158, 0.1)",
+    iconBorder: "rgba(58, 126, 158, 0.25)",
+    glow:       "group-hover:shadow-[0_12px_32px_rgba(58,126,158,0.18)] group-hover:border-[rgba(58,126,158,0.4)]",
+    gradient:   "rgba(58, 126, 158, 0.08)",
+  },
+  muted: {
+    icon:       "var(--color-text-muted)",
+    iconBg:     "var(--color-surface)",
+    iconBorder: "var(--color-border)",
+    glow:       "group-hover:shadow-[0_12px_32px_rgba(148,163,184,0.15)] group-hover:border-[var(--color-border-hover)]",
+    gradient:   "rgba(148, 163, 184, 0.06)",
   },
 };
 
 /**
- * Premium metric tile with animated counter, color-coded icon, and hover glow.
+ * Premium metric tile with standardized 8px spatial grid,
+ * high-contrast value typography, color-coded status badges,
+ * and subtle hover elevation.
  */
 export function MetricTile({
   label,
   value,
   change,
   icon: Icon,
-  color = "blue",
+  color = "brand",
   className,
+  subtext,
 }: MetricTileProps) {
-  const c = colorMap[color];
+  const c = colorMap[color] || colorMap.brand;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "glass-card group relative overflow-hidden p-5",
+        "glass-card group relative overflow-hidden p-6 border transition-all duration-200",
         c.glow,
         className
       )}
     >
-      {/* Ambient corner glow */}
+      {/* Ambient corner glow backdrop */}
       <div
-        className={cn(
-          "absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-0 transition-opacity duration-500 blur-2xl",
-          "group-hover:opacity-100",
-          c.bg
-        )}
+        className="absolute -top-10 -right-10 w-28 h-28 rounded-full opacity-0 transition-opacity duration-300 blur-2xl pointer-events-none group-hover:opacity-100"
+        style={{ backgroundColor: c.gradient }}
       />
 
       <div className="relative flex items-start justify-between">
         <div className="space-y-2">
-          <p className="text-[13px] font-medium text-[#9CA3AF] tracking-wide uppercase">
+          <p
+            className="text-[11px] font-bold uppercase tracking-[0.14em]"
+            style={{ color: "var(--color-text-muted)" }}
+          >
             {label}
           </p>
-          <p className="text-[28px] font-bold tracking-tight text-[#F9FAFB]">
+          <p
+            className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-none"
+            style={{ color: "var(--color-text-primary)" }}
+          >
             {value}
           </p>
-          {change !== undefined && (
+          {change !== undefined ? (
             <p
-              className={cn(
-                "text-xs font-medium flex items-center gap-1",
-                change >= 0 ? "text-[#10B981]" : "text-[#EF4444]"
-              )}
+              className="text-xs font-semibold flex items-center gap-1 mt-1"
+              style={{ color: change >= 0 ? "var(--color-success)" : "var(--color-danger)" }}
             >
-              {change >= 0 ? "↑" : "↓"} {Math.abs(change)}%
-              <span className="text-[#6B7280] ml-1">vs last run</span>
+              <span>{change >= 0 ? "↑" : "↓"} {Math.abs(change)}%</span>
+              <span style={{ color: "var(--color-text-muted)", fontWeight: 400 }} className="ml-1">
+                vs target benchmark
+              </span>
             </p>
-          )}
+          ) : subtext ? (
+            <p className="text-xs font-medium mt-1" style={{ color: "var(--color-text-muted)" }}>
+              {subtext}
+            </p>
+          ) : null}
         </div>
-        <div className={cn("p-2.5 rounded-xl", c.bg)}>
-          <Icon className={cn("w-5 h-5", c.icon)} />
+        <div
+          className="p-3 rounded-2xl border flex items-center justify-center shrink-0 shadow-sm transition-transform duration-200 group-hover:scale-105"
+          style={{
+            backgroundColor: c.iconBg,
+            borderColor: c.iconBorder,
+          }}
+        >
+          <Icon size={22} style={{ color: c.icon }} />
         </div>
       </div>
     </motion.div>

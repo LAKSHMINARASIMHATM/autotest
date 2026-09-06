@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, FileSearch, RefreshCw, Sparkles } from "lucide-react";
+import { IconAlertCircle, IconFileSearch, IconRefreshCw, IconSparkles } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -9,7 +9,7 @@ import { getProjectBugs, listProjects, ProjectItem, generatePatches, scanBugs, t
 
 export default function BugsPage() {
   const [projects, setProjects] = useState<ProjectItem[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [bugs, setBugs] = useState<BugItem[]>([]);
   const [selectedBug, setSelectedBug] = useState<BugItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,9 +22,6 @@ export default function BugsPage() {
     listProjects(1, 100)
       .then((res) => {
         setProjects(res.items);
-        if (res.items.length > 0) {
-          setSelectedProjectId(res.items[0].id);
-        }
       })
       .catch((err) => {
         console.error("Failed to load projects", err);
@@ -111,10 +108,10 @@ export default function BugsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight">
+          <h1 className="text-[28px] font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
             <span className="gradient-text">Bug</span> Intelligence Tracker
           </h1>
-          <p className="text-sm text-[#6B7280] mt-1">
+          <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
             Review localized faults, call stack analyses, and root-cause explanations.
           </p>
         </div>
@@ -122,22 +119,22 @@ export default function BugsPage() {
         <div className="flex flex-wrap items-center gap-3">
           {/* Project Selector */}
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">Select Project</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>Select Project</label>
             <select
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
               disabled={scanning}
-              className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-4 py-2 text-sm text-[#F9FAFB] focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50"
+              className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[var(--color-brown-primary)] disabled:opacity-50"
+              style={{ color: "var(--color-text-primary)" }}
             >
-              {projects.length === 0 ? (
-                <option value="">No projects loaded</option>
-              ) : (
-                projects.map((p) => (
-                  <option key={p.id} value={p.id} className="bg-[#18181B] text-[#F9FAFB]">
-                    {p.name}
-                  </option>
-                ))
-              )}
+              <option value="all" className="bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]">
+                All Repositories ({projects.length})
+              </option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id} className="bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]">
+                  {p.name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -145,9 +142,9 @@ export default function BugsPage() {
             <Button
               onClick={handleHuggingFaceScan}
               disabled={scanning || !selectedProjectId}
-              className="gap-2 text-[13px] font-semibold bg-[#3B82F6] hover:bg-[#2563EB]"
+              className="gap-2 text-[13px] font-semibold"
             >
-              <RefreshCw className={`w-4 h-4 ${scanning ? "animate-spin" : ""}`} />
+              <IconRefreshCw size={16} className={scanning ? "animate-spin" : ""} />
               {scanning ? "Scanning Codebase…" : "Scan with HuggingFace"}
             </Button>
           </div>
@@ -155,7 +152,7 @@ export default function BugsPage() {
       </div>
 
       {error && (
-        <div className="bg-red-900/20 border border-red-700/30 text-red-400 text-sm px-4 py-3 rounded-xl">
+        <div className="bg-[rgba(139,26,26,0.1)] border border-[rgba(139,26,26,0.3)] text-[var(--color-danger)] text-sm px-4 py-3 rounded-xl">
           {error}
         </div>
       )}
@@ -164,13 +161,13 @@ export default function BugsPage() {
         {/* Left Column: Bug list */}
         <div className="lg:col-span-1 space-y-4">
           <GlassCard className="p-5">
-            <h3 className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-3">Detected Faults</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-muted)" }}>Detected Faults</h3>
             {loading ? (
               <div className="space-y-2">
-                {[1, 2].map((i) => <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse" />)}
+                {[1, 2].map((i) => <div key={i} className="h-16 rounded-xl bg-[rgba(107,79,47,0.06)] animate-pulse" />)}
               </div>
             ) : bugs.length === 0 ? (
-              <p className="text-xs text-[#6B7280] py-4 text-center">No bugs detected yet.</p>
+              <p className="text-xs py-4 text-center" style={{ color: "var(--color-text-muted)" }}>No bugs detected yet.</p>
             ) : (
               <div className="space-y-2.5">
                 {bugs.map((bug) => (
@@ -179,23 +176,23 @@ export default function BugsPage() {
                     onClick={() => setSelectedBug(bug)}
                     className={`w-full text-left flex items-start gap-3 p-3.5 rounded-xl border transition-all ${
                       selectedBug?.id === bug.id
-                        ? "bg-[rgba(59,130,246,0.12)] border-[rgba(59,130,246,0.2)]"
-                        : "bg-transparent border-transparent hover:bg-[rgba(255,255,255,0.03)]"
+                        ? "bg-[rgba(107,79,47,0.12)] border-[rgba(107,79,47,0.3)]"
+                        : "bg-transparent border-transparent hover:bg-[rgba(107,79,47,0.04)]"
                     }`}
                   >
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      bug.severity === "critical" ? "bg-[#EF4444]/15 text-[#EF4444]"
-                        : bug.severity === "high" ? "bg-[#F59E0B]/15 text-[#F59E0B]"
-                        : "bg-[#3B82F6]/15 text-[#3B82F6]"
+                      bug.severity === "critical" ? "bg-[rgba(139,26,26,0.15)] text-[var(--color-danger)]"
+                        : bug.severity === "high" ? "bg-[rgba(122,81,0,0.15)] text-[var(--color-warning)]"
+                        : "bg-[rgba(107,79,47,0.15)] text-[var(--color-brown-primary)]"
                     }`}>
-                      <AlertCircle className="w-4 h-4" />
+                      <IconAlertCircle size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
-                        <p className="text-xs font-semibold text-white truncate">{bug.method || "unknown"}</p>
+                        <p className="text-xs font-semibold truncate" style={{ color: "var(--color-text-primary)" }}>{bug.method || "unknown"}</p>
                         <StatusBadge status={bug.status as any} />
                       </div>
-                      <p className="text-[10px] text-[#6B7280] font-mono truncate">{bug.file}:{bug.line}</p>
+                      <p className="text-[10px] font-mono truncate" style={{ color: "var(--color-text-muted)" }}>{bug.file}:{bug.line}</p>
                     </div>
                   </button>
                 ))}
@@ -208,47 +205,47 @@ export default function BugsPage() {
         <div className="lg:col-span-2 space-y-6">
           {selectedBug ? (
             <GlassCard className="p-6">
-              <div className="flex items-start justify-between border-b border-[rgba(255,255,255,0.05)] pb-4 mb-4">
+              <div className="flex items-start justify-between border-b border-[var(--color-border)] pb-4 mb-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded bg-red-900/40 text-red-400">
+                    <span className="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded bg-[rgba(139,26,26,0.15)] text-[var(--color-danger)]">
                       {selectedBug.severity} severity
                     </span>
-                    <span className="text-xs text-[#6B7280] font-mono">
+                    <span className="text-xs font-mono" style={{ color: "var(--color-text-muted)" }}>
                       Confidence: {(selectedBug.confidence * 100).toFixed(0)}%
                     </span>
                   </div>
-                  <h3 className="text-base font-semibold text-[#F9FAFB]">
+                  <h3 className="text-base font-semibold" style={{ color: "var(--color-text-primary)" }}>
                     Fault in {selectedBug.method || "unknown"}()
                   </h3>
-                  <p className="text-xs font-mono text-[#6B7280]">{selectedBug.file}:{selectedBug.line}</p>
+                  <p className="text-xs font-mono" style={{ color: "var(--color-text-muted)" }}>{selectedBug.file}:{selectedBug.line}</p>
                 </div>
                 <Button
                   onClick={repairBug}
                   disabled={repairing || selectedBug.status === "patch_generated"}
-                  className="gap-1.5 text-xs bg-[#8B5CF6] hover:bg-[#7C3AED]"
+                  className="gap-1.5 text-xs"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <IconSparkles size={14} />
                   {repairing ? "Repairing…" : selectedBug.status === "patch_generated" ? "Patch Generated" : "Auto-Repair Bug"}
                 </Button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <span className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-                    <FileSearch className="w-3.5 h-3.5 text-[#3B82F6]" /> Root Cause Analysis
+                  <span className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-1.5" style={{ color: "var(--color-brown-primary)" }}>
+                    <IconFileSearch size={14} /> Root Cause Analysis
                   </span>
-                  <p className="text-xs text-[#9CA3AF] leading-relaxed bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] rounded-xl p-3.5">
+                  <p className="text-xs leading-relaxed bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-3.5" style={{ color: "var(--color-text-secondary)" }}>
                     {selectedBug.rootCause || "Root cause analysis pending."}
                   </p>
                 </div>
 
                 {selectedBug.codeSnippet && (
                   <div>
-                    <span className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider block mb-1.5">
+                    <span className="text-xs font-semibold uppercase tracking-wider block mb-1.5" style={{ color: "var(--color-text-muted)" }}>
                       Target Code Segment
                     </span>
-                    <pre className="text-[11px] font-mono bg-[#09090B] border border-[rgba(255,255,255,0.06)] rounded-xl p-4 text-[#9CA3AF] overflow-x-auto">
+                    <pre className="text-[11px] font-mono bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-4 overflow-x-auto" style={{ color: "var(--color-text-secondary)" }}>
                       {selectedBug.codeSnippet}
                     </pre>
                   </div>
@@ -256,10 +253,10 @@ export default function BugsPage() {
 
                 {selectedBug.fixSuggestion && (
                   <div>
-                    <span className="text-xs font-semibold text-[#10B981] uppercase tracking-wider block mb-1.5">
+                    <span className="text-xs font-semibold uppercase tracking-wider block mb-1.5 text-[var(--color-success)]">
                       AI Proposed Correction
                     </span>
-                    <pre className="text-[11px] font-mono bg-[#10B981]/5 border border-[#10B981]/15 rounded-xl p-4 text-[#10B981] overflow-x-auto">
+                    <pre className="text-[11px] font-mono bg-[rgba(46,107,62,0.06)] border border-[rgba(46,107,62,0.2)] rounded-xl p-4 text-[var(--color-success)] overflow-x-auto">
                       {selectedBug.fixSuggestion}
                     </pre>
                   </div>
@@ -267,7 +264,7 @@ export default function BugsPage() {
               </div>
             </GlassCard>
           ) : !loading ? (
-            <GlassCard className="p-12 flex items-center justify-center text-[#6B7280] text-sm">
+            <GlassCard className="p-12 flex items-center justify-center text-sm" style={{ color: "var(--color-text-muted)" }}>
               Select a bug to view its root cause analysis.
             </GlassCard>
           ) : null}

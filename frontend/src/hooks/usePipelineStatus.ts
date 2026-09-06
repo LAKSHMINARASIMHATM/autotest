@@ -18,6 +18,7 @@ export const PIPELINE_AGENTS = [
   { id: "repair",        backendName: "program_repair",   name: "Program Repair",    description: "Patch generation" },
   { id: "patch-val",     backendName: "patch_validation", name: "Patch Validation",  description: "Regression testing" },
   { id: "learning",      backendName: "learning",         name: "Learning",          description: "Memory update" },
+  { id: "explainability", backendName: "explainability",  name: "Explainability",    description: "XAI synthesis & audit" },
 ] as const;
 
 export type PipelineAgentId = typeof PIPELINE_AGENTS[number]["id"];
@@ -29,6 +30,8 @@ export interface LiveAgentStatus {
   description: string;
   status: AgentStatus;
   confidence: number;
+  latencyMs?: number;
+  reasoningSteps?: number;
 }
 
 export interface LivePipelineState {
@@ -48,7 +51,7 @@ const AGENT_CONFIDENCES: Record<string, number> = {
   test_strategy: 0.87, test_generation: 0.85,
   verification: 0.90, execution: 0.94, bug_localization: 0.88,
   root_cause: 0.86, program_repair: 0.83, patch_validation: 0.89,
-  learning: 0.82,
+  learning: 0.82, explainability: 0.96,
 };
 
 function buildAgentStatuses(

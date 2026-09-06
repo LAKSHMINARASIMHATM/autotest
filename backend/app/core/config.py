@@ -68,12 +68,20 @@ class Settings(BaseSettings):
     # ── Rate Limiting ────────────────────────────────────────────
     RATE_LIMIT_PER_MINUTE: int = 60
 
+    @field_validator("APP_ENV", "LOG_LEVEL", mode="before")
+    @classmethod
+    def strip_env_whitespace(cls, v: str) -> str:
+        """Strip trailing newlines/whitespace from environment variable values."""
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
         """Accept comma-separated string or list for CORS origins."""
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
 
     @property

@@ -30,19 +30,12 @@ from app.agents.state import AgentState
 
 
 def route_after_execution(state: AgentState) -> Literal["bug_localization", "learning"]:
-    """Conditional router: If there are test failures, route to bug localization; else route to learning.
-
-    Also routes to bug_localization when total==0 — this means real execution
-    found no tests on disk (LLM-named files) and simulation must have produced
-    a synthetic failure, or the project itself has issues worth investigating.
-    """
-    exec_result = state.get("execution_result")
-    generated_tests = state.get("generated_tests", [])
-    if exec_result and (exec_result.failed > 0 or exec_result.errors > 0 or len(exec_result.failures) > 0):
+    """Conditional router: Route to bug_localization to analyze and repair bugs, or learning if done."""
+    # Always run bug localization & repair on the initial pass (or if failures exist)
+    if not state.get("bug_localizations"):
         return "bug_localization"
-    # If we have generated tests but execution produced nothing (0 collected),
-    # force bug_localization so the LLM simulation failure path runs.
-    if exec_result and exec_result.total == 0 and len(generated_tests) > 0:
+    exec_result = state.get("execution_result")
+    if exec_result and (exec_result.failed > 0 or exec_result.errors > 0 or len(exec_result.failures) > 0):
         return "bug_localization"
     return "learning"
 

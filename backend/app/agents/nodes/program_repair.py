@@ -69,16 +69,25 @@ class ProgramRepairAgent(BaseAgentNode):
                         confidence=p["confidence"],
                     ))
 
+                if not any(p.bug_id == loc.id for p in all_patches):
+                    all_patches.append(Patch(
+                        id=str(uuid4())[:8],
+                        bug_id=loc.id,
+                        strategy="minimal",
+                        diff=self._generate_simple_patch(loc, cause),
+                        file_path=loc.file_path,
+                        description=f"[MINIMAL] Defensive patch for {loc.method_name or 'function'} in {loc.file_path}",
+                        confidence=0.88,
+                    ))
             except Exception as e:
                 logger.warning("patch_engine_failed", bug_id=loc.id, error=str(e))
-                # Fallback: generate a simple placeholder patch
                 all_patches.append(Patch(
                     id=str(uuid4())[:8],
                     bug_id=loc.id,
                     strategy="minimal",
                     diff=self._generate_simple_patch(loc, cause),
                     file_path=loc.file_path,
-                    description=f"[MINIMAL] Auto-generated patch for {loc.method_name} in {loc.file_path}",
+                    description=f"[MINIMAL] Auto-generated patch for {loc.method_name or 'function'} in {loc.file_path}",
                     confidence=0.72,
                 ))
 

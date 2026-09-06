@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FolderGit2, Plus, GitBranch, Globe, Code, CheckCircle,
-  RefreshCw, BarChart2, Shield, Play, Zap, AlertCircle,
-} from "lucide-react";
+  IconFolderGit, IconPlus, IconGitBranch, IconGlobe, IconCode, IconCheckCircle,
+  IconRefreshCw, IconBarChart2, IconShield, IconPlay, IconZap, IconAlertCircle,
+  IconUpload, IconFileArchive, IconLink
+} from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -13,7 +14,6 @@ import {
   listProjects, importFromGitHub, importFromZip, triggerAgentPipeline, getPipelineStatus,
   type ProjectItem, type GitHubImportResponse, type PipelineStatusResponse,
 } from "@/lib/api";
-import { Upload, FileArchive, Link as LinkIcon } from "lucide-react";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectItem[]>([]);
@@ -42,7 +42,7 @@ export default function ProjectsPage() {
       setProjects(res.items);
     } catch {
       setProjects([]);
-    } finally {
+    } fontally: {
       setLoading(false);
     }
   };
@@ -98,48 +98,27 @@ export default function ProjectsPage() {
 
         result = await importFromZip(formData);
       }
-      setImportResult(result);
 
-      // Track pipeline session
+      setImportResult(result);
       if (result.session_id) {
         setSessions(prev => ({
           ...prev,
           [result.session_id!]: {
             session_id: result.session_id!,
-            project_id: result.project_id,
+            project_id: result.name || "",
             status: "running",
             agents_run: [],
             test_cases_generated: 0,
             bugs_found: 0,
             patches_generated: 0,
-          },
+          }
         }));
       }
-      await fetchProjects();
-    } catch (err: unknown) {
-      setImportError(err instanceof Error ? err.message : "Import failed");
+      fetchProjects();
+    } catch (e: unknown) {
+      setImportError(e instanceof Error ? e.message : "Import failed");
     } finally {
       setIsImporting(false);
-    }
-  };
-
-  const handleRunPipeline = async (projectId: string) => {
-    try {
-      const res = await triggerAgentPipeline(projectId, 2);
-      setSessions(prev => ({
-        ...prev,
-        [res.session_id]: {
-          session_id: res.session_id,
-          project_id: projectId,
-          status: "running",
-          agents_run: [],
-          test_cases_generated: 0,
-          bugs_found: 0,
-          patches_generated: 0,
-        },
-      }));
-    } catch (err) {
-      console.error("Pipeline trigger failed:", err);
     }
   };
 
@@ -149,66 +128,67 @@ export default function ProjectsPage() {
     setImportError(null);
     setRepoUrl("");
     setProjName("");
-    setBranch("main");
-    setDescription("");
     setSelectedFile(null);
-    setActiveTab("link");
+    setDescription("");
   };
 
-  const getSessionForProject = (projectId: string) =>
-    Object.values(sessions).find(s => s.project_id === projectId);
+  const handleRunPipeline = async (projectId: string) => {
+    try {
+      const resp = await triggerAgentPipeline(projectId);
+      setSessions(prev => ({
+        ...prev,
+        [resp.session_id]: {
+          session_id: resp.session_id,
+          project_id: projectId,
+          status: "running",
+          agents_run: [],
+          test_cases_generated: 0,
+          bugs_found: 0,
+          patches_generated: 0,
+        }
+      }));
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Failed to run pipeline");
+    }
+  };
+
+  const getSessionForProject = (pid: string) => {
+    return Object.values(sessions).reverse().find(s => s.session_id.startsWith(pid) || s.status === "running");
+  };
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto relative min-h-screen pb-12">
+    <div className="space-y-6 max-w-[1600px] mx-auto min-h-screen pb-12">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight">
-            <span className="gradient-text">Project</span> Workspace
+          <h1 className="text-[28px] font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
+            <span className="gradient-text">Project</span> Portfolio
           </h1>
-          <p className="text-sm text-[#6B7280] mt-1">
-            Import from GitHub and run autonomous AI quality engineering pipelines.
+          <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
+            Import repositories, inspect test coverage, and execute AI agent testing pipelines.
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={fetchProjects} disabled={loading} className="gap-2 text-xs">
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
+        <div className="flex items-center gap-3">
+          <Button onClick={fetchProjects} variant="secondary" className="gap-2 text-xs">
+            <IconRefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
           </Button>
-          <Button onClick={() => setIsImportOpen(true)} className="gap-2 text-[13px] font-semibold">
-            <Plus className="w-4 h-4" /> Import from GitHub
+          <Button onClick={() => setIsImportOpen(true)} className="gap-2 text-xs shadow-lg">
+            <IconPlus size={16} /> Import Project
           </Button>
         </div>
       </div>
 
-      {/* Active pipeline sessions banner */}
-      {Object.values(sessions).filter(s => s.status === "running").map(s => (
-        <div key={s.session_id} className="flex items-center gap-3 bg-blue-900/20 border border-blue-700/30 px-4 py-3 rounded-xl text-sm text-blue-300">
-          <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
-          <span>
-            Pipeline <span className="font-mono text-xs">{s.session_id.slice(0, 8)}</span> running for project <strong>{s.project_id.slice(-6)}</strong>…
-          </span>
-        </div>
-      ))}
-      {Object.values(sessions).filter(s => s.status === "complete").map(s => (
-        <div key={s.session_id} className="flex items-center gap-3 bg-emerald-900/20 border border-emerald-700/30 px-4 py-3 rounded-xl text-sm text-emerald-300">
-          <CheckCircle className="w-4 h-4 shrink-0" />
-          <span>
-            Pipeline complete — <strong>{s.test_cases_generated}</strong> test cases · <strong>{s.bugs_found}</strong> bugs · <strong>{s.patches_generated}</strong> patches generated
-          </span>
-        </div>
-      ))}
-
       {/* Projects Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map(i => <div key={i} className="h-60 rounded-2xl bg-white/5 animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-60 rounded-2xl bg-[rgba(107,79,47,0.06)] animate-pulse" />)}
         </div>
       ) : projects.length === 0 ? (
         <GlassCard className="p-16 flex flex-col items-center justify-center gap-4 text-center">
-          <FolderGit2 className="w-10 h-10 text-[#6B7280]" />
-          <p className="text-[#6B7280] text-sm">No projects yet. Import a GitHub repository to get started.</p>
+          <IconFolderGit size={40} className="text-[var(--color-brown-primary)]" />
+          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>No projects yet. Import a GitHub repository to get started.</p>
           <Button onClick={() => setIsImportOpen(true)} className="gap-2">
-            <Plus className="w-4 h-4" /> Import from GitHub
+            <IconPlus size={16} /> Import from GitHub
           </Button>
         </GlassCard>
       ) : (
@@ -217,16 +197,16 @@ export default function ProjectsPage() {
             const session = getSessionForProject(proj.id);
             const isRunning = session?.status === "running";
             return (
-              <GlassCard key={proj.id} className="p-6 relative overflow-hidden" glow={isRunning ? "blue" : "none"}>
+              <GlassCard key={proj.id} className="p-6 relative overflow-hidden" glow={isRunning ? "brown" : "none"}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3B82F6]/10 to-[#8B5CF6]/10 flex items-center justify-center">
-                      <FolderGit2 className="w-5 h-5 text-[#3B82F6]" />
+                    <div className="w-10 h-10 rounded-xl bg-[rgba(107,79,47,0.1)] border border-[rgba(107,79,47,0.2)] flex items-center justify-center">
+                      <IconFolderGit size={20} className="text-[var(--color-brown-primary)]" />
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-[#F9FAFB]">{proj.name}</h3>
-                      <p className="text-xs text-[#6B7280] flex items-center gap-1 mt-0.5 font-mono">
-                        <Globe className="w-3.5 h-3.5" />
+                      <h3 className="text-base font-semibold" style={{ color: "var(--color-text-primary)" }}>{proj.name}</h3>
+                      <p className="text-xs flex items-center gap-1 mt-0.5 font-mono" style={{ color: "var(--color-text-muted)" }}>
+                        <IconGlobe size={14} />
                         {proj.repo_url.replace("https://", "").slice(0, 40)}
                       </p>
                     </div>
@@ -236,11 +216,11 @@ export default function ProjectsPage() {
 
                 <div className="space-y-4 pt-2">
                   <div className="flex items-center gap-4 text-xs">
-                    <span className="text-[#9CA3AF] flex items-center gap-1 font-mono">
-                      <GitBranch className="w-3.5 h-3.5" /> {proj.branch}
+                    <span className="flex items-center gap-1 font-mono" style={{ color: "var(--color-text-secondary)" }}>
+                      <IconGitBranch size= {14} /> {proj.branch}
                     </span>
-                    <span className="text-[#9CA3AF] flex items-center gap-1">
-                      <Code className="w-3.5 h-3.5" /> {proj.language} {proj.framework && `· ${proj.framework}`}
+                    <span className="flex items-center gap-1" style={{ color: "var(--color-text-secondary)" }}>
+                      <IconCode size={14} /> {proj.language} {proj.framework && `· ${proj.framework}`}
                     </span>
                   </div>
 
@@ -248,23 +228,23 @@ export default function ProjectsPage() {
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-[#6B7280] flex items-center gap-1"><Shield className="w-3.5 h-3.5" /> Coverage</span>
-                        <span className="font-semibold text-[#F9FAFB]">{proj.coverage_percentage.toFixed(1)}%</span>
+                        <span className="flex items-center gap-1" style={{ color: "var(--color-text-muted)" }}><IconShield size={14} /> Coverage</span>
+                        <span className="font-semibold" style={{ color: "var(--color-text-primary)" }}>{proj.coverage_percentage.toFixed(1)}%</span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full" style={{ width: `${proj.coverage_percentage}%` }} />
+                      <div className="h-1.5 rounded-full bg-[rgba(107,79,47,0.1)] overflow-hidden">
+                        <div className="h-full bg-[var(--color-brown-primary)] rounded-full" style={{ width: `${proj.coverage_percentage}%` }} />
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-[rgba(255,255,255,0.05)] flex items-center justify-between text-xs text-[#6B7280]">
-                    <span>Tests: <strong className="text-[#F9FAFB]">{proj.total_test_cases}</strong></span>
-                    <span>Bugs: <strong className="text-[#EF4444]">{proj.total_bugs_found}</strong></span>
-                    <span>Patches: <strong className="text-[#10B981]">{proj.total_patches_applied}</strong></span>
+                  <div className="pt-2 border-t border-[var(--color-border)] flex items-center justify-between text-xs" style={{ color: "var(--color-text-muted)" }}>
+                    <span>Tests: <strong style={{ color: "var(--color-text-primary)" }}>{proj.total_test_cases}</strong></span>
+                    <span>Bugs: <strong className="text-[var(--color-danger)]">{proj.total_bugs_found}</strong></span>
+                    <span>Patches: <strong className="text-[var(--color-success)]">{proj.total_patches_applied}</strong></span>
                   </div>
 
                   {session && (
-                    <div className="text-[10px] font-mono text-[#6B7280] bg-[rgba(255,255,255,0.03)] rounded-lg px-3 py-2">
+                    <div className="text-[10px] font-mono bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 py-2" style={{ color: "var(--color-text-secondary)" }}>
                       {session.status === "running"
                         ? `⚡ Pipeline running… ${session.agents_run.length} agents done`
                         : session.status === "complete"
@@ -279,7 +259,7 @@ export default function ProjectsPage() {
                       className="w-full text-xs py-1 h-8"
                       onClick={() => window.location.href = `/dashboard`}
                     >
-                      <BarChart2 className="w-3.5 h-3.5 mr-1" /> Dashboard
+                      <IconBarChart2 size={14} className="mr-1" /> Dashboard
                     </Button>
                     <Button
                       className="w-full text-xs py-1 h-8 gap-1"
@@ -287,8 +267,8 @@ export default function ProjectsPage() {
                       onClick={() => handleRunPipeline(proj.id)}
                     >
                       {isRunning
-                        ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Running</>
-                        : <><Zap className="w-3.5 h-3.5" /> Run Agents</>}
+                        ? <><IconRefreshCw size={14} className="animate-spin" /> Running</>
+                        : <><IconZap size={14} /> Run Agents</>}
                     </Button>
                   </div>
                 </div>
@@ -301,39 +281,39 @@ export default function ProjectsPage() {
       {/* Import Modal */}
       <AnimatePresence>
         {isImportOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="glass-card max-w-lg w-full p-6 space-y-4 border border-[rgba(255,255,255,0.1)]"
+              className="glass-card max-w-lg w-full p-6 space-y-4 border border-[var(--color-border)] shadow-2xl"
             >
               {/* Success state */}
               {importResult ? (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-emerald-400">
-                    <CheckCircle className="w-5 h-5" />
+                  <div className="flex items-center gap-2 text-[var(--color-success)]">
+                    <IconCheckCircle size={20} />
                     <h2 className="text-lg font-bold">Import Successful!</h2>
                   </div>
-                  <div className="bg-[rgba(16,185,129,0.05)] border border-emerald-700/30 rounded-xl p-4 space-y-2 text-sm">
-                    <div className="flex justify-between text-xs text-[#9CA3AF]">
-                      <span>Project</span><strong className="text-white">{importResult.name}</strong>
+                  <div className="bg-[rgba(46,107,62,0.06)] border border-[rgba(46,107,62,0.2)] rounded-xl p-4 space-y-2 text-sm">
+                    <div className="flex justify-between text-xs" style={{ color: "var(--color-text-muted)" }}>
+                      <span>Project</span><strong style={{ color: "var(--color-text-primary)" }}>{importResult.name}</strong>
                     </div>
-                    <div className="flex justify-between text-xs text-[#9CA3AF]">
-                      <span>Language</span><strong className="text-white">{importResult.language} {importResult.framework && `· ${importResult.framework}`}</strong>
+                    <div className="flex justify-between text-xs" style={{ color: "var(--color-text-muted)" }}>
+                      <span>Language</span><strong style={{ color: "var(--color-text-primary)" }}>{importResult.language} {importResult.framework && `· ${importResult.framework}`}</strong>
                     </div>
-                    <div className="flex justify-between text-xs text-[#9CA3AF]">
-                      <span>Files scanned</span><strong className="text-white">{importResult.total_files}</strong>
+                    <div className="flex justify-between text-xs" style={{ color: "var(--color-text-muted)" }}>
+                      <span>Files scanned</span><strong style={{ color: "var(--color-text-primary)" }}>{importResult.total_files}</strong>
                     </div>
-                    <div className="flex justify-between text-xs text-[#9CA3AF]">
-                      <span>Functions found</span><strong className="text-white">{importResult.total_functions}</strong>
+                    <div className="flex justify-between text-xs" style={{ color: "var(--color-text-muted)" }}>
+                      <span>Functions found</span><strong style={{ color: "var(--color-text-primary)" }}>{importResult.total_functions}</strong>
                     </div>
-                    <div className="flex justify-between text-xs text-[#9CA3AF]">
-                      <span>API endpoints</span><strong className="text-white">{importResult.api_endpoints.length}</strong>
+                    <div className="flex justify-between text-xs" style={{ color: "var(--color-text-muted)" }}>
+                      <span>API endpoints</span><strong style={{ color: "var(--color-text-primary)" }}>{importResult.api_endpoints.length}</strong>
                     </div>
                     {importResult.session_id && (
-                      <div className="pt-1 text-[10px] font-mono text-blue-400 flex items-center gap-1">
-                        <RefreshCw className="w-3 h-3 animate-spin" />
+                      <div className="pt-1 text-[10px] font-mono text-[var(--color-brown-primary)] flex items-center gap-1">
+                        <IconRefreshCw size={12} className="animate-spin" />
                         Agent pipeline started — session {importResult.session_id.slice(0, 8)}
                       </div>
                     )}
@@ -343,40 +323,40 @@ export default function ProjectsPage() {
               ) : (
                 <>
                   <div>
-                    <h2 className="text-lg font-bold text-[#F9FAFB]">Import Project</h2>
-                    <p className="text-xs text-[#6B7280] mt-0.5">
+                    <h2 className="text-lg font-bold" style={{ color: "var(--color-text-primary)" }}>Import Project</h2>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
                       Import a project by repository link, ZIP download link, or direct ZIP file upload.
                     </p>
                   </div>
 
                   {importError && (
-                    <div className="flex items-start gap-2 bg-red-900/20 border border-red-700/30 text-red-400 text-xs px-3 py-2 rounded-xl">
-                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <div className="flex items-start gap-2 bg-[rgba(139,26,26,0.1)] border border-[rgba(139,26,26,0.3)] text-[var(--color-danger)] text-xs px-3 py-2 rounded-xl">
+                      <IconAlertCircle size={16} className="shrink-0 mt-0.5" />
                       {importError}
                     </div>
                   )}
 
-                  <div className="flex bg-[rgba(255,255,255,0.03)] p-1 rounded-xl border border-[rgba(255,255,255,0.06)]">
+                  <div className="flex bg-[var(--color-bg-secondary)] p-1 rounded-xl border border-[var(--color-border)]">
                     <button
                       type="button"
                       onClick={() => setActiveTab("link")}
                       className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === "link"
-                          ? "bg-[#3B82F6] text-white shadow-lg shadow-[#3B82F6]/20"
-                          : "text-[#9CA3AF] hover:text-white"
+                          ? "bg-[rgba(107,79,47,0.15)] border border-[rgba(107,79,47,0.3)] text-[var(--color-brown-primary)]"
+                          : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
                         }`}
                     >
-                      <LinkIcon className="w-3.5 h-3.5" />
+                      <IconLink size={14} />
                       Git / ZIP Link
                     </button>
                     <button
                       type="button"
                       onClick={() => setActiveTab("file")}
                       className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === "file"
-                          ? "bg-[#3B82F6] text-white shadow-lg shadow-[#3B82F6]/20"
-                          : "text-[#9CA3AF] hover:text-white"
+                          ? "bg-[rgba(107,79,47,0.15)] border border-[rgba(107,79,47,0.3)] text-[var(--color-brown-primary)]"
+                          : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
                         }`}
                     >
-                      <Upload className="w-3.5 h-3.5" />
+                      <IconUpload size={14} />
                       ZIP File Upload
                     </button>
                   </div>
@@ -385,36 +365,39 @@ export default function ProjectsPage() {
                     {activeTab === "link" ? (
                       <>
                         <div className="space-y-1">
-                          <label className="text-xs font-semibold text-[#9CA3AF]">Repository or ZIP URL *</label>
+                          <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Repository or ZIP URL *</label>
                           <input
                             type="text"
                             required
                             value={repoUrl}
                             onChange={e => setRepoUrl(e.target.value)}
                             placeholder="https://github.com/username/repository or https://site.com/code.zip"
-                            className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3B82F6] font-mono"
+                            className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-brown-primary)] font-mono"
+                            style={{ color: "var(--color-text-primary)" }}
                           />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-1">
-                            <label className="text-xs font-semibold text-[#9CA3AF]">Project Name (optional)</label>
+                            <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Project Name (optional)</label>
                             <input
                               type="text"
                               value={projName}
                               onChange={e => setProjName(e.target.value)}
                               placeholder="auto-detected"
-                              className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                              className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-sm focus:outline-none"
+                              style={{ color: "var(--color-text-primary)" }}
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-xs font-semibold text-[#9CA3AF]">Branch</label>
+                            <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Branch</label>
                             <input
                               type="text"
                               value={branch}
                               onChange={e => setBranch(e.target.value)}
                               placeholder="main"
-                              className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                              className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-sm focus:outline-none"
+                              style={{ color: "var(--color-text-primary)" }}
                             />
                           </div>
                         </div>
@@ -422,7 +405,7 @@ export default function ProjectsPage() {
                     ) : (
                       <div className="space-y-3">
                         <div className="space-y-1">
-                          <label className="text-xs font-semibold text-[#9CA3AF]">Project ZIP File *</label>
+                          <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Project ZIP File *</label>
                           <div
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={(e) => {
@@ -434,7 +417,7 @@ export default function ProjectsPage() {
                                 }
                               }
                             }}
-                            className="border-2 border-dashed border-[rgba(255,255,255,0.12)] hover:border-[#3B82F6]/50 transition-colors rounded-xl p-5 text-center cursor-pointer bg-[rgba(255,255,255,0.02)] flex flex-col items-center justify-center space-y-2"
+                            className="border-2 border-dashed border-[var(--color-border)] hover:border-[var(--color-brown-primary)] transition-colors rounded-xl p-5 text-center cursor-pointer bg-[var(--color-surface)] flex flex-col items-center justify-center space-y-2"
                             onClick={() => document.getElementById("zip-file-input")?.click()}
                           >
                             <input
@@ -453,22 +436,22 @@ export default function ProjectsPage() {
                             />
                             {selectedFile ? (
                               <>
-                                <FileArchive className="w-8 h-8 text-blue-400 animate-pulse" />
-                                <div className="text-xs font-semibold text-white truncate max-w-[250px]">
+                                <IconFileArchive size={32} className="text-[var(--color-brown-primary)] animate-pulse" />
+                                <div className="text-xs font-semibold truncate max-w-[250px]" style={{ color: "var(--color-text-primary)" }}>
                                   {selectedFile.name}
                                 </div>
-                                <div className="text-[10px] text-[#9CA3AF]">
+                                <div className="text-[10px]" style={{ color: "var(--color-text-muted)" }}>
                                   {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                                 </div>
-                                <span className="text-[10px] text-blue-400 font-semibold underline mt-0.5">Change file</span>
+                                <span className="text-[10px] text-[var(--color-brown-primary)] font-semibold underline mt-0.5">Change file</span>
                               </>
                             ) : (
                               <>
-                                <Upload className="w-8 h-8 text-[#6B7280]" />
-                                <div className="text-xs text-[#9CA3AF]">
-                                  Drag &amp; drop project ZIP here, or <span className="text-blue-400 underline font-semibold">browse</span>
+                                <IconUpload size={32} className="text-[var(--color-brown-primary)] opacity-60" />
+                                <div className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                                  Drag &amp; drop project ZIP here, or <span className="text-[var(--color-brown-primary)] underline font-semibold">browse</span>
                                 </div>
-                                <div className="text-[10px] text-[#6B7280]">
+                                <div className="text-[10px]" style={{ color: "var(--color-text-muted)" }}>
                                   Supports only .zip archives up to 50MB
                                 </div>
                               </>
@@ -478,24 +461,26 @@ export default function ProjectsPage() {
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-1">
-                            <label className="text-xs font-semibold text-[#9CA3AF]">Project Name *</label>
+                            <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Project Name *</label>
                             <input
                               type="text"
                               required
                               value={projName}
                               onChange={e => setProjName(e.target.value)}
                               placeholder="Project Name"
-                              className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                              className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-sm focus:outline-none"
+                              style={{ color: "var(--color-text-primary)" }}
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-xs font-semibold text-[#9CA3AF]">Project/Repo URL (optional)</label>
+                            <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Project/Repo URL (optional)</label>
                             <input
                               type="text"
                               value={repoUrl}
                               onChange={e => setRepoUrl(e.target.value)}
-                              placeholder="https://simhahatwar.me"
-                              className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3B82F6] font-mono"
+                              placeholder="https://example.com"
+                              className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-brown-primary)] font-mono"
+                              style={{ color: "var(--color-text-primary)" }}
                             />
                           </div>
                         </div>
@@ -503,26 +488,27 @@ export default function ProjectsPage() {
                     )}
 
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-[#9CA3AF]">Description (optional)</label>
+                      <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Description (optional)</label>
                       <input
                         type="text"
                         value={description}
                         onChange={e => setDescription(e.target.value)}
                         placeholder="Brief description of the project"
-                        className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                        className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-sm focus:outline-none"
+                        style={{ color: "var(--color-text-primary)" }}
                       />
                     </div>
 
                     <label className="flex items-center gap-3 cursor-pointer">
                       <div
                         onClick={() => setAutoRun(p => !p)}
-                        className={`w-10 h-5 rounded-full transition-colors ${autoRun ? "bg-[#3B82F6]" : "bg-[rgba(255,255,255,0.12)]"}`}
+                        className={`w-10 h-5 rounded-full transition-colors ${autoRun ? "bg-[var(--color-brown-primary)]" : "bg-[rgba(107,79,47,0.2)]"}`}
                       >
                         <div className={`w-4 h-4 rounded-full bg-white m-0.5 transition-transform ${autoRun ? "translate-x-5" : "translate-x-0"}`} />
                       </div>
-                      <span className="text-xs text-[#9CA3AF]">
+                      <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
                         Auto-run AI agent pipeline after import
-                        <span className="ml-1 text-[#6B7280]">(HuggingFace / Groq)</span>
+                        <span className="ml-1" style={{ color: "var(--color-text-muted)" }}>(HuggingFace / Groq)</span>
                       </span>
                     </label>
 
@@ -532,9 +518,9 @@ export default function ProjectsPage() {
                       </Button>
                       <Button type="submit" className="gap-2" disabled={isImporting}>
                         {isImporting ? (
-                          <><RefreshCw className="w-4 h-4 animate-spin" /> Processing &amp; Scanning…</>
+                          <><IconRefreshCw size={16} className="animate-spin" /> Processing &amp; Scanning…</>
                         ) : (
-                          <><Play className="w-4 h-4" /> Import Project</>
+                          <><IconPlay size={16} /> Import Project</>
                         )}
                       </Button>
                     </div>

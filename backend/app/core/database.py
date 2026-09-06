@@ -5,6 +5,15 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from app.core.config import get_settings
 
+# Monkey-patch Motor 3.6+ missing append_metadata on AsyncIOMotorClient to prevent
+# Motor from returning a MotorDatabase object when Beanie accesses client.append_metadata
+if not hasattr(AsyncIOMotorClient, "append_metadata"):
+    def _append_metadata(self, key_val):
+        delegate = getattr(self, "delegate", None)
+        if delegate and hasattr(delegate, "append_metadata"):
+            delegate.append_metadata(key_val)
+    AsyncIOMotorClient.append_metadata = _append_metadata
+
 _client: AsyncIOMotorClient | None = None
 _database: AsyncIOMotorDatabase | None = None
 
@@ -32,12 +41,6 @@ async def init_mongodb() -> None:
     global _client, _database
 
     settings = get_settings()
-    _client = AsyncIOMotorClient(
-        settings.MONGODB_URL,
-        serverSelectionTimeoutMS=10000,
-        connectTimeoutMS=10000,
-    )
-    _database = _client[settings.MONGODB_DB_NAME]
 
     # Import all document models so Beanie can discover them
     from app.models.api_key import ApiKey

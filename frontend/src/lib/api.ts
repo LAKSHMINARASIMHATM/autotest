@@ -14,6 +14,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...(options?.headers as Record<string, string> ?? {}),
   };
 
+
+  
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("access_token");
     if (token) {
@@ -88,7 +90,7 @@ export interface DashboardMetrics {
     total: number;
     pass_rate: number;
     coverage_pct: number;
-  };
+  } | null;
   total_bugs: number;
   total_patches: number;
   patch_success_rate: number;
@@ -318,6 +320,27 @@ export interface XAISessionResponse {
   xai_report: XAIReport | null;
   explanations: AgentDecision[];
   agents_run: string[];
+}
+
+export interface XAITraceAgent {
+  name: string;
+  decision: string;
+  reason: string;
+  confidence: number;
+  evidence: string[];
+  alternatives: string[];
+}
+
+export interface XAITraceResponse {
+  session_id: string;
+  project_name: string;
+  summary: string;
+  agents: XAITraceAgent[];
+}
+
+/** Fetch real XAI explainability trace from MongoDB & Groq LLM for a project or session */
+export async function getXAITrace(id: string): Promise<XAITraceResponse> {
+  return request<XAITraceResponse>(`/metrics/xai/trace/${id}`);
 }
 
 /** Fetch the XAI audit report from the Explainability agent for a completed session. */

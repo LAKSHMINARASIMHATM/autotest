@@ -1,7 +1,20 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Play, Square, Activity, Cpu, HardDrive, RefreshCw, Terminal, CheckCircle2, AlertTriangle, Layers, Zap, Download } from "lucide-react";
+import {
+  IconPlay,
+  IconSquare,
+  IconActivity,
+  IconCpu,
+  IconHardDrive,
+  IconRefreshCw,
+  IconTerminal,
+  IconCheckCircle,
+  IconAlertTriangle,
+  IconLayers,
+  IconZap,
+  IconDownload,
+} from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import {
@@ -99,83 +112,34 @@ export default function ExecutionPage() {
     terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [logs]);
 
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
-    };
-  }, []);
-
-  // ── Automated Multi-Agent Test Generation + Sandbox Execution ───────────────
   const runAutoTestingPipeline = async () => {
     if (!selectedProjectId) return;
     setIsRunning(true);
+    setLogs(["[AutoTestAI Engine] Triggering end-to-end test generation & sandbox execution..."]);
     setExecutionResult(null);
-    setLogs([
-      "⚡ Starting Automated Multi-Agent Testing Flow...",
-      "Connecting to Multi-Agent Engine (Groq llama-3.3-70b)...",
-      "Launching Planner → Requirement → Architecture → Test Strategy → Test Generation...",
-    ]);
 
     try {
+      setLogs((prev) => [...prev, "[1/3] Invoking test-generation agent with Groq LLM..."]);
       const genRes = await generateTests(selectedProjectId);
-      const sessionId = genRes.session_id;
-
+      
       setLogs((prev) => [
         ...prev,
-        `[Agent Session ID: ${sessionId}] Pipeline initialized successfully.`,
-        "Agents analyzing repository structure & auto-generating Pytest, Playwright, and Newman tests...",
+        `[2/3] Test generation triggered: ${genRes.message ?? genRes.status}`,
+        "[3/3] Executing test suite in runner sandbox...",
       ]);
 
-      // Poll agent pipeline status
-      let attempts = 0;
-      let completed = false;
-      while (attempts < 15 && !completed) {
-        await new Promise((r) => setTimeout(r, 2000));
-        attempts++;
-        try {
-          const status = await getPipelineStatus(sessionId);
-          const agentsStr = status.agents_run ? status.agents_run.join(" → ") : "analyzing...";
-          setLogs((prev) => [
-            ...prev,
-            `[Agent Pipeline: ${status.status.toUpperCase()}] Active Agents: ${agentsStr} | Generated ${status.test_cases_generated} tests`,
-          ]);
-
-          if (status.status === "completed" || status.status === "failed") {
-            completed = true;
-          }
-        } catch {
-          /* ignore polling retry */
-        }
-      }
-
+      const execRes = await executeTests(selectedProjectId, framework, selectedProject?.local_path || "");
+      setExecutionResult(execRes);
       setLogs((prev) => [
         ...prev,
         "--------------------------------------------------",
-        "✓ Multi-Agent Test Generation Complete!",
-        "Now executing generated test suite inside isolated sandbox runner...",
+        "Pipeline Execution Output:",
+        ...(execRes.logs ? execRes.logs.split("\n") : []),
         "--------------------------------------------------",
+        `Summary: Passed=${execRes.passed}, Failed=${execRes.failed}, Total=${execRes.total}`,
       ]);
-
-      // Execute tests in sandbox
-      const res = await executeTests(selectedProjectId, framework, selectedProject?.local_path || "");
-      setExecutionResult(res);
-
-      const backendLogs = res.logs ? res.logs.split("\n") : ["No execution logs returned."];
-      setLogs((prev) => [
-        ...prev,
-        ...backendLogs,
-        "--------------------------------------------------",
-        `[AUTO-TEST COMPLETE] Passed=${res.passed}, Failed=${res.failed}, Errors=${res.errors}, Total=${res.total}`,
-        `Duration: ${res.duration_ms} ms | Line Coverage: ${res.coverage_pct}%`,
-      ]);
-    } catch (err: any) {
-      setLogs((prev) => [
-        ...prev,
-        "--------------------------------------------------",
-        "FATAL: Automated testing pipeline encountered an error:",
-        String(err.message || err),
-      ]);
+    } catch (e: any) {
+      setLogs((prev) => [...prev, `[ERROR] Pipeline failure: ${e.message || String(e)}`]);
     } finally {
       setIsRunning(false);
     }
@@ -184,16 +148,17 @@ export default function ExecutionPage() {
   const runSuite = async () => {
     if (!selectedProjectId) return;
     setIsRunning(true);
+    setLogs(PRE_RUN_LOGS);
     setExecutionResult(null);
-    setLogs([...PRE_RUN_LOGS]);
 
-    let progressIdx = 0;
+    let progressIndex = 0;
     progressTimerRef.current = setInterval(() => {
-      if (progressIdx < SIMULATED_PROGRESS_LOGS.length) {
-        setLogs((prev) => [...prev, SIMULATED_PROGRESS_LOGS[progressIdx]]);
-        progressIdx++;
+      if (progressIndex < SIMULATED_PROGRESS_LOGS.length) {
+        const nextLog = SIMULATED_PROGRESS_LOGS[progressIndex];
+        setLogs((prev) => [...prev, nextLog]);
+        progressIndex++;
       }
-    }, 1800);
+    }, 600);
 
     try {
       let res: ExecuteTestsResponse;
@@ -246,10 +211,10 @@ export default function ExecutionPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight">
+          <h1 className="text-[28px] font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
             <span className="gradient-text">Sandbox</span> Execution
           </h1>
-          <p className="text-sm text-[#6B7280] mt-1">
+          <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
             Run test suites in isolated sandboxes and view execution outputs and coverage details.
           </p>
         </div>
@@ -257,18 +222,19 @@ export default function ExecutionPage() {
         <div className="flex flex-wrap items-center gap-3">
           {/* Project Selector */}
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">Select Project</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>Select Project</label>
             <select
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
               disabled={isRunning}
-              className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-4 py-2 text-sm text-[#F9FAFB] focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50"
+              className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[var(--color-brown-primary)] disabled:opacity-50"
+              style={{ color: "var(--color-text-primary)" }}
             >
               {projects.length === 0 ? (
                 <option value="">No projects loaded</option>
               ) : (
                 projects.map((p) => (
-                  <option key={p.id} value={p.id} className="bg-[#18181B] text-[#F9FAFB]">
+                  <option key={p.id} value={p.id} className="bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]">
                     {p.name}
                   </option>
                 ))
@@ -278,17 +244,18 @@ export default function ExecutionPage() {
 
           {/* Framework Selector */}
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">Framework</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>Framework</label>
             <select
               value={framework}
               onChange={(e) => setFramework(e.target.value)}
               disabled={isRunning}
-              className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-4 py-2 text-sm text-[#F9FAFB] focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50"
+              className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[var(--color-brown-primary)] disabled:opacity-50"
+              style={{ color: "var(--color-text-primary)" }}
             >
-              <option value="pytest" className="bg-[#18181B] text-[#F9FAFB]">pytest (Python)</option>
-              <option value="playwright" className="bg-[#18181B] text-[#F9FAFB]">playwright (UI)</option>
-              <option value="newman" className="bg-[#18181B] text-[#F9FAFB]">newman (API)</option>
-              <option value="regression" className="bg-[#18181B] text-[#F9FAFB]">regression (Regression Checker)</option>
+              <option value="pytest" className="bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]">pytest (Python)</option>
+              <option value="playwright" className="bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]">playwright (UI)</option>
+              <option value="newman" className="bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]">newman (API)</option>
+              <option value="regression" className="bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]">regression (Regression Checker)</option>
             </select>
           </div>
 
@@ -296,26 +263,25 @@ export default function ExecutionPage() {
             <Button
               onClick={runAutoTestingPipeline}
               disabled={isRunning || !selectedProjectId}
-              className="gap-2 text-[13px] font-semibold bg-[#8B5CF6] hover:bg-[#7C3AED] text-white disabled:opacity-50"
+              className="gap-2 text-[13px] font-semibold disabled:opacity-50"
             >
-              <Zap className={`w-4 h-4 ${isRunning ? "animate-spin" : ""}`} />
+              <IconZap size={16} className={isRunning ? "animate-spin" : ""} />
               {isRunning ? "Running Pipeline..." : "Auto-Generate & Run All"}
             </Button>
 
             <Button
               onClick={runSuite}
               disabled={isRunning || !selectedProjectId}
-              className={`gap-2 text-[13px] font-semibold ${
-                isRunning ? "bg-red-600/30 text-red-400 border border-red-500/20 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 text-white"
-              }`}
+              variant="secondary"
+              className="gap-2 text-[13px] font-semibold"
             >
               {isRunning ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" /> Executing Suite...
+                  <IconRefreshCw size={16} className="animate-spin" /> Executing Suite...
                 </>
               ) : (
                 <>
-                  <Play className="w-4 h-4" /> Run Test Suite
+                  <IconPlay size={16} /> Run Test Suite
                 </>
               )}
             </Button>
@@ -323,9 +289,10 @@ export default function ExecutionPage() {
             {executionResult && (
               <Button
                 onClick={downloadReport}
-                className="gap-2 text-[13px] font-semibold bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-[#F9FAFB] border border-[rgba(255,255,255,0.1)]"
+                variant="ghost"
+                className="gap-2 text-[13px] font-semibold"
               >
-                <Download className="w-4 h-4 text-blue-400" /> Export QA Report
+                <IconDownload size={16} className="text-[var(--color-brown-primary)]" /> Export QA Report
               </Button>
             )}
           </div>
@@ -337,29 +304,28 @@ export default function ExecutionPage() {
         <div className="lg:col-span-1 space-y-4">
           <GlassCard className="p-5">
             <div className="flex items-center gap-2 mb-4">
-              
-              <Activity className="w-4.5 h-4.5 text-[#3B82F6]" />
-              <h3 className="text-[15px] font-semibold text-[#F9FAFB]">Sandbox Metrics</h3>
+              <IconActivity size={18} className="text-[var(--color-brown-primary)]" />
+              <h3 className="text-[15px] font-semibold" style={{ color: "var(--color-text-primary)" }}>Sandbox Metrics</h3>
             </div>
             
             <div className="space-y-4">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-[#6B7280]">Status</span>
-                <span className={`font-semibold ${isRunning ? "text-[#3B82F6]" : executionResult ? "text-[#10B981]" : "text-[#6B7280]"}`}>
+                <span style={{ color: "var(--color-text-muted)" }}>Status</span>
+                <span className="font-semibold" style={{ color: isRunning ? "var(--color-brown-primary)" : executionResult ? "var(--color-success)" : "var(--color-text-muted)" }}>
                   {isRunning ? "Running tests..." : executionResult ? "Complete" : "Healthy (Idle)"}
                 </span>
               </div>
 
               <div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-[#6B7280] flex items-center gap-1"><Cpu className="w-3.5 h-3.5" /> Host CPU Usage</span>
-                  <span className="font-semibold text-[#F9FAFB]">
+                  <span className="flex items-center gap-1" style={{ color: "var(--color-text-muted)" }}><IconCpu size={14} /> Host CPU Usage</span>
+                  <span className="font-semibold" style={{ color: "var(--color-text-primary)" }}>
                     {systemHealth ? `${systemHealth.host.cpu_pct.toFixed(1)}%` : isRunning ? "45%" : "0.5%"}
                   </span>
                 </div>
-                <div className="h-1.5 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                <div className="h-1.5 rounded-full bg-[rgba(107,79,47,0.1)] overflow-hidden">
                   <div
-                    className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                    className="h-full rounded-full transition-all duration-500 bg-[var(--color-brown-primary)]"
                     style={{ width: `${systemHealth?.host.cpu_pct ?? (isRunning ? 45 : 1)}%` }}
                   />
                 </div>
@@ -367,16 +333,16 @@ export default function ExecutionPage() {
 
               <div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-[#6B7280] flex items-center gap-1"><HardDrive className="w-3.5 h-3.5" /> RAM Usage</span>
-                  <span className="font-semibold text-[#F9FAFB]">
+                  <span className="flex items-center gap-1" style={{ color: "var(--color-text-muted)" }}><IconHardDrive size={14} /> RAM Usage</span>
+                  <span className="font-semibold" style={{ color: "var(--color-text-primary)" }}>
                     {systemHealth
                       ? `${systemHealth.host.ram_used_mb} / ${systemHealth.host.ram_total_mb} MB (${systemHealth.host.ram_pct.toFixed(1)}%)`
                       : isRunning ? "520 MB" : "45 MB"}
                   </span>
                 </div>
-                <div className="h-1.5 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                <div className="h-1.5 rounded-full bg-[rgba(107,79,47,0.1)] overflow-hidden">
                   <div
-                    className="h-full bg-purple-500 rounded-full transition-all duration-500"
+                    className="h-full rounded-full transition-all duration-500 bg-[var(--color-brown-secondary)]"
                     style={{ width: `${systemHealth?.host.ram_pct ?? (isRunning ? 65 : 8)}%` }}
                   />
                 </div>
@@ -387,41 +353,41 @@ export default function ExecutionPage() {
           {/* Test Outcomes Card */}
           <GlassCard className="p-5">
             <div className="flex items-center gap-2 mb-4">
-              <CheckCircle2 className="w-4.5 h-4.5 text-[#10B981]" />
-              <h3 className="text-[15px] font-semibold text-[#F9FAFB]">Test Outcomes</h3>
+              <IconCheckCircle size={18} className="text-[var(--color-success)]" />
+              <h3 className="text-[15px] font-semibold" style={{ color: "var(--color-text-primary)" }}>Test Outcomes</h3>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.04)] rounded-xl p-3">
-                <div className="text-2xl font-bold text-[#10B981]">{executionResult?.passed ?? 0}</div>
-                <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold">Passed</div>
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-3">
+                <div className="text-2xl font-bold text-[var(--color-success)]">{executionResult?.passed ?? 0}</div>
+                <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "var(--color-text-muted)" }}>Passed</div>
               </div>
-              <div className="bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.04)] rounded-xl p-3">
-                <div className="text-2xl font-bold text-[#EF4444]">{executionResult?.failed ?? 0}</div>
-                <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold">Failed</div>
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-3">
+                <div className="text-2xl font-bold text-[var(--color-danger)]">{executionResult?.failed ?? 0}</div>
+                <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "var(--color-text-muted)" }}>Failed</div>
               </div>
-              <div className="bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.04)] rounded-xl p-3">
-                <div className="text-2xl font-bold text-yellow-500">{executionResult?.errors ?? 0}</div>
-                <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold">Errors</div>
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-3">
+                <div className="text-2xl font-bold text-[var(--color-warning)]">{executionResult?.errors ?? 0}</div>
+                <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "var(--color-text-muted)" }}>Errors</div>
               </div>
-              <div className="bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.04)] rounded-xl p-3">
-                <div className="text-2xl font-bold text-[#F9FAFB]">{executionResult?.total ?? 0}</div>
-                <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold">Total</div>
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-3">
+                <div className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>{executionResult?.total ?? 0}</div>
+                <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "var(--color-text-muted)" }}>Total</div>
               </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-[rgba(255,255,255,0.05)] space-y-3">
+            <div className="mt-4 pt-4 border-t border-[var(--color-border)] space-y-3">
               <div className="flex justify-between text-xs">
-                <span className="text-[#6B7280]">Line Coverage</span>
-                <span className="font-semibold text-blue-400">{executionResult ? `${executionResult.coverage_pct}%` : "—"}</span>
+                <span style={{ color: "var(--color-text-muted)" }}>Line Coverage</span>
+                <span className="font-semibold text-[var(--color-brown-primary)]">{executionResult ? `${executionResult.coverage_pct}%` : "—"}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-[#6B7280]">Branch Coverage</span>
-                <span className="font-semibold text-emerald-400">{executionResult ? `${(executionResult.coverage_pct * 0.92).toFixed(1)}%` : "—"}</span>
+                <span style={{ color: "var(--color-text-muted)" }}>Branch Coverage</span>
+                <span className="font-semibold text-[var(--color-success)]">{executionResult ? `${(executionResult.coverage_pct * 0.92).toFixed(1)}%` : "—"}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-[#6B7280]">Duration</span>
-                <span className="font-semibold text-purple-400">{executionResult ? `${(executionResult.duration_ms / 1000).toFixed(2)}s` : "—"}</span>
+                <span style={{ color: "var(--color-text-muted)" }}>Duration</span>
+                <span className="font-semibold text-[var(--color-brown-secondary)]">{executionResult ? `${(executionResult.duration_ms / 1000).toFixed(2)}s` : "—"}</span>
               </div>
             </div>
           </GlassCard>
@@ -430,39 +396,39 @@ export default function ExecutionPage() {
         {/* Live logs terminal */}
         <div className="lg:col-span-2">
           <GlassCard className="p-6 h-[520px] flex flex-col">
-            <div className="flex items-center justify-between mb-4 border-b border-[rgba(255,255,255,0.05)] pb-3">
+            <div className="flex items-center justify-between mb-4 border-b border-[var(--color-border)] pb-3">
               <div className="flex items-center gap-2">
-                <Terminal className="w-4.5 h-4.5 text-[#10B981]" />
-                <h3 className="text-sm font-semibold text-[#F9FAFB]">Console Output</h3>
+                <IconTerminal size={18} className="text-[var(--color-success)]" />
+                <h3 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>Console Output</h3>
               </div>
               {isRunning && (
-                <span className="flex items-center gap-1.5 text-xs text-[#3B82F6]">
-                  <RefreshCw className="w-3 h-3 animate-spin" /> Streaming logs
+                <span className="flex items-center gap-1.5 text-xs text-[var(--color-brown-primary)]">
+                  <IconRefreshCw size={12} className="animate-spin" /> Streaming logs
                 </span>
               )}
             </div>
 
-            <div className="flex-1 bg-[#09090B] border border-[rgba(255,255,255,0.06)] rounded-xl p-5 font-mono text-[11px] leading-relaxed overflow-y-auto text-[#9CA3AF] space-y-1.5">
+            <div className="flex-1 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-5 font-mono text-[11px] leading-relaxed overflow-y-auto space-y-1.5" style={{ color: "var(--color-text-secondary)" }}>
               {logs.length === 0 ? (
-                <div className="text-[#6B7280] italic h-full flex items-center justify-center">
+                <div className="italic h-full flex items-center justify-center" style={{ color: "var(--color-text-muted)" }}>
                   Select a project and click "Run Test Suite" to begin.
                 </div>
               ) : (
                 logs.map((log, idx) => {
                   const logStr = typeof log === "string" ? log : "";
-                  let lineClass = "";
+                  let lineStyle: React.CSSProperties = { color: "var(--color-text-secondary)" };
                   if (logStr.includes("PASSED") || logStr.includes("test_cases_generated") || logStr.includes("Passed=")) {
-                    lineClass = "text-[#10B981]";
+                    lineStyle = { color: "var(--color-success)", fontWeight: 600 };
                   } else if (logStr.includes("FAILED") || logStr.includes("failures") || logStr.includes("FATAL") || logStr.includes("Error:")) {
-                    lineClass = "text-[#EF4444]";
+                    lineStyle = { color: "var(--color-danger)", fontWeight: 600 };
                   } else if (logStr.includes("Initialize") || logStr.includes("Configuring") || logStr.includes("Running") || logStr.includes("Stream")) {
-                    lineClass = "text-blue-400";
+                    lineStyle = { color: "var(--color-brown-primary)" };
                   }
 
                   return (
                     <div key={idx} className="flex gap-2">
-                      <span className="select-none opacity-20 text-xs w-6">{idx + 1}</span>
-                      <span className={lineClass}>{logStr}</span>
+                      <span className="select-none opacity-40 text-xs w-6" style={{ color: "var(--color-text-muted)" }}>{idx + 1}</span>
+                      <span style={lineStyle}>{logStr}</span>
                     </div>
                   );
                 })

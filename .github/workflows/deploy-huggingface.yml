@@ -1,0 +1,54 @@
+name: Deploy Backend to Hugging Face Spaces
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-huggingface.yml'
+
+jobs:
+  deploy-hf:
+    name: Sync Backend to Hugging Face Space
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Hugging Face Hub CLI
+        run: pip install huggingface_hub
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_REPO: ${{ secrets.HF_SPACE_REPO }} # Format: username/space-name
+        run: |
+          if [ -z "$HF_TOKEN" ] || [ -z "$HF_SPACE_REPO" ]; then
+            echo "Skipping Hugging Face push: HF_TOKEN or HF_SPACE_REPO secrets not set."
+            exit 0
+          fi
+
+          python -c "
+          from huggingface_hub import HfApi
+          import os
+
+          api = HfApi(token=os.environ['HF_TOKEN'])
+          repo_id = os.environ['HF_SPACE_REPO']
+
+          print(f'Uploading backend folder to Hugging Face Space: {repo_id}')
+          api.upload_folder(
+              folder_path='backend',
+              repo_id=repo_id,
+              repo_type='space',
+              commit_message='Deploy backend update via GitHub Actions'
+          )
+          print('Successfully deployed to Hugging Face Space!')
+          "

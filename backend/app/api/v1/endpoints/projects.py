@@ -186,7 +186,7 @@ async def _run_pipeline_background(project_id: str, local_path: str, repo_summar
         from app.api.v1.endpoints.agents import _save_test_cases, _save_bugs, _save_patches
 
         tests_saved = await _save_test_cases(project, final_state.get("generated_tests", []))
-        bugs_saved = await _save_bugs(
+        bugs_saved, _bug_map = await _save_bugs(
             project,
             final_state.get("bug_localizations", []),
             final_state.get("root_causes", []),
@@ -702,14 +702,33 @@ async def get_project_bugs(
     project_id: str,
     _user_id: str = Depends(get_current_user_id),
 ):
-    """Retrieve all localized bugs for a project."""
+    """Retrieve all localized bugs for a project (or all projects if project_id == 'all')."""
     from beanie import PydanticObjectId
-
     from app.models.bug_report import BugReport
+
+    if project_id == "all":
+        bugs = await BugReport.find_all().to_list()
+        return [
+            {
+                "id": str(b.id),
+                "severity": b.severity,
+                "file": b.file_path,
+                "method": b.method_name,
+                "line": b.line_number,
+                "confidence": b.confidence,
+                "status": b.status,
+                "rootCause": b.root_cause_summary,
+                "codeSnippet": b.explanation.get("code_snippet", "") if b.explanation else "",
+                "fixSuggestion": b.explanation.get("fix_suggestion", "") if b.explanation else "",
+            }
+            for b in bugs
+        ]
+
     try:
         p_id = PydanticObjectId(project_id)
     except Exception:
         return []
+
     bugs = await BugReport.find(BugReport.project_id == p_id).to_list()
     return [
         {
@@ -831,16 +850,36 @@ async def run_huggingface_bug_scan(project_id: str) -> None:
             return
 
         project_path = project.local_path
+        clone_path = None
+        if not project_path or not os.path.exists(project_path):
+            if project.repo_url:
+                try:
+                    from app.agents.github_import import clone_and_scan
+                    log.info("hf_scan_cloning_repo", url=project.repo_url)
+                    summary = await clone_and_scan(project.repo_url, project.branch or "main")
+                    clone_path = summary.local_path
+                    project_path = clone_path
+                except Exception as clone_err:
+                    log.warning("hf_scan_clone_failed", error=str(clone_err))
+
         if not project_path or not os.path.exists(project_path):
             log.error("hf_scan_invalid_local_path", path=project_path)
             return
 
-        # Get Hugging Face LLM
+        # Get Hugging Face LLM (with fallback to Groq / Best available LLM)
+        from app.agents.llm_factory import get_best_llm
+        llm = None
         try:
             llm = get_huggingface_llm()
-        except Exception as llm_err:
-            log.error("hf_scan_llm_init_failed", error=str(llm_err))
-            return
+            log.info("hf_scan_using_huggingface_llm")
+        except Exception as hf_err:
+            log.warning("hf_scan_llm_init_failed_falling_back_to_groq", error=str(hf_err))
+            try:
+                llm = get_best_llm()
+                log.info("hf_scan_using_groq_fallback_llm")
+            except Exception as best_err:
+                log.error("hf_scan_all_llms_failed", error=str(best_err))
+                llm = None
 
         bugs_found_count = 0
 
@@ -954,28 +993,33 @@ If no bugs are found, respond with an empty JSON array: []"""
 
                 chunks = chunk_file_content(content)
                 for start_line, chunk_text in chunks:
+                    if not llm:
+                        break
                     user_prompt = f"File Path: {rel_path}\n\n=== SOURCE CODE CHUNK (Starting on line {start_line}) ===\n{chunk_text}\n\nScan this chunk and report any bugs in JSON format."
 
-                    # Call HuggingFace
-                    response = await llm.ainvoke([
-                        SystemMessage(content=system_prompt),
-                        HumanMessage(content=user_prompt)
-                    ])
-
-                    resp_text = response.content
-                    if isinstance(resp_text, list):
-                        resp_text = "".join(str(part) for part in resp_text)
-                    resp_text = resp_text.strip()
-
-                    # Extract JSON array
-                    json_match = re.search(r"\[\s*\{.*\}\s*\]", resp_text, re.DOTALL)
-                    raw_json = json_match.group(0) if json_match else resp_text
-
                     try:
-                        detected_bugs = json.loads(raw_json)
-                        if not isinstance(detected_bugs, list):
-                            detected_bugs = [detected_bugs]
-                    except Exception:
+                        response = await llm.ainvoke([
+                            SystemMessage(content=system_prompt),
+                            HumanMessage(content=user_prompt)
+                        ])
+
+                        resp_text = response.content
+                        if isinstance(resp_text, list):
+                            resp_text = "".join(str(part) for part in resp_text)
+                        resp_text = resp_text.strip()
+
+                        # Extract JSON array
+                        json_match = re.search(r"\[\s*\{.*\}\s*\]", resp_text, re.DOTALL)
+                        raw_json = json_match.group(0) if json_match else resp_text
+
+                        try:
+                            detected_bugs = json.loads(raw_json)
+                            if not isinstance(detected_bugs, list):
+                                detected_bugs = [detected_bugs]
+                        except Exception:
+                            detected_bugs = []
+                    except Exception as llm_invoke_err:
+                        log.warning("hf_scan_llm_invoke_failed", file=rel_path, error=str(llm_invoke_err))
                         detected_bugs = []
 
                     for bug_data in detected_bugs:
@@ -985,7 +1029,6 @@ If no bugs are found, respond with an empty JSON array: []"""
                         sev_str = str(bug_data.get("severity", "medium")).upper()
                         sev = getattr(BugSeverity, sev_str, BugSeverity.MEDIUM)
 
-                        # Extract line number and snippet
                         line_num = int(bug_data.get("line_number") or 1)
                         snippet = bug_data.get("code_snippet", "")
                         if not snippet:
@@ -1029,6 +1072,10 @@ If no bugs are found, respond with an empty JSON array: []"""
 
     except Exception as e:
         log.exception("hf_scan_error", error=str(e))
+    finally:
+        if clone_path:
+            from app.agents.github_import import cleanup_clone
+            cleanup_clone(clone_path)
 
 
 @router.post("/{project_id}/scan-bugs")

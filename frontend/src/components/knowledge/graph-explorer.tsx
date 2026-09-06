@@ -4,17 +4,16 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { GlassCard } from "@/components/ui/glass-card";
 import {
-  ChevronRight,
-  Database,
-  FileCode,
-  FolderTree,
-  Globe,
-  Layers,
-  Search,
-  Workflow,
-  Folder,
-} from "lucide-react";
-import { useState } from "react";
+  IconChevronRight,
+  IconDatabase,
+  IconFileCode,
+  IconFolderGit,
+  IconGlobe,
+  IconLayers,
+  IconSearch,
+} from "@/components/icons";
+import { useState, useEffect } from "react";
+import { getDefaultProjectId, getProjectGraphTree } from "@/lib/api";
 
 interface KGNode {
   id: string;
@@ -24,38 +23,35 @@ interface KGNode {
 }
 
 const nodeIcons: Record<string, React.ElementType> = {
-  project: FolderTree,
-  folder: Folder,
-  file: FileCode,
-  module: Layers,
-  class: FileCode,
-  function: Workflow,
-  api: Globe,
-  table: Database,
-  requirement: ChevronRight,
-  test: ChevronRight,
+  project: IconFolderGit,
+  folder: IconFolderGit,
+  file: IconFileCode,
+  module: IconLayers,
+  class: IconFileCode,
+  function: IconSearch,
+  api: IconGlobe,
+  table: IconDatabase,
+  requirement: IconChevronRight,
+  test: IconChevronRight,
 };
 
 const nodeColors: Record<string, { bg: string; text: string; border: string }> = {
-  project: { bg: "bg-[#3B82F6]/10", text: "text-[#3B82F6]", border: "border-[#3B82F6]/20" },
-  folder: { bg: "bg-[#3B82F6]/10", text: "text-[#3B82F6]", border: "border-[#3B82F6]/20" },
-  file: { bg: "bg-[#06B6D4]/10", text: "text-[#06B6D4]", border: "border-[#06B6D4]/20" },
-  module: { bg: "bg-[#8B5CF6]/10", text: "text-[#8B5CF6]", border: "border-[#8B5CF6]/20" },
-  class: { bg: "bg-[#06B6D4]/10", text: "text-[#06B6D4]", border: "border-[#06B6D4]/20" },
-  function: { bg: "bg-[#10B981]/10", text: "text-[#10B981]", border: "border-[#10B981]/20" },
-  api: { bg: "bg-[#F59E0B]/10", text: "text-[#F59E0B]", border: "border-[#F59E0B]/20" },
-  table: { bg: "bg-[#EF4444]/10", text: "text-[#EF4444]", border: "border-[#EF4444]/20" },
-  requirement: { bg: "bg-[#EC4899]/10", text: "text-[#EC4899]", border: "border-[#EC4899]/20" },
-  test: { bg: "bg-[#10B981]/10", text: "text-[#10B981]", border: "border-[#10B981]/20" },
+  project: { bg: "bg-[rgba(107,79,47,0.12)]", text: "text-[var(--color-brown-primary)]", border: "border-[rgba(107,79,47,0.25)]" },
+  folder: { bg: "bg-[rgba(107,79,47,0.1)]", text: "text-[var(--color-brown-primary)]", border: "border-[rgba(107,79,47,0.2)]" },
+  file: { bg: "bg-[rgba(139,115,85,0.1)]", text: "text-[var(--color-brown-secondary)]", border: "border-[rgba(139,115,85,0.2)]" },
+  module: { bg: "bg-[rgba(107,79,47,0.1)]", text: "text-[var(--color-brown-primary)]", border: "border-[rgba(107,79,47,0.2)]" },
+  class: { bg: "bg-[rgba(139,115,85,0.1)]", text: "text-[var(--color-brown-secondary)]", border: "border-[rgba(139,115,85,0.2)]" },
+  function: { bg: "bg-[rgba(46,107,62,0.1)]", text: "text-[var(--color-success)]", border: "border-[rgba(46,107,62,0.25)]" },
+  api: { bg: "bg-[rgba(122,81,0,0.1)]", text: "text-[var(--color-warning)]", border: "border-[rgba(122,81,0,0.25)]" },
+  table: { bg: "bg-[rgba(139,26,26,0.1)]", text: "text-[var(--color-danger)]", border: "border-[rgba(139,26,26,0.25)]" },
+  requirement: { bg: "bg-[rgba(107,79,47,0.08)]", text: "text-[var(--color-brown-primary)]", border: "border-[rgba(107,79,47,0.2)]" },
+  test: { bg: "bg-[rgba(46,107,62,0.1)]", text: "text-[var(--color-success)]", border: "border-[rgba(46,107,62,0.25)]" },
 };
-
-import { useEffect, type ElementType } from "react";
-import { getDefaultProjectId, getProjectGraphTree } from "@/lib/api";
 
 function TreeNode({ node, depth = 0 }: { node: KGNode; depth?: number }) {
   const [expanded, setExpanded] = useState(depth < 2);
   const hasChildren = node.children && node.children.length > 0;
-  const Icon = nodeIcons[node.type] || ChevronRight;
+  const Icon = nodeIcons[node.type] || IconChevronRight;
   const colors = nodeColors[node.type] || nodeColors.module;
 
   return (
@@ -68,25 +64,26 @@ function TreeNode({ node, depth = 0 }: { node: KGNode; depth?: number }) {
         onClick={() => hasChildren && setExpanded(!expanded)}
         className={cn(
           "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-left transition-all duration-150",
-          "hover:bg-[rgba(255,255,255,0.04)]",
+          "hover:bg-[rgba(107,79,47,0.06)]",
           hasChildren && "cursor-pointer",
           !hasChildren && "cursor-default"
         )}
         style={{ paddingLeft: `${depth * 16 + 10}px` }}
       >
         {hasChildren && (
-          <ChevronRight
+          <IconChevronRight
+            size={12}
             className={cn(
-              "w-3 h-3 text-[#4B5563] transition-transform duration-200 shrink-0",
+              "text-[var(--color-text-muted)] transition-transform duration-200 shrink-0",
               expanded && "rotate-90"
             )}
           />
         )}
         {!hasChildren && <span className="w-3" />}
         <div className={cn("w-5 h-5 rounded flex items-center justify-center shrink-0", colors.bg)}>
-          <Icon className={cn("w-3 h-3", colors.text)} />
+          <Icon size={12} className={colors.text} />
         </div>
-        <span className="text-[12px] text-[#F9FAFB] font-medium truncate">{node.label}</span>
+        <span className="text-[12px] font-medium truncate" style={{ color: "var(--color-text-primary)" }}>{node.label}</span>
         <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded ml-auto shrink-0", colors.bg, colors.text)}>
           {node.type}
         </span>
@@ -160,8 +157,8 @@ export function KnowledgeGraphExplorer({ projectId, refreshKey, className }: { p
     <GlassCard className={cn("p-5 flex flex-col h-full", className)}>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-[15px] font-semibold text-[#F9FAFB]">Knowledge Graph</h3>
-          <p className="text-xs text-[#6B7280] mt-0.5">Project structure • Live Data</p>
+          <h3 className="text-[15px] font-semibold" style={{ color: "var(--color-text-primary)" }}>Knowledge Graph</h3>
+          <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>Project structure • Live Data</p>
         </div>
       </div>
 
@@ -170,7 +167,7 @@ export function KnowledgeGraphExplorer({ projectId, refreshKey, className }: { p
         {Object.entries(nodeColors).map(([type, colors]) => (
           <div key={type} className="flex items-center gap-1">
             <span className={cn("w-2 h-2 rounded-full", colors.bg, colors.border, "border")} />
-            <span className="text-[10px] text-[#6B7280] capitalize">{type}</span>
+            <span className="text-[10px] capitalize" style={{ color: "var(--color-text-muted)" }}>{type}</span>
           </div>
         ))}
       </div>
@@ -178,18 +175,18 @@ export function KnowledgeGraphExplorer({ projectId, refreshKey, className }: { p
       {/* Tree content */}
       <div className="flex-1 overflow-y-auto space-y-0.5 min-h-[300px]">
         {loading && (
-          <div className="flex flex-col items-center justify-center h-full py-20 text-[#9CA3AF] gap-2 text-xs">
-            <div className="w-5 h-5 border-2 border-t-transparent border-[#8B5CF6] rounded-full animate-spin" />
+          <div className="flex flex-col items-center justify-center h-full py-20 gap-2 text-xs" style={{ color: "var(--color-text-muted)" }}>
+            <div className="w-5 h-5 border-2 border-t-transparent border-[var(--color-brown-primary)] rounded-full animate-spin" />
             Loading project graph...
           </div>
         )}
         {error && (
-          <div className="text-red-400 text-xs py-10 text-center font-mono">
+          <div className="text-[var(--color-danger)] text-xs py-10 text-center font-mono">
             {error}
           </div>
         )}
         {!loading && !error && graphData.length === 0 && (
-          <div className="flex items-center justify-center h-full py-20 text-[#6B7280] text-xs">
+          <div className="flex items-center justify-center h-full py-20 text-xs" style={{ color: "var(--color-text-muted)" }}>
             No project structure loaded. Import a project first.
           </div>
         )}
