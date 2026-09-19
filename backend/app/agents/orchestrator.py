@@ -16,11 +16,15 @@ from langgraph.graph import END, StateGraph
 
 from app.agents.nodes.architecture import ArchitectureAgent
 from app.agents.nodes.bug_localization import BugLocalizationAgent
+from app.agents.nodes.code_understanding import CodeUnderstandingAgent
+from app.agents.nodes.coverage_analyst import CoverageAnalystAgent
 from app.agents.nodes.execution import ExecutionAgent
+from app.agents.nodes.explainability_agent import ExplainabilityAgent
 from app.agents.nodes.learning import LearningAgent
 from app.agents.nodes.patch_validation import PatchValidationAgent
 from app.agents.nodes.planner import PlannerAgent
 from app.agents.nodes.program_repair import ProgramRepairAgent
+from app.agents.nodes.regression_agent import RegressionAgent
 from app.agents.nodes.requirement import RequirementAgent
 from app.agents.nodes.root_cause import RootCauseAgent
 from app.agents.nodes.test_generation import TestGenerationAgent
@@ -68,50 +72,60 @@ def build_agent_graph(llm: BaseChatModel | None = None) -> StateGraph:
 
     workflow = StateGraph(AgentState)
 
-    # All 12 agents use Groq for consistent, reliable execution
-    planner      = PlannerAgent(groq_llm)
-    requirement  = RequirementAgent(groq_llm)
-    architecture = ArchitectureAgent(groq_llm)
-    test_strategy = TestStrategyAgent(groq_llm)
-    test_gen     = TestGenerationAgent(groq_llm)
-    verification = VerificationAgent(groq_llm)
-    execution    = ExecutionAgent(groq_llm)
-    bug_loc      = BugLocalizationAgent(groq_llm)
-    root_cause   = RootCauseAgent(groq_llm)
-    repair       = ProgramRepairAgent(groq_llm)
-    patch_val    = PatchValidationAgent(groq_llm)
-    learning     = LearningAgent(groq_llm)
+    # All 14 specialized agents use Groq for consistent, reliable execution
+    planner         = PlannerAgent(groq_llm)
+    requirement     = RequirementAgent(groq_llm)
+    code_und        = CodeUnderstandingAgent(groq_llm)
+    architecture    = ArchitectureAgent(groq_llm)
+    test_strategy   = TestStrategyAgent(groq_llm)
+    test_gen        = TestGenerationAgent(groq_llm)
+    verification    = VerificationAgent(groq_llm)
+    execution       = ExecutionAgent(groq_llm)
+    cov_analyst     = CoverageAnalystAgent(groq_llm)
+    bug_loc         = BugLocalizationAgent(groq_llm)
+    root_cause      = RootCauseAgent(groq_llm)
+    repair          = ProgramRepairAgent(groq_llm)
+    patch_val       = PatchValidationAgent(groq_llm)
+    regression      = RegressionAgent(groq_llm)
+    explain         = ExplainabilityAgent(groq_llm)
+    learning        = LearningAgent(groq_llm)
 
     # Add nodes to graph
     workflow.add_node("planner", planner)
     workflow.add_node("requirement", requirement)
+    workflow.add_node("code_understanding", code_und)
     workflow.add_node("architecture", architecture)
     workflow.add_node("test_strategy", test_strategy)
     workflow.add_node("test_generation", test_gen)
     workflow.add_node("verification", verification)
     workflow.add_node("execution", execution)
+    workflow.add_node("coverage_analyst", cov_analyst)
     workflow.add_node("bug_localization", bug_loc)
     workflow.add_node("root_cause", root_cause)
     workflow.add_node("program_repair", repair)
     workflow.add_node("patch_validation", patch_val)
+    workflow.add_node("regression_agent", regression)
+    workflow.add_node("explainability", explain)
     workflow.add_node("learning", learning)
 
     # Define standard workflow edges
     workflow.set_entry_point("planner")
     workflow.add_edge("planner", "requirement")
-    workflow.add_edge("requirement", "architecture")
+    workflow.add_edge("requirement", "code_understanding")
+    workflow.add_edge("code_understanding", "architecture")
     workflow.add_edge("architecture", "test_strategy")
     workflow.add_edge("test_strategy", "test_generation")
     workflow.add_edge("test_generation", "verification")
     workflow.add_edge("verification", "execution")
+    workflow.add_edge("execution", "coverage_analyst")
 
-    # Conditional routing after execution
+    # Conditional routing after execution/coverage analysis
     workflow.add_conditional_edges(
-        "execution",
+        "coverage_analyst",
         route_after_execution,
         {
             "bug_localization": "bug_localization",
-            "learning": "learning",
+            "learning": "explainability",
         },
     )
 
@@ -119,18 +133,19 @@ def build_agent_graph(llm: BaseChatModel | None = None) -> StateGraph:
     workflow.add_edge("bug_localization", "root_cause")
     workflow.add_edge("root_cause", "program_repair")
     workflow.add_edge("program_repair", "patch_validation")
+    workflow.add_edge("patch_validation", "regression_agent")
 
-    # Conditional routing after patch validation (retry repair vs finish)
+    # Conditional routing after patch validation & regression
     workflow.add_conditional_edges(
-        "patch_validation",
+        "regression_agent",
         route_after_patch_validation,
         {
             "program_repair": "program_repair",
-            "learning": "learning",
+            "learning": "explainability",
         },
     )
 
-    # Terminal node
+    workflow.add_edge("explainability", "learning")
     workflow.add_edge("learning", END)
 
     return workflow

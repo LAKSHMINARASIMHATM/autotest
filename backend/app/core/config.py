@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     HUGGINGFACE_API_TOKEN: SecretStr = SecretStr("")
     HF_MODEL: str = "Qwen/Qwen2.5-7B-Instruct"
 
-    DEFAULT_LLM_MODEL: str = "llama-3.3-70b-versatile"
+    DEFAULT_LLM_MODEL: str = "openai/gpt-oss-120b"
     DEFAULT_TEMPERATURE: float = 0.1
 
     # ── JWT ──────────────────────────────────────────────────────

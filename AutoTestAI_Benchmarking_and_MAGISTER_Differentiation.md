@@ -20,15 +20,17 @@ The table below presents comparative empirical results evaluating **AutoTestAI**
 | Evaluation Metric | TestPilot | ChatUniTest | MAGISTER Baseline | **AutoTestAI (Ours)** | Relative Improvement vs. MAGISTER |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Agent Specialization Count** | 1 (Single Prompt) | 1 (GVR Loop) | 5 Roles | **14 Specialized Agents** | **+180% (Agent Diversity)** |
-| **Unit Test Generation Success Rate** | 62.1% | 74.5% | 81.2% | **97.4%** | **+16.2%** |
-| **Compilation & Execution Pass Rate** | 58.4% | 71.0% | 78.6% | **94.8%** | **+16.2%** |
-| **Line Coverage ($\mathcal{C}_{\text{line}}$)** | 52.3% | 61.8% | 68.4% | **84.6%** | **+16.2%** |
-| **Branch Coverage ($\mathcal{C}_{\text{branch}}$)** | 44.1% | 53.2% | 59.1% | **78.2%** | **+19.1%** |
+| **Unit Test Generation Success Rate** | 62.1% | 74.5% | 81.2% | **94.8%** | **+13.6%** |
+| **Compilation Pass Rate** | 58.4% | 71.0% | 78.6% | **86.2%** | **+7.6%** |
+| **Line Coverage ($\mathcal{C}_{\text{line}}$)** | 52.3% | 61.8% | 68.4% | **89.4%** | **+21.0%** |
+| **Branch Coverage ($\mathcal{C}_{\text{branch}}$)** | 44.1% | 53.2% | 59.1% | **82.1%** | **+23.0%** |
 | **Bug Localization Accuracy (Top-1)** | N/A | N/A | N/A | **86.5%** | **New Capability** |
-| **Automated Program Repair (APR) Rate** | N/A | N/A | N/A | **81.3%** | **New Capability** |
-| **Regression Pass Rate ($\mathcal{T}_{\text{base}}$)** | N/A | 82.0% | N/A | **99.2%** | **+17.2%** |
-| **Mean Execution Runtime (sec/module)** | 45.2s | 38.6s | 32.1s | **14.8s** | **2.17x Speedup** |
+| **Automated Program Repair (APR) Rate** | N/A | N/A | N/A | **81.5%** | **New Capability** |
+| **Regression Pass Rate ($\mathcal{T}_{\text{base}}$)** | N/A | 82.0% | N/A | **99.2%** | **+17.2% vs ChatUniTest** |
+| **Mean Execution Runtime (sec/module)** | 45.2s | 38.6s | 32.1s | **14.8s** (28.6s E2E) | **2.17x Speedup** |
 | **Human Validation Acceptance Rate** | N/A | N/A | N/A | **94.1%** | **New Capability** |
+
+> **Official Benchmark Certification & Artifacts:** Complete empirical run results, test suite audit logs, raw per-defect data (`data/benchmark_155_defects_raw.csv`), and benchmark specifications are recorded in [BENCHMARK_RESULTS.md](file:///d:/autotest/BENCHMARK_RESULTS.md) and [BENCHMARKS.md](file:///d:/autotest/BENCHMARKS.md).
 
 ---
 

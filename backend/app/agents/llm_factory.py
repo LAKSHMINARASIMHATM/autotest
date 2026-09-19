@@ -60,27 +60,50 @@ def get_groq_llm() -> BaseChatModel:
 
     try:
         from langchain_groq import ChatGroq
-        logger.info("llm_selected", provider="groq_rotating", keys_count=len(valid_keys), model=settings.DEFAULT_LLM_MODEL)
 
-        models = [
-            ChatGroq(
-                model=settings.DEFAULT_LLM_MODEL,
-                temperature=settings.DEFAULT_TEMPERATURE,
-                api_key=k,
-            )
-            for k in valid_keys
+        primary_model = settings.DEFAULT_LLM_MODEL
+        known_candidates = [
+            "openai/gpt-oss-120b",
+            "qwen/qwen3.8-27b",
+            "openai/gpt-oss-20b",
+            "qwen/qwen3.6-27b",
         ]
+        models_to_try = [primary_model] + [m for m in known_candidates if m != primary_model]
+
+        logger.info("llm_selected", provider="groq_rotating", keys_count=len(valid_keys), model=primary_model)
+
+        all_models = []
+        # Primary model across all keys (key rotation)
+        for k in valid_keys:
+            all_models.append(
+                ChatGroq(
+                    model=primary_model,
+                    temperature=settings.DEFAULT_TEMPERATURE,
+                    api_key=k,
+                )
+            )
+
+        # Fallback models across keys (model rotation if primary is invalid/deprecated)
+        for candidate in models_to_try[1:]:
+            for k in valid_keys[:2]:
+                all_models.append(
+                    ChatGroq(
+                        model=candidate,
+                        temperature=settings.DEFAULT_TEMPERATURE,
+                        api_key=k,
+                    )
+                )
 
         # Add HuggingFace as final fallback if available
         try:
             hf_model = get_huggingface_llm()
-            fallbacks = models[1:] + [hf_model]
+            fallbacks = all_models[1:] + [hf_model]
         except Exception:
-            fallbacks = models[1:]
+            fallbacks = all_models[1:]
 
         if not fallbacks:
-            return models[0]
-        return models[0].with_fallbacks(fallbacks)
+            return all_models[0]
+        return all_models[0].with_fallbacks(fallbacks)
 
     except Exception as e:
         logger.warning("groq_llm_failed_falling_back_to_hf", error=str(e))

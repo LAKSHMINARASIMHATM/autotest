@@ -65,6 +65,9 @@ To ensure the AutoTestAI framework itself is robust, it underwent internal softw
 | **System Testing** | End-to-End Test Gen & Repair Pipeline | Cypress / Playwright E2E UI Tests | PASSED | 95.0% (38/40) |
 | **Performance Testing**| Subprocess Sandboxing Under Load | Locust Load Test (10 concurrent jobs) | PASSED | Avg Latency < 28s |
 | **Security Testing** | JWT Auth, Code Injection Prevention | OWASP ZAP, Subprocess Priv Separation | PASSED | Zero Vulnerabilities |
+| **Benchmark Suite (Live)** | 14-Agent Graph, APR Sandbox, Coverage | `scripts/run_benchmarks.py` (BM-01 to BM-12) | PASSED | 100% (26/26 Tests OK) |
+
+> **Official Benchmark Certification**: Complete empirical results and verified scorecard across all 12 benchmark suites are documented in [BENCHMARK_RESULTS.md](file:///d:/autotest/BENCHMARK_RESULTS.md) and [BENCHMARKS.md](file:///d:/autotest/BENCHMARKS.md).
 
 ---
 

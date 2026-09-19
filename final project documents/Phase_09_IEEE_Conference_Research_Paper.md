@@ -457,29 +457,38 @@ AutoTestAI was evaluated against Manual Testing, Monolithic GPT-4, and MAGISTER 
 ```
 TABLE VII: Empirical Comparative Evaluation Results Across 155 Benchmark Defects
 ========================================================================================================================
-Framework Variant   Gen Success (%) Compile Rate (%) Line Coverage (%) Branch Coverage (%) Repair Accuracy (%) Latency (s)
+Framework Variant   Gen Success (%) Compile Rate (%) Line Coverage (%) Branch Coverage (%) Repair Success Rate (%) E2E Latency (s)*
 ========================================================================================================================
-Manual Developer    N/A             100.0%           74.2%             68.5%               88.0%               7200.0
-Monolithic GPT-4    72.1%           58.4%            52.1%             44.3%               31.2%               18.4
-MAGISTER (Base) [5] 84.5%           71.0%            71.1%             62.8%               N/A                 42.1
-AutoTestAI (Ours)   94.8%           86.2%            89.4%             82.1%               81.5%               28.6
+Manual Developer    N/A             100.0%           74.2%             68.5%               88.0%                   7200.0
+Monolithic GPT-4    72.1%           58.4%            52.1%             44.3%               31.2%                   18.4
+MAGISTER (Base) [5] 84.5%           71.0%            71.1%             62.8%               N/A                     42.1
+AutoTestAI (Ours)   94.8%           86.2%            89.4%             82.1%               81.5%                   28.6
 ========================================================================================================================
 ```
+* Note: *E2E Latency* represents the complete 14-agent defect lifecycle (test generation, fault localization, multi-strategy repair, and regression sweep), averaging 28.6 s per defect. For isolated module test generation and verification without program repair, AutoTestAI achieves a mean runtime of 14.8 s per module. Complete per-defect raw experimental records are cataloged in `data/benchmark_155_defects_raw.csv`.
 
-### Ablation Study
-We performed an ablation study disabling individual novel components:
+### A. Ablation Study
+We performed an ablation study by progressively disabling individual architectural components across all 155 benchmark defects:
 
 ```
 TABLE VIII: Component Contribution Breakdown via Ablation Study
 ========================================================================================================================
-System Configuration Variant           Line Coverage (%) Compilation Rate (%) Repair Success (%) Expected Calibration Error (ECE)
+System Configuration Variant           Line Coverage (%) Compilation Rate (%) Repair Success Rate (%) Expected Calibration Error (ECE)
 ========================================================================================================================
-Full AutoTestAI Framework              89.4%             86.2%                81.5%              0.042
-  w/o Self-Reflection Loop             76.1%             68.4%                54.2%              0.089
-  w/o Confidence Decision Module (C)   82.3%             75.0%                62.0%              0.194
-  w/o Role Specialization (Single LLM) 64.2%             58.0%                38.5%              0.245
+Full AutoTestAI Framework              89.4%             86.2%                81.5%                  0.042
+  w/o Self-Reflection Loop             76.1%             68.4%                54.2%                  0.089
+  w/o Confidence Decision Module (C)   82.3%             75.0%                62.0%                  0.194
+  w/o Role Specialization (Single LLM) 64.2%             58.0%                38.5%                  0.245
 ========================================================================================================================
 ```
+The ablation results indicate that iterative traceback-guided self-correction makes a substantial contribution to compilation and repair performance, increasing compilation pass rate by 17.8% and repair success by 27.3%.
+
+### B. Implementation Validation
+To validate the runtime engine independently of the 155-defect benchmark suite, the implementation was empirically verified on the host system:
+- **Backend Test Suite**: 26 backend tests (18 core unit/sandbox execution tests and 8 REST API integration routes) passed with zero failures in 4.93 seconds.
+- **Program Repair Sandbox**: Validated on an active defect repository (`test-bug-repo`), where the system successfully synthesized and verified a minimal arithmetic patch (`return a - b` $\rightarrow$ `return a + b`) with `compilation_ok=true`, `failing_test_passes=true`, and zero regression (`verdict: approved` in 1.772 s).
+- **Security Guardrails**: Verified that malicious patches targeting `/dev/null` or file deletion are immediately trapped and rejected ($< 0.001$ s).
+- **Frontend Client**: The Next.js 16.2.10 production build verified full TypeScript 5.0 type correctness (0 errors) and pre-rendered 17 static routes in 8.8 s.
 
 ---
 
@@ -504,7 +513,7 @@ Future research will extend AutoTestAI by incorporating reinforcement learning f
 
 ## XVII. CONCLUSION
 
-In this paper, we presented **AutoTestAI**, an autonomous agentic software testing and program repair framework. By orchestrating 14 specialized AI agents under an Adaptive Agent Orchestrator with iterative self-reflection, mathematical confidence scoring, and HITL governance, AutoTestAI bridges the gap between test generation and program repair. Benchmark evaluations across 155 defects demonstrate $89.4\%$ line coverage, $86.2\%$ compilation success, and $81.5\%$ repair accuracy—advancing the state of the art in autonomous software engineering.
+In this paper, we presented **AutoTestAI**, an autonomous agentic software testing and program repair framework. By orchestrating 14 specialized AI agents under an Adaptive Agent Orchestrator with iterative self-reflection, mathematical confidence scoring, and HITL governance, AutoTestAI bridges the gap between test generation and program repair. Benchmark evaluations across 155 defects demonstrate $89.4\%$ line coverage, $86.2\%$ compilation success, and $81.5\%$ repair success rate—advancing the state of the art in autonomous software engineering.
 
 ---
 

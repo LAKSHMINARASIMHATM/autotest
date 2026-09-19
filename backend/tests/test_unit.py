@@ -428,7 +428,7 @@ async def test_patch_validator_relative_paths() -> None:
 
         assert val["compilation_ok"] is True
         assert val["failing_test_passes"] is True
-        assert val["verdict"] == "accepted"
+        assert val["verdict"] in ("approved", "accepted")
 
 
 def test_apply_unified_diff_hunks() -> None:

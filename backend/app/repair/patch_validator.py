@@ -162,7 +162,7 @@ def _heuristic_verdict(patch_diff: str, file_path: str, confidence: float = 0.75
             "regression_ok": False,
             "coverage_maintained": False,
             "verdict": "rejected",
-            "reason": "File deletion patches rejected.",
+            "reason": "File deletion patches (/dev/null) rejected.",
         }
 
     return {
