@@ -1,0 +1,3 @@
+defect_id,status,model,elapsed_sec,sbfl_top1,sbfl_top5,plausible_patch,correct_patch
+tornado-1,queued_for_dataset_checkout,llama-3.3-70b-versatile,0.0,False,False,False,False
+tornado-2,queued_for_dataset_checkout,llama-3.3-70b-versatile,0.0,False,False,False,False

@@ -39,34 +39,39 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
+          cache-dependency-path: backend/pyproject.toml
 
       - name: Install dependencies
         working-directory: backend
         run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-cov ruff mypy httpx fastapi uvicorn beanie motor pydantic langchain-core langchain-groq || true
-          if [ -f requirements.txt ]; then pip install -r requirements.txt || true; fi
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e ".[dev]"
 
       - name: Lint (Ruff)
         working-directory: backend
-        continue-on-error: true
         run: ruff check app/
+        continue-on-error: true
 
       - name: Type Check (mypy)
         working-directory: backend
-        continue-on-error: true
         run: mypy app/ --ignore-missing-imports
+        continue-on-error: true
 
       - name: Run Tests with Coverage
         working-directory: backend
         env:
+          APP_ENV: development
           MONGODB_URL: mongodb://localhost:27017
+          MONGODB_DB_NAME: autotest
           REDIS_URL: redis://localhost:6379/0
           NEO4J_URI: bolt://localhost:7687
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          JWT_SECRET: test-secret-key
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || 'test-mock-groq-key' }}
+          JWT_SECRET: test-secret-key-for-ci
+          AUTOTEST_USE_DOCKER: false
+          CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://192.168.56.1:3000
+          CORS_ORIGIN_REGEX: .*
         run: |
-          pytest tests/ --cov=app --cov-report=xml:coverage.xml -v || true
+          pytest tests/ --cov=app --cov-report=xml:coverage.xml -v
 
   # ─────────────────────────────────────────────────────────────
   # Frontend: lint, type-check, build
@@ -91,10 +96,16 @@ jobs:
 
       - name: Type Check
         working-directory: frontend
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: npx tsc --noEmit
 
       - name: Production Build
         working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+          NEXT_TELEMETRY_DISABLED: "1"
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: npm run build
 
   # ─────────────────────────────────────────────────────────────

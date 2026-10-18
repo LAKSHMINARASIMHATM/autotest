@@ -184,47 +184,110 @@ export function Sidebar() {
         </div>
 
         {/* Quick Access Segmented Control */}
-        {(!collapsed || mobileOpen) && (
-          <div
-            className="p-3 mx-2.5 my-2 rounded-xl border transition-all"
-            style={{
-              backgroundColor: "var(--color-surface)",
-              borderColor: "var(--color-border)",
-            }}
-          >
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] mb-2 px-1 flex items-center justify-between" style={{ color: "var(--color-text-placeholder)" }}>
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--color-maroon-primary)" }} />
-                <span>Quick Navigation</span>
-              </span>
-              <IconSparkles size={11} style={{ color: "var(--color-navy-accent)" }} />
-            </p>
-            <div className="grid grid-cols-3 gap-1.5">
-              {quickNavItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-[11px] font-medium transition-all duration-200 border text-center",
-                      isActive
-                        ? "maroon-glass-box font-bold"
-                        : "border-transparent text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
-                    )}
-                  >
-                    <item.icon
-                      size={14}
-                      className="mb-0.5"
-                      style={{ color: isActive ? "#FFFFFF" : "currentColor" }}
+        <AnimatePresence>
+          {(!collapsed || mobileOpen) && (
+            <motion.div
+              key="quick-nav-container"
+              initial={{ opacity: 0, height: 0, y: -8 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <div
+                className="p-2.5 mx-2.5 my-2 rounded-xl border relative shadow-sm"
+                style={{
+                  backgroundColor: "var(--color-surface)",
+                  borderColor: "var(--color-border)",
+                }}
+              >
+                <div
+                  className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.14em] mb-2 px-1"
+                  style={{ color: "var(--color-text-placeholder)" }}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <motion.span
+                      animate={{ scale: [1, 1.35, 1], opacity: [0.7, 1, 0.7] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                      className="w-1.5 h-1.5 rounded-full inline-block shadow-[0_0_8px_var(--color-maroon-primary)]"
+                      style={{ backgroundColor: "var(--color-maroon-primary)" }}
                     />
-                    <span className="truncate w-full">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                    <span>Quick Navigation</span>
+                  </span>
+                  <motion.div
+                    whileHover={{ rotate: 180, scale: 1.2 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <IconSparkles size={11} style={{ color: "var(--color-navy-accent)" }} />
+                  </motion.div>
+                </div>
+                <div className="grid grid-cols-3 gap-1 relative p-1 rounded-lg bg-[var(--color-bg-primary)]/40 border border-[var(--color-border)]/40">
+                  {quickNavItems.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="relative block"
+                      >
+                        <motion.div
+                          whileHover={{ y: -1.5, scale: 1.02 }}
+                          whileTap={{ scale: 0.95 }}
+                          transition={{ type: "spring", stiffness: 450, damping: 28 }}
+                          className={cn(
+                            "relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-lg text-[11px] font-medium transition-colors duration-150 text-center select-none",
+                            isActive
+                              ? "text-white font-bold"
+                              : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                          )}
+                        >
+                          {isActive && (
+                            <motion.div
+                              layoutId="quickNavActiveIndicator"
+                              className="absolute inset-0 rounded-lg maroon-glass-box shadow-md"
+                              style={{
+                                background: "linear-gradient(135deg, #800020, #9A1B3A)",
+                                border: "1px solid rgba(255, 117, 151, 0.35)",
+                                boxShadow: "0 2px 10px rgba(128, 0, 32, 0.35)",
+                              }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 500,
+                                damping: 35,
+                              }}
+                            />
+                          )}
+                          <span className="relative z-20 flex flex-col items-center justify-center w-full">
+                            <span className="relative">
+                              <item.icon
+                                size={14}
+                                className="mb-0.5 transition-transform duration-200 group-hover:scale-110"
+                                style={{ color: isActive ? "#FFFFFF" : "currentColor" }}
+                              />
+                              {item.badge && (
+                                <span
+                                  className={cn(
+                                    "absolute -top-1 -right-2.5 text-[8px] font-extrabold px-1 py-0.1 rounded-full leading-none",
+                                    isActive
+                                      ? "bg-white text-[var(--color-maroon-primary)]"
+                                      : "bg-[var(--color-maroon-primary)] text-white"
+                                  )}
+                                >
+                                  {item.badge}
+                                </span>
+                              )}
+                            </span>
+                            <span className="truncate w-full text-[10.5px] tracking-tight">{item.label}</span>
+                          </span>
+                        </motion.div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Navigation Sections */}
         <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-5">

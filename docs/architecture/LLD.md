@@ -28,9 +28,11 @@ class Settings(BaseSettings):
     NEO4J_PASSWORD: SecretStr
     CHROMA_HOST: str
     CHROMA_PORT: int
-    OPENAI_API_KEY: SecretStr
-    ANTHROPIC_API_KEY: SecretStr
-    GROQ_API_KEY: SecretStr
+    GROQ_API_KEY: SecretStr          # Primary LLM provider
+    GROQ_API_KEY_1: SecretStr        # Key rotation slot 1
+    GROQ_API_KEY_2: SecretStr        # Key rotation slot 2
+    HUGGINGFACE_API_TOKEN: SecretStr # Fallback LLM provider
+    HF_MODEL: str                    # e.g. "Qwen/Qwen2.5-7B-Instruct"
     JWT_SECRET: SecretStr
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30

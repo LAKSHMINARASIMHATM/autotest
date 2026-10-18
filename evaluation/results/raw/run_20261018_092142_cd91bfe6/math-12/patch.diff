@@ -1,0 +1,6 @@
+--- a/pricing_engine.py
++++ b/pricing_engine.py
+@@ -51,2 +51,1 @@
+-        taxed_subtotal = sub_dec * (Decimal("1.0") + tax_dec)
+-        discount_amount = taxed_subtotal * disc_pct
++        discount_amount = sub_dec * disc_pct

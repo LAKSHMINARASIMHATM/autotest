@@ -50,12 +50,26 @@ class Neo4jService:
     """Manages connection lifetime and Cypher query execution for Neo4j."""
 
     _driver: AsyncDriver | None = None
+    # Tracks whether a connection attempt has already failed — prevents
+    # hammering the server on every request when Neo4j is unreachable.
+    _unavailable: bool = False
 
     @classmethod
     async def init_driver(cls) -> None:
-        """Initializes the Neo4j connection driver and creates indexes/constraints."""
+        """Initializes the Neo4j connection driver and creates indexes/constraints.
+
+        Sets ``_unavailable = True`` on first connection failure so callers can
+        detect the condition and fall back to MongoDB without retrying.
+        """
         if cls._driver is not None:
             return
+        # If a previous attempt already failed, do not retry within the same
+        # process lifetime — the caller must trigger a manual reconnect.
+        if cls._unavailable:
+            raise RuntimeError(
+                "Neo4j is unavailable (previous connection attempt failed). "
+                "Check NEO4J_URI / credentials and restart the service."
+            )
 
         settings = get_settings()
         uri = settings.NEO4J_URI
@@ -68,16 +82,27 @@ class Neo4jService:
                 uri,
                 auth=(user, password),
                 notifications_min_severity="OFF",
-                warn_notification_severity="OFF"
+                warn_notification_severity="OFF",
             )
-            # Verify connectivity
+            # Verify connectivity before declaring success
             await cls._driver.verify_connectivity()
             logger.info("neo4j_connected")
 
-            # Setup indexes
+            # Reset unavailability flag on successful reconnect
+            cls._unavailable = False
+
+            # Setup indexes/constraints
             await cls.create_indexes()
         except Exception as e:
-            logger.exception("neo4j_connection_failed", error=str(e))
+            logger.warning("neo4j_connection_failed", error=str(e))
+            # Clean up any partially-created driver
+            if cls._driver is not None:
+                try:
+                    await cls._driver.close()
+                except Exception:
+                    pass
+                cls._driver = None
+            cls._unavailable = True
             raise
 
     @classmethod
@@ -118,12 +143,19 @@ class Neo4jService:
         logger.info("neo4j_constraints_created")
 
     @classmethod
+    async def reset_unavailable(cls) -> None:
+        """Clears the unavailability flag so the next query can attempt to reconnect."""
+        cls._unavailable = False
+        logger.info("neo4j_availability_reset")
+
+    @classmethod
     async def execute_query(cls, query: str, parameters: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         """Executes an arbitrary Cypher query and returns the results as list of dicts."""
         if cls._driver is None:
-            await cls.init_driver()
+            await cls.init_driver()  # Raises RuntimeError if _unavailable
 
-        assert cls._driver is not None
+        if cls._driver is None:
+            raise RuntimeError("Neo4j driver is not initialised.")
         parameters = parameters or {}
 
         db_name = get_settings().NEO4J_DATABASE

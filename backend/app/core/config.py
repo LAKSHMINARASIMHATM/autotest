@@ -26,7 +26,13 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     APP_ENV: Literal["development", "staging", "production"] = "development"
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
-    CORS_ORIGINS: str | list[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: str | list[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://192.168.56.1:3000",
+        "*",
+    ]
+    CORS_ORIGIN_REGEX: str | None = r".*"
 
     # ── MongoDB ──────────────────────────────────────────────────
     MONGODB_URL: str = "mongodb://localhost:27017"
@@ -45,8 +51,7 @@ class Settings(BaseSettings):
     CHROMA_HOST: str = "localhost"
     CHROMA_PORT: int = 8001
 
-    # ── LLM Providers ────────────────────────────────────────────
-    ANTHROPIC_API_KEY: SecretStr = SecretStr("")
+    # ── LLM Providers (Groq + HuggingFace) ─────────────────────
     GROQ_API_KEY: SecretStr = SecretStr("")
     GROQ_API_KEY_1: SecretStr = SecretStr("")
     GROQ_API_KEY_2: SecretStr = SecretStr("")
@@ -56,7 +61,7 @@ class Settings(BaseSettings):
     HUGGINGFACE_API_TOKEN: SecretStr = SecretStr("")
     HF_MODEL: str = "Qwen/Qwen2.5-7B-Instruct"
 
-    DEFAULT_LLM_MODEL: str = "openai/gpt-oss-120b"
+    DEFAULT_LLM_MODEL: str = "qwen/qwen3.8-27b"
     DEFAULT_TEMPERATURE: float = 0.1
 
     # ── JWT ──────────────────────────────────────────────────────

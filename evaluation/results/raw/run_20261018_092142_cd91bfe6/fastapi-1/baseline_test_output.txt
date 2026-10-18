@@ -1,0 +1,39 @@
+.F....                                                                   [100%]
+================================== FAILURES ===================================
+_________________ test_rfc7230_lowercase_authorization_header _________________
+
+    def test_rfc7230_lowercase_authorization_header():
+        """Real-world defect: HTTP/2 and ASGI gateways lowercase all incoming header names."""
+        validator = TokenValidator()
+        token = _make_dummy_jwt({"sub": "user_456", "aud": "autotest-api"})
+        headers = {"authorization": f"Bearer {token}"}
+>       extracted = validator.extract_token_from_headers(headers)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_auth_token_validator.py:29: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <auth_token_validator.TokenValidator object at 0x000002558F300690>
+headers = {'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiAidXNlcl80NTYiLCAiYXVkIjogImF1dG90ZXN0LWFwaSJ9.c2ltdWxhdGVkX3NpZ25hdHVyZQ'}
+
+    def extract_token_from_headers(self, headers: dict[str, str]) -> str:
+        """Extracts the Bearer token from request headers.
+        Per RFC 7230, HTTP header field names are case-insensitive.
+        """
+        auth_header = None
+        # BUG: Uses exact case 'Authorization', failing when HTTP/2 or ASGI proxies lowercase headers
+        if "Authorization" in headers:
+            auth_header = headers["Authorization"]
+    
+        if not auth_header:
+>           raise AuthenticationError("Missing Authorization header")
+E           auth_token_validator.AuthenticationError: Missing Authorization header
+
+auth_token_validator.py:37: AuthenticationError
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.2-final-0 _______________
+
+Coverage JSON written to file D:\autotest\evaluation\results\raw\run_20261018_092142_cd91bfe6\fastapi-1\coverage.json
+=========================== short test summary info ===========================
+FAILED test_auth_token_validator.py::test_rfc7230_lowercase_authorization_header
+1 failed, 5 passed in 0.20s

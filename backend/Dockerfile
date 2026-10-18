@@ -17,14 +17,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN useradd -m -u 1000 user
 WORKDIR $HOME/app
 
-# Copy dependency definition
-COPY pyproject.toml .
+# Copy dependency definition and application source for build
+COPY --chown=user:user pyproject.toml README.md* ./
+COPY --chown=user:user app ./app
 
 # Install dependencies (install app as editable or standard package)
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -e "."
 
-# Copy application source code
+# Copy remaining application files
 COPY --chown=user:user . $HOME/app
 
 # Ensure proper permission for user 1000

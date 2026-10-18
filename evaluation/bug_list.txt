@@ -1,0 +1,53 @@
+# Authoritative, pre-selected stratified list of real-world defects
+# Format: <project>-<bug_id>
+
+# Active Real-World Benchmarks (Live Sandbox Fixtures)
+fastapi-1
+tornado-4
+spacy-3
+youtube-dl-2
+math-12
+
+# Tornado (Asynchronous Networking)
+tornado-1
+tornado-2
+tornado-3
+tornado-5
+tornado-6
+tornado-7
+tornado-8
+tornado-9
+tornado-10
+
+# FastAPI (Modern Web Framework)
+fastapi-2
+fastapi-3
+fastapi-4
+fastapi-5
+fastapi-6
+fastapi-7
+fastapi-8
+fastapi-9
+fastapi-10
+
+# spaCy (Industrial Natural Language Processing)
+spacy-1
+spacy-2
+spacy-4
+spacy-5
+spacy-6
+spacy-7
+spacy-8
+spacy-9
+spacy-10
+
+# youtube-dl (Media Extraction CLI)
+youtube-dl-1
+youtube-dl-3
+youtube-dl-4
+youtube-dl-5
+youtube-dl-6
+youtube-dl-7
+youtube-dl-8
+youtube-dl-9
+youtube-dl-10

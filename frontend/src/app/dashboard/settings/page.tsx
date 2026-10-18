@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 
 export default function SettingsPage() {
-  const [openaiKey, setOpenaiKey] = useState("••••••••••••••••••••••••••••••••");
-  const [anthropicKey, setAnthropicKey] = useState("••••••••••••••••••••••••••••••••");
+  const [groqKey, setGroqKey] = useState("••••••••••••••••••••••••••••••••");
+  const [hfKey, setHfKey] = useState("••••••••••••••••••••••••••••••••");
   const [neo4jUri, setNeo4jUri] = useState("bolt://localhost:7687");
   const [dockerTimeout, setDockerTimeout] = useState(120);
   const [isSaving, setIsSaving] = useState(false);
@@ -43,21 +43,21 @@ export default function SettingsPage() {
           <h3 className="text-sm font-semibold border-b border-[var(--color-border)] pb-2" style={{ color: "var(--color-text-primary)" }}>AI Providers</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>OpenAI API Key</label>
+              <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Groq API Key</label>
               <input
                 type="password"
-                value={openaiKey}
-                onChange={(e) => setOpenaiKey(e.target.value)}
+                value={groqKey}
+                onChange={(e) => setGroqKey(e.target.value)}
                 className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-brown-primary)]"
                 style={{ color: "var(--color-text-primary)" }}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Anthropic API Key</label>
+              <label className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>Hugging Face API Token</label>
               <input
                 type="password"
-                value={anthropicKey}
-                onChange={(e) => setAnthropicKey(e.target.value)}
+                value={hfKey}
+                onChange={(e) => setHfKey(e.target.value)}
                 className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-brown-primary)]"
                 style={{ color: "var(--color-text-primary)" }}
               />

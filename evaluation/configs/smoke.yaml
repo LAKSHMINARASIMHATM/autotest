@@ -1,0 +1,11 @@
+model: "llama-3.3-70b-versatile"
+provider: "groq"
+temperature: 0.2
+seeds:
+  - 42
+timeout_seconds: 30
+max_reflection_iterations: 2
+limit_defects: 5
+dataset: "RealWorldDefects"
+bug_list: "evaluation/bug_list.txt"
+output_dir: "evaluation/results/raw"

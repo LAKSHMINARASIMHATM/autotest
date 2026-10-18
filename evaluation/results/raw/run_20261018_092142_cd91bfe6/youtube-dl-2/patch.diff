@@ -1,0 +1,9 @@
+--- a/video_url_extractor.py
++++ b/video_url_extractor.py
+@@ -17,3 +17,3 @@
+-    STANDARD_PATTERN = re.compile(
+-        r"(?:https?://)?(?:www\.)?(?:youtube\.com/(?:watch\?v=|embed/)|youtu\.be/)([\w-]{11})"
+-    )
++    STANDARD_PATTERN = re.compile(
++        r"(?:https?://)?(?:www\.)?(?:youtube\.com/(?:watch\?(?:[\w=&-]+&)?v=|embed/)|youtu\.be/)([\w-]{11})"
++    )

@@ -1,0 +1,29 @@
+.F..F                                                                    [100%]
+================================== FAILURES ===================================
+______________________ test_pre_tax_discount_calculation ______________________
+
+    def test_pre_tax_discount_calculation():
+        """Real-world defect: Discount MUST be calculated on pre-tax subtotal ($100 * 10% = $10.00)."""
+        res = PricingEngine.calculate_order_total(subtotal=100.0, discount_code="WELCOME10", tax_rate=0.08)
+        # Pre-tax discount: $10.00, Tax on pre-tax: $8.00, Total: $100 - $10 + $8 = $98.00
+>       assert res["discount_applied"] == 10.00
+E       assert 10.8 == 10.0
+
+test_pricing_engine.py:18: AssertionError
+________________________ test_volume_tier_auto_applied ________________________
+
+    def test_volume_tier_auto_applied():
+        res = PricingEngine.calculate_order_total(subtotal=600.0, tax_rate=0.10)
+        # 15% tier = $90 discount, $60 tax, Total = $570
+>       assert res["discount_applied"] == 90.00
+E       assert 99.0 == 90.0
+
+test_pricing_engine.py:36: AssertionError
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.2-final-0 _______________
+
+Coverage JSON written to file D:\autotest\evaluation\results\raw\run_20261018_092642_833e2925\math-12\coverage.json
+=========================== short test summary info ===========================
+FAILED test_pricing_engine.py::test_pre_tax_discount_calculation - assert 10....
+FAILED test_pricing_engine.py::test_volume_tier_auto_applied - assert 99.0 ==...
+2 failed, 3 passed in 0.17s

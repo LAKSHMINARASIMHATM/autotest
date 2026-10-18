@@ -1,0 +1,10 @@
+{
+  "patch_id": "val-youtube-dl-2",
+  "run_id": "eval-run-youtube-dl-2",
+  "compilation_ok": true,
+  "failing_test_passes": true,
+  "regression_ok": true,
+  "coverage_maintained": true,
+  "verdict": "approved",
+  "reason": "Patch validated successfully: compilation and tests passed."
+}

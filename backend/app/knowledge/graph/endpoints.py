@@ -86,7 +86,7 @@ async def _mongo_fallback(raw_query: str) -> dict[str, Any]:
     # ── 1. EXPOSES_API  ───────────────────────────────────────────────────────
     if "EXPOSES_API" in q:
         from app.models.project import Project
-        projects = await Project.find_all().limit(10).to_list()
+        projects = await Project.find_all(limit=10).to_list()
         for proj in projects:
             eps: list[dict] = []
             if proj.config and "api_endpoints" in proj.config:
@@ -105,7 +105,7 @@ async def _mongo_fallback(raw_query: str) -> dict[str, Any]:
     # ── 2. TestCase / TESTS  ──────────────────────────────────────────────────
     elif "TESTS" in q or "TESTCASE" in q or "TEST_CASE" in q:
         from app.models.test_case import TestCase
-        test_cases = await TestCase.find_all().limit(20).to_list()
+        test_cases = await TestCase.find_all(limit=20).to_list()
         rows = [
             {
                 "t.id": str(tc.id)[:8],
@@ -122,7 +122,7 @@ async def _mongo_fallback(raw_query: str) -> dict[str, Any]:
     # ── 3. Bug / LOCALIZED_IN  ────────────────────────────────────────────────
     elif "BUG" in q or "LOCALIZED_IN" in q:
         from app.models.bug_report import BugReport
-        bugs = await BugReport.find_all().limit(20).to_list()
+        bugs = await BugReport.find_all(limit=20).to_list()
         rows = [
             {
                 "b.severity": b.severity,
@@ -139,7 +139,7 @@ async def _mongo_fallback(raw_query: str) -> dict[str, Any]:
     # ── 4. Project  ───────────────────────────────────────────────────────────
     elif "PROJECT" in q:
         from app.models.project import Project
-        projects = await Project.find_all().limit(20).to_list()
+        projects = await Project.find_all(limit=20).to_list()
         rows = [
             {
                 "p.name": p.name,
@@ -157,7 +157,7 @@ async def _mongo_fallback(raw_query: str) -> dict[str, Any]:
     # ── 5. Module / File / CodeEntity  ───────────────────────────────────────
     elif any(kw in q for kw in ("MODULE", "FILE", "CLASS", "FUNCTION", "CODEENTITY", "ENTITY")):
         from app.models.code_entity import CodeEntity
-        entities = await CodeEntity.find_all().limit(30).to_list()
+        entities = await CodeEntity.find_all(limit=30).to_list()
         rows = [
             {
                 "e.name": e.name,
@@ -172,7 +172,7 @@ async def _mongo_fallback(raw_query: str) -> dict[str, Any]:
     # ── 6. Source file list  ──────────────────────────────────────────────────
     elif "SOURCEFILE" in q or "SOURCE_FILE" in q:
         from app.models.source_file import SourceFile
-        files = await SourceFile.find_all().limit(30).to_list()
+        files = await SourceFile.find_all(limit=30).to_list()
         rows = [
             {
                 "f.path": f.path,
@@ -192,8 +192,8 @@ async def _mongo_fallback(raw_query: str) -> dict[str, Any]:
         from app.models.bug_report import BugReport
         from app.models.test_case import TestCase
 
-        projects = await Project.find_all().limit(5).to_list()
-        entities = await CodeEntity.find_all().limit(10).to_list()
+        projects = await Project.find_all(limit=5).to_list()
+        entities = await CodeEntity.find_all(limit=10).to_list()
 
         if entities:
             rows = [

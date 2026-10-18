@@ -1,0 +1,15 @@
+{
+  "defect_id": "tornado-1",
+  "model": "llama-3.3-70b-versatile",
+  "provider": "groq",
+  "temperature": 0.2,
+  "timestamp": "2026-10-18T09:05:44.795129+00:00",
+  "status": "queued_for_dataset_checkout",
+  "sbfl_top1": false,
+  "sbfl_top5": false,
+  "plausible_patch": false,
+  "correct_patch": false,
+  "regression_pass": false,
+  "line_coverage": null,
+  "elapsed_sec": 0.0
+}

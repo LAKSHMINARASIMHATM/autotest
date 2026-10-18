@@ -1,0 +1,9 @@
+--- a/auth_token_validator.py
++++ b/auth_token_validator.py
+@@ -33,2 +33,4 @@
+-        if "Authorization" in headers:
+-            auth_header = headers["Authorization"]
++        for k, v in headers.items():
++            if k.lower() == "authorization":
++                auth_header = v
++                break

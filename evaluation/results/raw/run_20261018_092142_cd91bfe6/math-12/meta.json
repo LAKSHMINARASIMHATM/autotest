@@ -1,0 +1,19 @@
+{
+  "defect_id": "math-12",
+  "name": "Defects4J-Math (Pre-Tax Tiered Calculation & Rounding)",
+  "model": "llama-3.3-70b-versatile",
+  "provider": "groq",
+  "temperature": 0.2,
+  "timestamp": "2026-10-18T09:22:08.589111+00:00",
+  "status": "evaluated",
+  "sbfl_rank": 1,
+  "sbfl_top1": true,
+  "sbfl_top5": true,
+  "plausible_patch": true,
+  "correct_patch": true,
+  "regression_pass": true,
+  "line_coverage_pct": 90.7,
+  "elapsed_sec": 6.173,
+  "compilation_ok": true,
+  "failing_test_passes": true
+}

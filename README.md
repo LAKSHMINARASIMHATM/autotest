@@ -9,8 +9,8 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com)
 [![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent-orange.svg)](https://langchain-ai.github.io/langgraph/)
 [![Groq](https://img.shields.io/badge/LLM-Groq%20Llama%203.3-purple.svg)](https://groq.com)
-[![Benchmarks](https://img.shields.io/badge/Benchmarks-100%25%20Passed-brightgreen.svg)](BENCHMARK_RESULTS.md)
-[![IEEE Research](https://img.shields.io/badge/Paper-IEEE%20Ready-red.svg)](final%20project%20documents/IEEE_Conference_Paper_Full_Manuscript.md)
+[![Evaluation](https://img.shields.io/badge/Evaluation-In%20Progress-blue.svg)](evaluation/)
+[![Preprint](https://img.shields.io/badge/Preprint-In%20Preparation-orange.svg)](final%20project%20documents/IEEE_Conference_Paper_Full_Manuscript.md)
 
 ---
 
@@ -19,7 +19,7 @@
 **AutoTestAI** is an industrial-grade, research-oriented agentic platform that automates the entire software quality engineering lifecycle. Rather than relying on simple one-shot LLM prompts, AutoTestAI deploys a **14-agent LangGraph orchestrator** that ingests raw codebases, constructs dual structural knowledge representations (Neo4j Knowledge Graph + ChromaDB Vector Index), plans and synthesizes multi-framework test suites, executes them in isolated Docker sandboxes, localizes bugs via Spectrum-Based Fault Localization (SBFL), performs Automated Program Repair (APR) across 4 specialized strategies, validates candidate patches against regressions, and continuously learns from runtime telemetry.
 
 ### Primary Missions:
-- 🎓 **IEEE & ACM Research Publication** — Novel closed-loop agentic architecture surpassing SOTA benchmarks (MAGISTER, ChatUniTest, TestPilot).
+- 🎓 **Academic Research Capstone** — Novel closed-loop agentic architecture evaluating real-world Python defects against SOTA multi-agent approaches.
 - 🏆 **Final Year Engineering Capstone** — Production-ready, fully validated software system.
 - 💼 **FAANG-Level Architecture** — Asynchronous microservices, clean decoupled patterns, resilient fallback chains, and containerized sandboxes.
 - 🌐 **Open-Source SaaS Platform** — Full-stack web portal with a 3D animated landing page, real-time agent visualizers, and interactive diff review tooling.
@@ -39,7 +39,7 @@
 | 🎨 **3D Cyberpunk Landing Experience** | Interactive WebGL/Canvas dynamic particle flow, holographic glowing grid, floating telemetry badges, and 1-click launch |
 | 📊 **14 Full-Stack Dashboard Views** | Glassmorphic Next.js 16 UI with live LangGraph execution monitoring, Neo4j interactive explorer, AST diff viewer, and security audit logs |
 | 🛡️ **HITL Safety & Anti-Tampering** | Confidence scoring ($C < 0.70$) with Human-in-the-Loop approval modal and anti-deletion guards rejecting malicious patches (e.g., `/dev/null`) |
-| 🏆 **Certified Empirical Benchmarks** | 12 standardized evaluation suites with **100% pass rate**, 26/26 backend tests in 4.97s, and empirical superiority over MAGISTER |
+| 🔬 **Reproducible Evaluation Suite** | Real-world evaluation harness targeting real defects in BugsInPy and the 5 MAGISTER repositories |
 | 🆓 **100% Free API Tier Ready** | Built natively on Groq (`llama-3.3-70b-versatile`) and free local/Atlas cloud services — zero paid OpenAI dependency required |
 
 ---
@@ -107,112 +107,46 @@ flowchart TD
 
 ---
 
-## 🏆 Empirical Benchmarks & Performance Certification
+## 🔬 Empirical Evaluation & Research Protocol
 
-AutoTestAI underwent rigorous empirical benchmarking across **12 standardized evaluation suites** (BM-01 to BM-12) encompassing 155 real-world defects, unit test generation, live program repair, fault localization, safety guardrails, and Next.js frontend route generation.
+AutoTestAI is evaluated following rigorous software engineering empirical guidelines. The experimental harness measures fault localization (SBFL), automated program repair, and test generation across real-world Python repositories.
 
-- 📄 **Detailed Benchmark Certification Report:** [BENCHMARK_RESULTS.md](BENCHMARK_RESULTS.md)
-- 📋 **Benchmark Suite Registry & Criteria:** [BENCHMARKS.md](BENCHMARKS.md)
-- 🔬 **Academic Differentiation Study:** [AutoTestAI_Benchmarking_and_MAGISTER_Differentiation.md](AutoTestAI_Benchmarking_and_MAGISTER_Differentiation.md)
-- 📊 **Execution Report & Audit Logs:** [benchmark_execution_report.md](benchmark_execution_report.md)
+- 📋 **Evaluation Harness & Protocols:** [`evaluation/`](evaluation/)
+- 📄 **Academic Research Methodology:** [`BENCHMARKS.md`](BENCHMARKS.md)
+- 🔬 **MAGISTER Comparative Differentiation:** [`AutoTestAI_Benchmarking_and_MAGISTER_Differentiation.md`](AutoTestAI_Benchmarking_and_MAGISTER_Differentiation.md)
 
-### 1. Official Benchmark Master Scorecard
+### 1. Evaluation Scope & Datasets
 
-| ID | Benchmark Suite | Scope / Dataset | Target Threshold | Measured Empirical Result | Status |
-| :--- | :--- | :--- | :--- | :--- | :---: |
-| **BM-01** | **BugsInPy Defect Suite** | Python Bug Localization & APR (60 bugs) | $\ge 80.0\%$ Repair / $\ge 85.0\%$ Top-1 | **81.5% Repair / 86.5% Top-1 SBFL** | `PASSED` |
-| **BM-02** | **Defects4J (Py-Port)** | Algorithmic Logic & Regression Pass (50 bugs) | $\ge 98.0\%$ Regress / $\ge 85.0\%$ Cov | **99.2% Regress / 89.4% Line Cov** | `PASSED` |
-| **BM-03** | **Apache Commons Modules** | Boundary Conditions & CLI Parsing (30 modules) | $\ge 78.0\%$ Branch Coverage | **82.1% Branch Coverage** | `PASSED` |
-| **BM-04** | **Spring PetClinic (REST & UI)** | Full-Stack REST API & E2E Flows (15 endpoints) | $\ge 95.0\%$ Execution Pass Rate | **100% Pass Rate (26/26 Tests OK)** | `PASSED` |
-| **BM-05** | **SWE-bench Lite** | Real-World Multi-File GitHub Issues (50 tasks) | $\ge 35.0\%$ Resolved Rate | **36.2% Resolved Rate** | `PASSED` |
-| **BM-06** | **HumanEval / HumanEval-Plus** | Foundational Code & Test Synthesis | $\ge 98.0\%$ Comp / $\ge 92.0\%$ Pass@1 | **94.8% Comp / 92.4% Pass@1** | `PASSED` |
-| **BM-07** | **Mutation Testing Benchmark** | Test Suite Strength (`mutmut` / `cosmic-ray`) | $\ge 80.0\%$ Mutants Killed | **83.4% Mutants Killed** | `PASSED` |
-| **BM-08** | **Multi-Agent Pipeline Latency** | Runtime Throughput across 14 Agents | $\le 15.0\text{ s}$ per module | **14.8s Module / 28.6s E2E** | `PASSED` |
-| **BM-09** | **Self-Reflection Convergence** | Traceback-Guided Iterative Repair Loop | $\le 2.2$ mean loops to pass | **1.8 Iterations Mean (Max: 3)** | `PASSED` |
-| **BM-10** | **Confidence Calibration (ECE)** | Mathematical Calibration Error ($C$) | $ECE \le 0.05$ | **0.042 Expected Calibration Error** | `PASSED` |
-| **BM-11** | **HITL Governance & Safety Gate** | Safety Routing Precision at $C < 0.70$ | $\ge 95.0\%$ Precision | **96.8% Precision / 94.1% Acc** | `PASSED` |
-| **BM-12** | **Sandbox Isolation & Containment**| PyTest, Jest, Playwright, Newman Runners | $0.0\%$ Memory Leaks / 100% Trap | **0% Leaks, 100% Containment** | `PASSED` |
+| Target Capability | Benchmark Dataset | Size / Scope | Target Metrics | Status |
+| :--- | :--- | :---: | :--- | :---: |
+| **Fault Localization (SBFL)** | **BugsInPy** | 40–50 Python Defects | Top-1 / Top-3 / Top-5 Ochiai ranking accuracy | `In Progress` |
+| **Program Repair (APR)** | **BugsInPy** | 40–50 Python Defects | Plausible patch rate (passes test suite) & Correct patch rate | `In Progress` |
+| **Test Generation vs. MAGISTER** | **5 MAGISTER Repos** (`tqdm`, `rich`, `markdown`, `tenacity`, `typer`) | 5 Repos | Line coverage (`coverage.py`), branch coverage, mutation score (`mutmut`) | `In Progress` |
+| **Confidence & HITL Governance** | **QuixBugs** (Dev / Tuning Split) | 40 Python Programs | Expected Calibration Error ($ECE$), AUROC, false acceptance rate | `In Progress` |
+
+*Note: Previous versions of this repository contained synthetic illustrative data (`benchmark_155_defects_raw.csv`), which has been purged to ensure strict academic integrity and reproducible measurement.*
 
 ---
 
-### 2. Academic Comparative Differentiation (AutoTestAI vs. SOTA)
+### 2. Live Machine Verification & Smoke Checks
 
-Evaluated against leading academic and industrial baselines (**TestPilot**, **ChatUniTest**, and **MAGISTER** — Ahammad et al., 2025):
+All core system layers are validated on the host development machine:
 
-| Evaluation Metric | TestPilot | ChatUniTest | MAGISTER (2025) | **AutoTestAI (Verified)** | AutoTestAI Relative Gain |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Agent Specialization Count** | 1 Prompt | 1 GVR Loop | 5 Roles | **14 Specialized Agents** | **+180% Agent Diversity** |
-| **Unit Test Gen Success Rate** | 62.1% | 74.5% | 81.2% | **94.8%** | **+13.6% vs MAGISTER** |
-| **Compilation Pass Rate** | 58.4% | 71.0% | 78.6% | **86.2%** | **+7.6% vs MAGISTER** |
-| **Line Coverage ($M_{line\_cov}$)** | 52.3% | 61.8% | 68.4% | **89.4%** | **+21.0% vs MAGISTER** |
-| **Branch Coverage ($M_{branch\_cov}$)** | 44.1% | 53.2% | 59.1% | **82.1%** | **+23.0% vs MAGISTER** |
-| **Top-1 Bug Localization (SBFL)** | N/A | N/A | N/A | **86.5%** | **New Novel Capability** |
-| **Automated Program Repair (APR)** | N/A | N/A | N/A | **81.5%** | **New Novel Capability** |
-| **Regression Pass Rate** | N/A | 82.0% | N/A | **99.2%** | **+17.2% vs ChatUniTest** |
-| **Expected Calibration Error ($ECE$)** | 0.281 | 0.214 | N/A | **0.042** | **High Precision Calibration** |
-| **End-to-End Pipeline Latency** | 45.2s | 38.6s | 42.1s | **28.6s** | **1.47x Speedup vs MAGISTER** |
-| **Mean Module Runtime (Isolated)** | N/A | N/A | 32.1s | **14.8s** | **2.17x Speedup vs MAGISTER** |
-| **Human Approval Acceptance Rate** | N/A | N/A | N/A | **94.1%** | **New Novel Capability** |
-
----
-
-### 3. Live Machine Execution Audit
-
-All tests and benchmarks were executed and validated on the host system:
-
-- **Core Backend Suite:** `26 / 26` Tests Passed in **4.97 seconds** (`0` failures, `0` errors)
+- **Core Backend Suite:** `26 / 26` Tests Passed in **~5.5 seconds** (`0` failures, `0` errors)
 - **LangGraph Topology:** `16 / 16` Active Nodes verified (14 specialized agents + workflow handlers)
-- **Frontend Production Build:** `17 / 17` Static Routes generated with `0` TypeScript errors in **8.8 seconds**
+- **Frontend Production Build:** `17 / 17` Static Routes generated with `0` TypeScript errors
 - **Safety Heuristics:** Instantaneous rejection of malicious deletion patches (`/dev/null`) in `< 0.001s`
 
-#### Live Program Repair Case Study (`test-bug-repo`):
-```diff
---- a/main.py
-+++ b/main.py
-@@ -4,1 +4,1 @@
--    return a - b
-+    return a + b
-```
-```json
-{
-  "patch_id": "bm-patch-01",
-  "compilation_ok": true,
-  "failing_test_passes": true,
-  "regression_ok": true,
-  "coverage_maintained": true,
-  "verdict": "approved",
-  "reason": "Patch validated successfully: compilation and tests passed.",
-  "execution_time": 1.772
-}
-```
-
----
-
-### 4. Ablation Study Results
-
-| Architectural Variant | Line Coverage (%) | Compilation Rate (%) | Repair Rate (%) | Calibration ($ECE$) |
-| :--- | :---: | :---: | :---: | :---: |
-| **Full AutoTestAI Framework (14 Agents)** | **89.4%** | **86.2%** | **81.5%** | **0.042** |
-| w/o Self-Reflection Repair Loop | 76.1% (-13.3%) | 68.4% (-17.8%) | 54.2% (-27.3%) | 0.089 |
-| w/o Confidence Calibration Gate ($C < 0.70$) | 82.3% (-7.1%) | 75.0% (-11.2%) | 62.0% (-19.5%) | 0.194 |
-| w/o Role-Specialized Agents (Monolithic Prompt) | 64.2% (-25.2%) | 58.0% (-28.2%) | 38.5% (-43.0%) | 0.245 |
-
-> **Key Takeaway:** The iterative Self-Reflection Loop and Multi-Agent decomposition are responsible for a **+27.3%** and **+43.0%** increase in program repair success respectively over monolithic approaches.
-
----
-
-### 5. 1-Command Benchmark Reproduction
-
-Re-run the complete benchmark suite locally at any time:
-
+To run the local developer smoke checks:
 ```bash
-python scripts/run_benchmarks.py
+python scripts/smoke_checks.py
 ```
 
-Generated reports are persisted in:
-- Standardized JUnit XML: `backend/reports/junit_report.xml`
-- Machine-Readable JSON: `backend/reports/benchmark_summary.json`
-- Cobertura Coverage: `backend/coverage.xml`
+To run the full backend unit and integration test suite:
+```bash
+cd backend
+python -m pytest tests/test_unit.py tests/test_integration.py -v
+```
 
 ---
 
@@ -394,11 +328,12 @@ autotest/
 ├── docs/                            # Architecture diagrams, API specs, and presentations
 ├── final project documents/         # IEEE Research Manuscript, PPT slides, and reports
 ├── scripts/
-│   ├── run_benchmarks.py            # Automated 1-command live benchmark suite runner
-│   └── generate_benchmark_dataset.py# Synthetic dataset & defect generator
+│   ├── smoke_checks.py              # Developer system & sandbox sanity check runner
+│   └── seed.py                      # Database seeding for development
+├── evaluation/                      # Empirical evaluation harness, configs, & results
 ├── test-bug-repo/                   # Dedicated live bug reproduction repository
-├── BENCHMARK_RESULTS.md             # Official empirical benchmark validation report
-├── BENCHMARKS.md                    # Standardized 12-suite benchmark specification
+├── BENCHMARK_RESULTS.md             # Empirical evaluation methodology & results
+├── BENCHMARKS.md                    # Standardized evaluation protocol specification
 ├── docker-compose.yml               # Multi-container local orchestration
 └── README.md                        # Master project documentation
 ```
@@ -407,7 +342,7 @@ autotest/
 
 ## 🔬 Research & Academic Publications
 
-AutoTestAI is prepared and formatted for submission to **IEEE Transactions on Software Engineering (TSE)** and flagship software engineering conferences (ICSE / ISSTA / ACM TOSEM):
+AutoTestAI is prepared as a research capstone and formatted for academic submission:
 
 - **Full Research Manuscript:** [`final project documents/IEEE_Conference_Paper_Full_Manuscript.md`](final%20project%20documents/IEEE_Conference_Paper_Full_Manuscript.md)
 - **Updated IEEE Ready Document:** [`AutoTestAI_IEEE_Paper_IEEE_Ready_Updated.docx`](AutoTestAI_IEEE_Paper_IEEE_Ready_Updated.docx)
@@ -415,15 +350,11 @@ AutoTestAI is prepared and formatted for submission to **IEEE Transactions on So
 ### Academic Citation:
 
 ```bibtex
-@article{autotestai2026,
+@misc{autotestai2026,
   author    = {T M Lakshmi Narasimha},
   title     = {AutoTestAI: An Autonomous Agentic Multi-Agent Framework for Software Quality Engineering and Closed-Loop Program Repair},
-  journal   = {IEEE Transactions on Software Engineering (TSE)},
   year      = {2026},
-  volume    = {52},
-  number    = {4},
-  pages     = {412--429},
-  publisher = {IEEE Computer Society}
+  note      = {Preprint / Research capstone in preparation}
 }
 ```
 

@@ -1,0 +1,6 @@
+defect_id,name,status,model,elapsed_sec,line_coverage_pct,compilation_ok,failing_test_passes,regression_pass,sbfl_top1,plausible_patch
+fastapi-1,BugsInPy-FastAPI (RFC-7230 Auth Extraction),evaluated,llama-3.3-70b-versatile,13.264,92.5,True,True,True,True,True
+math-12,Defects4J-Math (Pre-Tax Tiered Calculation & Rounding),evaluated,llama-3.3-70b-versatile,8.303,90.7,True,True,True,True,True
+spacy-3,BugsInPy-spaCy (Token Span Offset Normalizer),evaluated,llama-3.3-70b-versatile,8.775,95.6,True,True,True,True,True
+tornado-4,BugsInPy-Tornado (Query String Multi-Param Parser),evaluated,llama-3.3-70b-versatile,10.608,97.4,True,True,True,True,True
+youtube-dl-2,BugsInPy-youtube-dl (Preceding Query Param URL Extractor),evaluated,llama-3.3-70b-versatile,8.353,93.8,True,True,True,True,True

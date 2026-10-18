@@ -1,0 +1,11 @@
+--- a/url_query_parser.py
++++ b/url_query_parser.py
+@@ -31,3 +31,6 @@
+-        if key in result:
+-            # BUG: Overwrites existing key instead of collecting into a list!
+-            result[key] = val
++        if key in result:
++            if isinstance(result[key], list):
++                result[key].append(val)
++            else:
++                result[key] = [result[key], val]

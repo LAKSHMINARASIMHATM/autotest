@@ -16,7 +16,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Check Vercel Secrets
+        id: check-secrets
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ] || [ -z "${{ secrets.VERCEL_ORG_ID }}" ] || [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+            echo "Skipping Vercel deployment: VERCEL_TOKEN, VERCEL_ORG_ID, or VERCEL_PROJECT_ID is not configured in repository secrets."
+            echo "can_deploy=false" >> $GITHUB_OUTPUT
+          else
+            echo "can_deploy=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy to Vercel Action
+        if: steps.check-secrets.outputs.can_deploy == 'true'
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}

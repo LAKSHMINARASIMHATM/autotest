@@ -1,0 +1,12 @@
+model: "llama-3.3-70b-versatile"
+provider: "groq"
+temperature: 0.2
+seeds:
+  - 42
+  - 123
+  - 999
+timeout_seconds: 45
+max_reflection_iterations: 3
+dataset: "BugsInPy"
+bug_list: "evaluation/bug_list.txt"
+output_dir: "evaluation/results/raw"

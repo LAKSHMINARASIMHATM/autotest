@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+from beanie import PydanticObjectId
 
 from app.agents.llm_factory import get_best_llm, get_groq_llm
 from app.agents.orchestrator import build_agent_graph
@@ -216,6 +217,16 @@ async def _save_patches(project, patches: list, validations: list = [], bug_map:
                     bug_obj_id = PydanticObjectId(raw_bug_id)
                 except Exception:
                     bug_obj_id = None
+
+            if not bug_obj_id and bug_map:
+                first_bug_val = next(iter(bug_map.values()), None)
+                if isinstance(first_bug_val, PydanticObjectId):
+                    bug_obj_id = first_bug_val
+                elif isinstance(first_bug_val, str) and first_bug_val:
+                    try:
+                        bug_obj_id = PydanticObjectId(first_bug_val)
+                    except Exception:
+                        pass
 
             proj_obj_id = project.id if isinstance(project.id, PydanticObjectId) else PydanticObjectId(str(project.id))
 

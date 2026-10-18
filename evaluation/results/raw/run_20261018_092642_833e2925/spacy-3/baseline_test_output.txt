@@ -1,0 +1,22 @@
+.F..                                                                     [100%]
+================================== FAILURES ===================================
+__________________ test_trailing_punctuation_offset_accurate __________________
+
+    def test_trailing_punctuation_offset_accurate():
+        """Real-world defect: end_char MUST match start_char + len(cleaned_token)."""
+        spans = SpanCleaner.clean_and_tokenize("Hello, world!")
+        assert len(spans) == 2
+        # "Hello," has start=0, raw length=6, but cleaned="Hello" (length=5). end_char should be 5, not 6!
+        assert spans[0].text == "Hello"
+>       assert spans[0].end_char == 5
+E       AssertionError: assert 6 == 5
+E        +  where 6 = TokenSpan(text='Hello', start_char=0, end_char=6).end_char
+
+test_text_span_cleaner.py:19: AssertionError
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.2-final-0 _______________
+
+Coverage JSON written to file D:\autotest\evaluation\results\raw\run_20261018_092642_833e2925\spacy-3\coverage.json
+=========================== short test summary info ===========================
+FAILED test_text_span_cleaner.py::test_trailing_punctuation_offset_accurate
+1 failed, 3 passed in 0.20s
