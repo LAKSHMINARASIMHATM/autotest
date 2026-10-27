@@ -1,0 +1,52 @@
+# Core
+fastapi>=0.110.0
+uvicorn>=0.25.0
+gunicorn  # Production WSGI server
+python-multipart
+python-dotenv
+requests
+httpx
+
+# Database
+motor
+pymongo
+
+# Auth
+python-jose[cryptography]
+passlib[bcrypt]
+authlib
+google-auth
+google-auth-httplib2
+google-api-python-client
+
+# AI & OCR - Enhanced for better scanning
+google-generativeai
+easyocr
+opencv-python-headless
+numpy
+Pillow
+torch
+torchvision
+scikit-image  # Advanced image processing for better preprocessing
+scipy  # Scientific computing for image enhancement
+pytesseract  # Fallback OCR engine
+pdf2image  # PDF to image conversion for PDF bills
+python-bidi  # Bidirectional text support
+imutils  # Convenience functions for image processing
+deskew  # Automatic skew correction for rotated images
+pypdfium2  # Fast PDF rendering alternative
+python-magic-bin  # File type detection
+textdistance  # Fuzzy text matching for better item recognition
+python-Levenshtein  # Fast Levenshtein distance calculation
+regex  # Advanced regex for text processing
+
+# Utils
+beautifulsoup4
+fake-useragent
+python-dateutil
+pytz
+
+
+
+
+

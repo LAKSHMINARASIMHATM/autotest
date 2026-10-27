@@ -1,0 +1,38 @@
+services:
+  # ------------------------------------
+  # 1. Backend Service (FastAPI)
+  # ------------------------------------
+  - type: web
+    name: shop-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: MONGO_URL
+        sync: false
+      - key: DB_NAME
+        value: shop_assistant
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+
+  # ------------------------------------
+  # 2. Frontend Service (React)
+  # ------------------------------------
+  - type: web
+    name: shop-frontend
+    env: static
+    region: oregon
+    plan: free
+    buildCommand: cd frontend && npm install && REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL npm run build
+    staticPublishPath: frontend/build
+    envVars:
+      - key: REACT_APP_BACKEND_URL
+        sync: false

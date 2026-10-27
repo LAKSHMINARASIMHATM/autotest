@@ -11,7 +11,6 @@ Provides:
 from __future__ import annotations
 
 import abc
-import json
 import re
 from datetime import UTC, datetime
 from typing import Any
@@ -173,13 +172,6 @@ class BaseAgentNode(abc.ABC):
         match = re.search(r"```(?:json)?\s*([\s\S]+?)\s*```", text)
         candidate = match.group(1).strip() if match else text
 
-        # If candidate is already valid JSON, return directly
-        try:
-            json.loads(candidate)
-            return candidate
-        except Exception:
-            pass
-
         # Try to find first '{' or '['
         start = -1
         for i, c in enumerate(candidate):
@@ -190,47 +182,23 @@ class BaseAgentNode(abc.ABC):
         if start == -1:
             return candidate
 
-        # Find matching closing bracket using stack, ignoring characters inside string literals
+        # Find matching closing bracket using stack to handle nested structures
         stack = []
         end = -1
         open_brace = candidate[start]
         close_brace = '}' if open_brace == '{' else ']'
 
-        in_string = False
-        escape = False
         for i in range(start, len(candidate)):
             c = candidate[i]
-            if escape:
-                escape = False
-                continue
-            if c == '\\':
-                escape = True
-                continue
-            if c == '"':
-                in_string = not in_string
-                continue
-            if not in_string:
-                if c == open_brace:
-                    stack.append(c)
-                elif c == close_brace:
-                    if stack:
-                        stack.pop()
-                    if not stack:
-                        end = i + 1
-                        break
+            if c == open_brace:
+                stack.append(c)
+            elif c == close_brace:
+                stack.pop()
+                if not stack:
+                    end = i + 1
+                    break
 
         if end != -1:
-            extracted = candidate[start:end].strip()
-            try:
-                json.loads(extracted)
-                return extracted
-            except Exception:
-                # Clean trailing commas e.g. {"a": 1,} or [1, 2,]
-                cleaned = re.sub(r",\s*([}\]])", r"\1", extracted)
-                try:
-                    json.loads(cleaned)
-                    return cleaned
-                except Exception:
-                    return extracted
+            return candidate[start:end].strip()
 
         return candidate

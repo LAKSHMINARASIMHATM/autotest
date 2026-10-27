@@ -54,21 +54,16 @@ class GraphQueryService:
         """Identifies functions with 0 callers/callees (potential dead code)."""
         query = """
         MATCH (f:Function)
-        WHERE NOT (f)-[:CALLS]->() AND NOT ()-[:CALLS]->(f)
+        WHERE NOT (f)-[:CALLS]-()
         RETURN f.name AS name, f.docstring AS docstring
         """
         return await Neo4jService.execute_query(query)
 
     @classmethod
     async def get_transitive_impact(cls, module_name: str, depth: int = 3) -> list[dict[str, Any]]:
-        """Perform a variable depth search to identify transitive impact graph for a module change.
-
-        Note: Cypher variable-length paths require a literal integer for the upper bound,
-        so the depth is interpolated into the query string after clamping to [1, 5].
-        """
-        safe_depth = max(1, min(depth, 5))  # Guard against arbitrary depths
+        """Perform a variable depth search to identify transitive impact graph for a module change."""
         query = f"""
-        MATCH path = (affected:Module)-[:DEPENDS_ON*1..{safe_depth}]->(m:Module {{name: $module_name}})
+        MATCH path = (affected:Module)-[:DEPENDS_ON*1..{depth}]->(m:Module {{name: $module_name}})
         RETURN affected.name AS affected_module, length(path) AS distance
         ORDER BY distance ASC
         """
@@ -203,7 +198,6 @@ class GraphQueryService:
             OPTIONAL MATCH (f)-[:DEFINES]->(c:Class)
             OPTIONAL MATCH (c)-[:DEFINES]->(f1:Function)
             OPTIONAL MATCH (f)-[:DEFINES]->(f2:Function)
-            WHERE NOT (f)-[:DEFINES]->(c2:Class)-[:DEFINES]->(f2)
             
             RETURN 
                 p.name AS project_name,

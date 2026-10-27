@@ -7,7 +7,6 @@ from uuid import uuid4
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel, Field
-from beanie import PydanticObjectId
 
 from app.agents.llm_factory import get_best_llm, get_groq_llm
 from app.agents.orchestrator import build_agent_graph
@@ -208,38 +207,18 @@ async def _save_patches(project, patches: list, validations: list = [], bug_map:
             except Exception:
                 patch_strat = PatchStrategy.MINIMAL
 
-            raw_bug_id = bug_map.get(getattr(p, "bug_id", ""))
-            bug_obj_id = None
-            if isinstance(raw_bug_id, PydanticObjectId):
-                bug_obj_id = raw_bug_id
-            elif isinstance(raw_bug_id, str) and raw_bug_id:
-                try:
-                    bug_obj_id = PydanticObjectId(raw_bug_id)
-                except Exception:
-                    bug_obj_id = None
-
-            if not bug_obj_id and bug_map:
-                first_bug_val = next(iter(bug_map.values()), None)
-                if isinstance(first_bug_val, PydanticObjectId):
-                    bug_obj_id = first_bug_val
-                elif isinstance(first_bug_val, str) and first_bug_val:
-                    try:
-                        bug_obj_id = PydanticObjectId(first_bug_val)
-                    except Exception:
-                        pass
-
-            proj_obj_id = project.id if isinstance(project.id, PydanticObjectId) else PydanticObjectId(str(project.id))
+            bug_id = bug_map.get(getattr(p, "bug_id", ""))
 
             patch = Patch(
-                project_id=proj_obj_id,
+                project_id=project.id,
                 project_name=getattr(project, "name", "") or "",
-                bug_report_id=bug_obj_id,
+                bug_report_id=bug_id,
                 strategy=patch_strat,
                 status=status,
                 diff=getattr(p, "diff", ""),
                 file_path=getattr(p, "file_path", "unknown"),
                 description=getattr(p, "description", "AI generated patch"),
-                confidence=float(getattr(p, "confidence", 0.7) or 0.7),
+                confidence=getattr(p, "confidence", 0.7),
                 rejection_reason=rejection_reason,
             )
             await patch.insert()

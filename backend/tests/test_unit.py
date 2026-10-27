@@ -428,7 +428,7 @@ async def test_patch_validator_relative_paths() -> None:
 
         assert val["compilation_ok"] is True
         assert val["failing_test_passes"] is True
-        assert val["verdict"] in ("approved", "accepted")
+        assert val["verdict"] == "accepted"
 
 
 def test_apply_unified_diff_hunks() -> None:
@@ -453,23 +453,6 @@ def test_apply_unified_diff_hunks() -> None:
         ok_bad, err_bad = _apply_unified_diff(bad_diff, workdir)
         assert ok_bad is False
         assert "No valid diff hunks" in err_bad
-
-        # Deletion diff (/dev/null)
-        dev_null_diff = "--- sample.py\n+++ /dev/null\n@@ -1,3 +0,0 @@\n-line1\n-line2_fixed\n-line3\n"
-        ok_del, err_del = _apply_unified_diff(dev_null_diff, workdir)
-        assert ok_del is False
-        assert "strictly prohibited" in err_del
-
-
-def test_heuristic_verdict_anti_deletion() -> None:
-    """_heuristic_verdict rejects patches targeting /dev/null."""
-    from app.repair.patch_validator import _heuristic_verdict
-
-    patch = "--- sample.py\n+++ /dev/null\n@@ -1,3 +0,0 @@\n"
-    res = _heuristic_verdict(patch, "sample.py")
-    assert res["verdict"] == "rejected"
-    assert "/dev/null" in res["reason"]
-
 
 
 

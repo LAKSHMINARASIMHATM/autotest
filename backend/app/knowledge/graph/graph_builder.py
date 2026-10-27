@@ -249,29 +249,13 @@ class GraphBuilder:
 
     @classmethod
     async def clear_project_structure(cls, project_id: str) -> None:
-        """Clear all nodes and relationships for a project before re-ingesting.
-
-        Neo4j requires that child nodes be deleted before their parents when
-        using DETACH DELETE.  Attempting to delete both ``p`` and ``n`` in the
-        same DELETE clause can raise a ConstraintValidation error if ``p``
-        already has no relationships by the time ``n`` is processed.
+        """Clear all nodes and relationships for a project before re-ingesting."""
+        query = """
+        MATCH (p:Project {id: $project_id})
+        OPTIONAL MATCH (p)-[:CONTAINS*]->(n)
+        DETACH DELETE p, n
         """
-        # Step 1 — delete all descendant nodes first (leaves → root)
-        await Neo4jService.execute_query(
-            """
-            MATCH (p:Project {id: $project_id})-[:CONTAINS*]->(n)
-            DETACH DELETE n
-            """,
-            {"project_id": project_id},
-        )
-        # Step 2 — delete the project root itself
-        await Neo4jService.execute_query(
-            """
-            MATCH (p:Project {id: $project_id})
-            DETACH DELETE p
-            """,
-            {"project_id": project_id},
-        )
+        await Neo4jService.execute_query(query, {"project_id": project_id})
 
     @classmethod
     async def ingest_project_structure(

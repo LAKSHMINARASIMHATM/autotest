@@ -26,13 +26,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     APP_ENV: Literal["development", "staging", "production"] = "development"
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
-    CORS_ORIGINS: str | list[str] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://192.168.56.1:3000",
-        "*",
-    ]
-    CORS_ORIGIN_REGEX: str | None = r".*"
+    CORS_ORIGINS: str | list[str] = ["http://localhost:3000"]
 
     # ── MongoDB ──────────────────────────────────────────────────
     MONGODB_URL: str = "mongodb://localhost:27017"
@@ -51,7 +45,8 @@ class Settings(BaseSettings):
     CHROMA_HOST: str = "localhost"
     CHROMA_PORT: int = 8001
 
-    # ── LLM Providers (Groq + HuggingFace) ─────────────────────
+    # ── LLM Providers ────────────────────────────────────────────
+    ANTHROPIC_API_KEY: SecretStr = SecretStr("")
     GROQ_API_KEY: SecretStr = SecretStr("")
     GROQ_API_KEY_1: SecretStr = SecretStr("")
     GROQ_API_KEY_2: SecretStr = SecretStr("")
@@ -61,7 +56,9 @@ class Settings(BaseSettings):
     HUGGINGFACE_API_TOKEN: SecretStr = SecretStr("")
     HF_MODEL: str = "Qwen/Qwen2.5-7B-Instruct"
 
-    DEFAULT_LLM_MODEL: str = "qwen/qwen3.8-27b"
+    DEFAULT_LLM_MODEL: str = "openai/gpt-oss-20b"
+    DEFAULT_FALLBACK_MODEL: str = "qwen/qwen3.8-27b"
+    DEFAULT_MAX_TOKENS: int = 4096
     DEFAULT_TEMPERATURE: float = 0.1
 
     # ── JWT ──────────────────────────────────────────────────────
@@ -73,20 +70,12 @@ class Settings(BaseSettings):
     # ── Rate Limiting ────────────────────────────────────────────
     RATE_LIMIT_PER_MINUTE: int = 60
 
-    @field_validator("APP_ENV", "LOG_LEVEL", mode="before")
-    @classmethod
-    def strip_env_whitespace(cls, v: str) -> str:
-        """Strip trailing newlines/whitespace from environment variable values."""
-        if isinstance(v, str):
-            return v.strip()
-        return v
-
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
         """Accept comma-separated string or list for CORS origins."""
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
+            return [origin.strip() for origin in v.split(",")]
         return v
 
     @property

@@ -98,7 +98,7 @@ class MetricsService:
                 "total_bugs": total_bugs,
                 "total_patches": total_patches,
                 "patch_success_rate": repair_rate,
-                "agents_executed": 12,
+                "agents_executed": 14,
             }
 
         except Exception as e:
@@ -117,7 +117,7 @@ class MetricsService:
                 "total_bugs": 0,
                 "total_patches": 0,
                 "patch_success_rate": 0.0,
-                "agents_executed": 12,
+                "agents_executed": 14,
             }
 
     @classmethod

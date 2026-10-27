@@ -1,0 +1,167 @@
+{
+  "identity": {
+    "name": "SmartSpend AI",
+    "persona": "The Thrifty Futurist",
+    "tone": "Efficient, Trustworthy, Optimistic",
+    "principles": [
+      "Fusion: Utility meets Organic. Receipts are boring; make them feel like achievements.",
+      "Emotion: Green isn't just money; it's growth. Use organic emeralds, not corporate dollars.",
+      "Clarity: Financial data must be instant. No cognitive load.",
+      "Tactility: Uploading a bill should feel like feeding a machine. Use sound and physics."
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "heading": {
+        "family": "Manrope",
+        "weights": ["600", "800"],
+        "usage": "Page titles, major stats, brand moments"
+      },
+      "body": {
+        "family": "Public Sans",
+        "weights": ["400", "500"],
+        "usage": "General UI, descriptions, form inputs"
+      },
+      "mono": {
+        "family": "JetBrains Mono",
+        "weights": ["500"],
+        "usage": "Prices, receipt items, transaction IDs, code snippets"
+      }
+    },
+    "scale": {
+      "h1": "text-4xl md:text-5xl font-extrabold tracking-tight",
+      "h2": "text-3xl font-bold tracking-tight",
+      "h3": "text-2xl font-semibold tracking-tight",
+      "body_lg": "text-lg leading-relaxed",
+      "body_base": "text-base leading-relaxed text-stone-600",
+      "caption": "text-sm font-medium text-stone-500 uppercase tracking-wider"
+    }
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#059669",
+        "foreground": "#ffffff",
+        "hover": "#047857",
+        "description": "Emerald 600 - The color of savings and growth."
+      },
+      "secondary": {
+        "DEFAULT": "#e7e5e4",
+        "foreground": "#1c1917",
+        "description": "Stone 200 - Organic structure."
+      },
+      "accent": {
+        "DEFAULT": "#f97316",
+        "foreground": "#ffffff",
+        "description": "Orange 500 - For offers, alerts, and 'Hot Deals'."
+      },
+      "background": {
+        "DEFAULT": "#fafaf9",
+        "dark": "#0c0a09",
+        "description": "Stone 50 - Warm, paper-like white."
+      },
+      "surface": {
+        "DEFAULT": "#ffffff",
+        "dark": "#1c1917",
+        "description": "Pure white for cards to pop against Stone 50."
+      },
+      "muted": {
+        "DEFAULT": "#f5f5f4",
+        "foreground": "#78716c"
+      }
+    },
+    "gradients": {
+      "hero": "bg-gradient-to-br from-emerald-50 to-stone-100",
+      "card_hover": "hover:bg-gradient-to-br hover:from-white hover:to-emerald-50/50"
+    }
+  },
+  "layout": {
+    "grid_system": {
+      "dashboard": "grid grid-cols-1 md:grid-cols-12 gap-6 p-6 md:p-8",
+      "marketing": "grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 px-6 md:px-12"
+    },
+    "spacing": {
+      "container_padding": "p-6 md:p-10",
+      "section_gap": "gap-8 md:gap-16"
+    },
+    "bento_grid": {
+      "hero_stat": "col-span-12 md:col-span-8 lg:col-span-6 row-span-2",
+      "list_container": "col-span-12 md:col-span-4 lg:col-span-3 row-span-2",
+      "chart_container": "col-span-12 md:col-span-8 lg:col-span-6",
+      "action_card": "col-span-6 md:col-span-4 lg:col-span-3"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 rounded-full px-8 py-3 font-bold tracking-wide",
+      "secondary": "bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-all rounded-full px-6 py-3 font-medium",
+      "ghost": "text-stone-500 hover:text-emerald-600 hover:bg-emerald-50/50 rounded-lg px-4 py-2"
+    },
+    "cards": {
+      "base": "bg-white border border-stone-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden",
+      "glass": "bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl",
+      "interactive": "cursor-pointer hover:border-emerald-200 hover:ring-2 hover:ring-emerald-100/50"
+    },
+    "inputs": {
+      "base": "bg-stone-50 border-stone-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 rounded-xl px-4 py-3 transition-all"
+    },
+    "visual_enhancers": {
+      "receipt_edge": "Use a 'jagged' CSS mask or SVG border for receipt containers.",
+      "scan_line": "Animated gradient line moving top-to-bottom for OCR states.",
+      "glass_morphism": "Use backdrop-blur-md for sticky headers and floating action buttons."
+    }
+  },
+  "motion": {
+    "transitions": {
+      "default": "transition-all duration-300 ease-out",
+      "slow": "transition-all duration-700 ease-in-out"
+    },
+    "animations": {
+      "fade_in": "animate-in fade-in duration-500",
+      "slide_up": "animate-in slide-in-from-bottom-4 duration-500",
+      "pulse_slow": "animate-pulse duration-[3000ms]"
+    }
+  },
+  "assets": {
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5px, rounded corners",
+      "usage": "Use Emerald-600 for active icons, Stone-400 for inactive."
+    },
+    "images": {
+      "login_bg": {
+        "url": "https://images.pexels.com/photos/6877710/pexels-photo-6877710.jpeg",
+        "alt": "Organized grocery flat lay",
+        "usage": "Full screen background for auth pages with overlay bg-stone-900/40"
+      },
+      "hero_placeholder": {
+        "url": "https://images.pexels.com/photos/24029891/pexels-photo-24029891.jpeg",
+        "alt": "Shopping receipt and calculator",
+        "usage": "Hero section visual"
+      }
+    }
+  },
+  "libraries": {
+    "charts": "recharts",
+    "animations": "framer-motion",
+    "dates": "date-fns",
+    "notifications": "sonner"
+  },
+  "instructions_to_main_agent": [
+    "1. INSTALLATION: Run 'npm install recharts framer-motion' immediately.",
+    "2. THEME SETUP: Update tailwind.config.js with the Emerald/Stone palette defined in 'colors'.",
+    "3. FONTS: Import Manrope, Public Sans, and JetBrains Mono from Google Fonts in index.css.",
+    "4. LAYOUT: Use the 'Bento Grid' strategy for the Dashboard. Do not make it a boring list.",
+    "5. BILL UPLOAD: Create a 'Drag & Drop' zone that looks like a physical receipt slot. Use dashed borders and texture.",
+    "6. PRICE COMPARISON: Use a 'Battle Card' UI. Your Item (Left) vs. Cheaper Option (Right). Highlight savings in Green.",
+    "7. CHARTS: Use Recharts for 'Monthly Spending' (Area Chart) and 'Category Breakdown' (Donut Chart). Style them with the Emerald palette.",
+    "8. GLASSMORPHISM: Apply 'backdrop-blur-xl' to the Sidebar and Top Navigation.",
+    "9. DATA-TESTID: Add 'data-testid' to all buttons, inputs, and major cards."
+  ],
+  "universal_guidelines": [
+    "Avoid 'AI Slop': Do not use generic gradients. Use distinct, solid colors or subtle noise textures.",
+    "Spacing: Use p-8 or p-10 where you'd normally use p-4. Let the data breathe.",
+    "Micro-Interactions: Buttons should scale down slightly on click. Inputs should glow on focus.",
+    "Dark Mode: Ensure the 'Stone' palette inverts correctly to 'Dark Stone' (Zinc/Neutral) for dark mode."
+  ]
+}

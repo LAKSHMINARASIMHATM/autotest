@@ -1,10 +1,19 @@
-"""LangGraph orchestrator — wires up the StateGraph with all 12 agent nodes.
+"""LangGraph orchestrator — wires up the StateGraph with all 14 agent nodes.
 
-Defines the flow:
-1. planner -> requirement -> architecture -> test_strategy -> test_generation -> verification -> execution
-2. If execution has failing tests -> bug_localization -> root_cause -> program_repair -> patch_validation
-3. patch_validation -> learning
-4. learning -> complete
+Full pipeline flow:
+1.  planner           → Project Analyst (parse repo layout & configs)
+2.  requirement       → Requirements Analyst (extract code contracts)
+3.  code_understanding→ Code Understanding (build AST & call graph)
+4.  architecture      → Architecture Agent (dependency/API/service graphs)
+5.  test_strategy     → Test Planner (formulate test scenarios)
+6.  test_generation   → Unit Test Generator (synthesize PyTest code)
+7.  verification      → Verification Agent (static AST syntax audit)
+8.  execution         → Execution Agent (sandbox subprocess run)
+9.  coverage_analyst  → Coverage Analyst (measure line/branch coverage)
+10. [conditional]
+    ├─ if failures → bug_localization → Root Cause → Program Repair → Patch Validation
+    │               → regression_agent → explainability → learning → END
+    └─ if clean    → regression_agent → explainability → learning → END
 """
 
 from __future__ import annotations
@@ -33,30 +42,68 @@ from app.agents.nodes.verification import VerificationAgent
 from app.agents.state import AgentState
 
 
-def route_after_execution(state: AgentState) -> Literal["bug_localization", "learning"]:
-    """Conditional router: Route to bug_localization to analyze and repair bugs, or learning if done."""
-    # Always run bug localization & repair on the initial pass (or if failures exist)
-    if not state.get("bug_localizations"):
-        return "bug_localization"
+def route_after_coverage(
+    state: AgentState,
+) -> Literal["bug_localization", "regression_agent"]:
+    """Conditional router after coverage_analyst.
+
+    Routes to bug_localization if there are test failures or if 0 tests were
+    collected from a non-empty generated_tests list (simulated failure).
+    Otherwise routes directly to regression_agent.
+    """
     exec_result = state.get("execution_result")
-    if exec_result and (exec_result.failed > 0 or exec_result.errors > 0 or len(exec_result.failures) > 0):
+    generated_tests = state.get("generated_tests", [])
+
+    if exec_result and (
+        exec_result.failed > 0
+        or exec_result.errors > 0
+        or len(exec_result.failures) > 0
+    ):
         return "bug_localization"
-    return "learning"
+
+    # If we generated tests but execution produced 0 collected → force debug path
+    if exec_result and exec_result.total == 0 and len(generated_tests) > 0:
+        return "bug_localization"
+
+    return "regression_agent"
 
 
-def route_after_patch_validation(state: AgentState) -> Literal["learning", "program_repair"]:
-    """Conditional router: If patch validation fails, we can retry (up to iteration limit); else proceed to learning."""
-    validation = state.get("patch_validations", [])
+def route_after_patch_validation(
+    state: AgentState,
+) -> Literal["regression_agent", "program_repair"]:
+    """Conditional router after patch_validation.
+
+    If the last patch was rejected and we have remaining iteration budget,
+    retry program_repair.  Otherwise proceed to regression_agent.
+
+    Early-exit: if all patches in the last two validation rounds were rejected,
+    stop retrying — the tests themselves are likely broken (bad imports, etc.)
+    and more repair iterations won't help.
+    """
+    validations = state.get("patch_validations", [])
     iteration = state.get("iteration", 0)
-    max_iterations = state.get("max_iterations", 3)
+    max_iterations = state.get("max_iterations", 2)  # default: max 2 repair loops
 
-    if validation and validation[-1].verdict == "rejected" and iteration < max_iterations:
-        return "program_repair"
-    return "learning"
+    # Nothing validated yet or best was accepted → proceed
+    if not validations:
+        return "regression_agent"
+    if validations[-1].verdict == "accepted":
+        return "regression_agent"
+
+    # Budget exhausted
+    if iteration >= max_iterations:
+        return "regression_agent"
+
+    # Early exit: if the last 6+ validations are all rejected, stop
+    # (means we're stuck — the tests themselves are broken or target code is empty)
+    if len(validations) >= 6 and all(v.verdict == "rejected" for v in validations[-6:]):
+        return "regression_agent"
+
+    return "program_repair"
 
 
 def build_agent_graph(llm: BaseChatModel | None = None) -> StateGraph:
-    """Instantiates the LangGraph StateGraph with all 12 agents.
+    """Instantiates the LangGraph StateGraph with all 14 agents.
 
     All agents use Groq (llama-3.3-70b-versatile) for reliable execution.
     HuggingFace is not used — it caused silent failures due to chat template
@@ -72,43 +119,60 @@ def build_agent_graph(llm: BaseChatModel | None = None) -> StateGraph:
 
     workflow = StateGraph(AgentState)
 
-    # All 14 specialized agents use Groq for consistent, reliable execution
-    planner         = PlannerAgent(groq_llm)
-    requirement     = RequirementAgent(groq_llm)
-    code_und        = CodeUnderstandingAgent(groq_llm)
-    architecture    = ArchitectureAgent(groq_llm)
-    test_strategy   = TestStrategyAgent(groq_llm)
-    test_gen        = TestGenerationAgent(groq_llm)
-    verification    = VerificationAgent(groq_llm)
-    execution       = ExecutionAgent(groq_llm)
-    cov_analyst     = CoverageAnalystAgent(groq_llm)
-    bug_loc         = BugLocalizationAgent(groq_llm)
-    root_cause      = RootCauseAgent(groq_llm)
-    repair          = ProgramRepairAgent(groq_llm)
-    patch_val       = PatchValidationAgent(groq_llm)
-    regression      = RegressionAgent(groq_llm)
-    explain         = ExplainabilityAgent(groq_llm)
-    learning        = LearningAgent(groq_llm)
+    # ── Instantiate all 14 agents ─────────────────────────────────────────────
+    # Agent 1 — Project Analyst
+    planner = PlannerAgent(groq_llm)
+    # Agent 2 — Requirements Analyst
+    requirement = RequirementAgent(groq_llm)
+    # Agent 3 — Code Understanding
+    code_understanding = CodeUnderstandingAgent(groq_llm)
+    # Agent 4 — Architecture (note: numbered 4 in graph; user table has Architecture
+    # as part of Code Understanding responsibility, but it is a separate existing node)
+    architecture = ArchitectureAgent(groq_llm)
+    # Agent 4 (Test Planner) — Test Planner
+    test_strategy = TestStrategyAgent(groq_llm)
+    # Agent 5 — Unit Test Generator
+    test_gen = TestGenerationAgent(groq_llm)
+    # Agent 6 — Verification Agent
+    verification = VerificationAgent(groq_llm)
+    # Agent 7 — Execution Agent
+    execution = ExecutionAgent(groq_llm)
+    # Agent 8 — Coverage Analyst
+    coverage_analyst = CoverageAnalystAgent(groq_llm)
+    # Agent 9 — Bug Localization
+    bug_loc = BugLocalizationAgent(groq_llm)
+    # Agent 10 — Root Cause Analyst
+    root_cause = RootCauseAgent(groq_llm)
+    # Agent 11 — Program Repair
+    repair = ProgramRepairAgent(groq_llm)
+    # Agent 12 — Patch Validation
+    patch_val = PatchValidationAgent(groq_llm)
+    # Agent 13 — Regression Agent
+    regression = RegressionAgent(groq_llm)
+    # Agent 14 — Explainability
+    explainability = ExplainabilityAgent(groq_llm)
+    # Learning/Memory (terminal enrichment node)
+    learning = LearningAgent(groq_llm)
 
-    # Add nodes to graph
+    # ── Register nodes ────────────────────────────────────────────────────────
     workflow.add_node("planner", planner)
     workflow.add_node("requirement", requirement)
-    workflow.add_node("code_understanding", code_und)
+    workflow.add_node("code_understanding", code_understanding)
     workflow.add_node("architecture", architecture)
     workflow.add_node("test_strategy", test_strategy)
     workflow.add_node("test_generation", test_gen)
     workflow.add_node("verification", verification)
     workflow.add_node("execution", execution)
-    workflow.add_node("coverage_analyst", cov_analyst)
+    workflow.add_node("coverage_analyst", coverage_analyst)
     workflow.add_node("bug_localization", bug_loc)
     workflow.add_node("root_cause", root_cause)
     workflow.add_node("program_repair", repair)
     workflow.add_node("patch_validation", patch_val)
     workflow.add_node("regression_agent", regression)
-    workflow.add_node("explainability", explain)
+    workflow.add_node("explainability", explainability)
     workflow.add_node("learning", learning)
 
-    # Define standard workflow edges
+    # ── Linear pipeline (Agents 1 → 9) ───────────────────────────────────────
     workflow.set_entry_point("planner")
     workflow.add_edge("planner", "requirement")
     workflow.add_edge("requirement", "code_understanding")
@@ -119,32 +183,33 @@ def build_agent_graph(llm: BaseChatModel | None = None) -> StateGraph:
     workflow.add_edge("verification", "execution")
     workflow.add_edge("execution", "coverage_analyst")
 
-    # Conditional routing after execution/coverage analysis
+    # ── Conditional routing after coverage_analyst ────────────────────────────
     workflow.add_conditional_edges(
         "coverage_analyst",
-        route_after_execution,
+        route_after_coverage,
         {
             "bug_localization": "bug_localization",
-            "learning": "explainability",
+            "regression_agent": "regression_agent",
         },
     )
 
-    # Post-execution debugging flow
+    # ── Debug/repair branch (Agents 9 → 12) ──────────────────────────────────
     workflow.add_edge("bug_localization", "root_cause")
     workflow.add_edge("root_cause", "program_repair")
     workflow.add_edge("program_repair", "patch_validation")
-    workflow.add_edge("patch_validation", "regression_agent")
 
-    # Conditional routing after patch validation & regression
+    # Conditional routing after patch_validation (retry repair vs finish)
     workflow.add_conditional_edges(
-        "regression_agent",
+        "patch_validation",
         route_after_patch_validation,
         {
             "program_repair": "program_repair",
-            "learning": "explainability",
+            "regression_agent": "regression_agent",
         },
     )
 
+    # ── Final pipeline (Agents 13 → Learning) ────────────────────────────────
+    workflow.add_edge("regression_agent", "explainability")
     workflow.add_edge("explainability", "learning")
     workflow.add_edge("learning", END)
 

@@ -62,7 +62,6 @@ logs/
 # Database
 *.db
 *.sqlite
-data/
 
 # Misc
 .cache/

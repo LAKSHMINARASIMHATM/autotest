@@ -1,49 +1,174 @@
----
-title: AutoTest AI Backend API
-emoji: 🤖
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
-license: mit
-short_description: Multi-Agent Software Quality Engineer FastAPI Backend
----
+# 🛍️ Smart Shopping Assistant
 
-# AutoTest AI Backend API (Hugging Face Space)
+An AI-powered shopping assistant that helps you save money by analyzing bills, comparing prices, and generating smart shopping lists.
 
-Autonomous Multi-Agent Software Quality Engineering system built with FastAPI, LangChain, LangGraph, MongoDB, Neo4j, and ChromaDB.
+##  Features
 
-## Features
-- **Multi-Agent Pipeline**: Autonomous generation of test cases, root cause analysis, and automated program repair.
-- **RESTful API**: FastAPI with auto-generated OpenAPI documentation (`/docs`).
-- **Graph & Vector RAG**: Neo4j knowledge graphs combined with ChromaDB code embeddings.
+- ** Bill Scanning**: Upload bills and extract items using OCR
+- ** AI Analysis**: Powered by Google Gemini for intelligent item categorization
+- ** Price Comparison**: Compare prices across 9+ e-commerce platforms
+- ** Spending Insights**: Track your spending patterns and get insights
+- ** Smart Shopping Lists**: Generate optimized shopping lists within budget
+- ** Secure Authentication**: Email/password and OAuth (Google, GitHub) login
 
-## Hugging Face Space Environment Secrets / Variables
+##  Tech Stack
 
-Configure the following secrets in **Settings -> Repository Secrets**:
+### Backend
+- **FastAPI** - Modern Python web framework
+- **MongoDB** - Database for storing user data and bills
+- **EasyOCR** - Optical character recognition for bill scanning
+- **Google Gemini** - AI for item categorization and analysis
+- **Motor** - Async MongoDB driver
 
-| Variable | Description | Example / Required |
-|----------|-------------|--------------------|
-| `APP_ENV` | Environment | `production` |
-| `LOG_LEVEL` | Log verbosity | `INFO` |
-| `CORS_ORIGINS` | Allowed frontend domains | `https://autotest-ai.vercel.app,http://localhost:3000` |
-| `MONGODB_URL` | MongoDB Atlas Connection String | `mongodb+srv://<user>:<password>@cluster.mongodb.net/autotest` |
-| `MONGODB_DB_NAME` | Database name | `autotest` |
-| `NEO4J_URI` | Neo4j Connection URI | `neo4j+s://<db_id>.databases.neo4j.io` |
-| `NEO4J_USER` | Neo4j username | `neo4j` |
-| `NEO4J_PASSWORD` | Neo4j password | `<your_neo4j_password>` |
-| `REDIS_URL` | Redis Connection URL | `rediss://default:<password>@<host>:<port>` |
-| `GROQ_API_KEY` | Groq LLM API Key | `gsk_...` |
-| `ANTHROPIC_API_KEY` | Anthropic Claude Key (Optional) | `sk-ant-...` |
-| `JWT_SECRET` | Secret key for auth tokens | `<random_32_char_string>` |
+### Frontend
+- **React** - UI framework
+- **React Router** - Navigation
+- **Axios** - HTTP client
 
-## Local Development & Docker Verification
+##  Quick Start
 
+### Prerequisites
+- Python 3.8+
+- Node.js 14+
+- MongoDB Atlas account
+- Google Gemini API key
+
+### Backend Setup
+
+1. **Navigate to backend directory**:
+   ```bash
+   cd backend
+   ```
+
+
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Test MongoDB connection**:
+   ```bash
+   python test_mongodb.py
+   ```
+
+5. **Start the server**:
+   ```bash
+   python -m uvicorn server:app --reload
+   ```
+
+   Server will run at: http://localhost:8000
+
+### Frontend Setup
+
+1. **Navigate to frontend directory**:
+   ```bash
+   cd frontend
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Create `.env.local`**:
+   ```env
+   REACT_APP_API_URL=http://localhost:8000/api
+   ```
+
+4. **Start the development server**:
+   ```bash
+   npm start
+   ```
+
+   App will open at: http://localhost:3000
+
+## 📚 Documentation
+
+- **[Quick Start Guide](QUICKSTART.md)** - Get started quickly
+- **[Git Setup](GIT_SETUP.md)** - Git authentication and push instructions
+- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Deploy to production
+
+## 🔑 API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login with email/password
+- `GET /api/auth/google` - Google OAuth login
+- `GET /api/auth/github` - GitHub OAuth login
+
+### Bills
+- `POST /api/bills/upload` - Upload and analyze bill
+- `GET /api/bills` - Get user's bills
+- `GET /api/bills/{bill_id}` - Get specific bill
+
+### Shopping Lists
+- `POST /api/shopping-list/generate` - Generate shopping list
+- `GET /api/shopping-lists` - Get user's shopping lists
+
+### Insights
+- `GET /api/insights` - Get spending insights
+
+## 🌐 Supported Platforms
+
+Price comparison across:
+- Amazon India
+- Flipkart
+- Meesho
+- BigBasket
+- JioMart
+- Blinkit (10-15 min delivery)
+- Zepto (10 min delivery)
+- Swiggy Instamart (15-20 min delivery)
+- Dunzo (20-30 min delivery)
+
+## 🔒 Environment Variables
+
+### Required
+- `MONGO_URL` - MongoDB connection string
+- `DB_NAME` - Database name
+- `JWT_SECRET` - Secret for JWT tokens
+- `GEMINI_API_KEY` - Google Gemini API key
+
+### Optional (OAuth)
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GITHUB_CLIENT_ID`
+- `GITHUB_CLIENT_SECRET`
+
+### Optional (Affiliate Links)
+- `AMAZON_AFFILIATE_TAG`
+- `FLIPKART_AFFILIATE_ID`
+- `MEESHO_AFFILIATE_ID`
+
+## 🧪 Testing
+
+### Test MongoDB Connection
 ```bash
-# Build Docker image locally
-docker build -t autotest-backend .
-
-# Run container listening on port 7860
-docker run -p 7860:7860 --env-file .env autotest-backend
+cd backend
+python test_mongodb.py
 ```
+
+### API Documentation
+Once the server is running, visit:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+## 🚀 Deployment
+
+See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for detailed deployment instructions.
+
+## 📝 License
+
+MIT License - feel free to use this project for your own purposes.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📧 Contact
+
+For questions or support, please open an issue on GitHub.
+
+---
+
+**Made with ❤️ by LAKSHMINARASIMHATM**

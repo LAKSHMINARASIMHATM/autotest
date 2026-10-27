@@ -28,6 +28,7 @@ export default function PatchesPage() {
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [commitShas, setCommitShas] = useState<Record<string, string>>({});
+  const [searchFilter, setSearchFilter] = useState<string>("");
 
   useEffect(() => {
     listProjects(1, 100).then((res) => {
@@ -168,13 +169,31 @@ export default function PatchesPage() {
         {/* Left Column: Patch List & Validation Summary */}
         <div className="lg:col-span-1 space-y-6">
           <GlassCard className="p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: "var(--color-text-muted)" }}>
                 <IconSparkles size={14} className="text-[var(--color-brown-primary)]" /> Generated Candidates
               </h3>
               <span className="text-xs font-semibold bg-[rgba(107,79,47,0.1)] px-2 py-0.5 rounded-md" style={{ color: "var(--color-text-primary)" }}>
-                {patches.length} Total
+                {patches.filter(p =>
+                  !searchFilter ||
+                  p.file.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                  p.strategy.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                  p.status.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                  p.bugId.toLowerCase().includes(searchFilter.toLowerCase())
+                ).length} / {patches.length}
               </span>
+            </div>
+
+            {/* Search filter */}
+            <div className="mb-3">
+              <input
+                type="text"
+                placeholder="Filter by file, strategy, status…"
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                className="w-full text-xs px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] outline-none focus:border-[rgba(107,79,47,0.5)] transition-colors"
+                style={{ color: "var(--color-text-primary)" }}
+              />
             </div>
 
             {loading ? (
@@ -193,7 +212,15 @@ export default function PatchesPage() {
               </div>
             ) : (
               <div className="space-y-2.5">
-                {patches.map((patch) => (
+                {patches
+                  .filter((p) =>
+                    !searchFilter ||
+                    p.file.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                    p.strategy.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                    p.status.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                    p.bugId.toLowerCase().includes(searchFilter.toLowerCase())
+                  )
+                  .map((patch) => (
                   <button
                     key={patch.id}
                     onClick={() => setSelectedPatch(patch)}

@@ -114,79 +114,61 @@ async def approve_patch(
             if any(target_p.iterdir()):
                 workdir_path = target_p
 
-        # Re-clone or create workspace if local path is missing on container
-        if not workdir_path and project:
-            if project.repo_url:
-                try:
-                    from app.agents.github_import import clone_and_scan
-                    logger.info("recloning_project_for_patch_approve", project_id=str(project.id), repo_url=project.repo_url)
-                    summary = await clone_and_scan(project.repo_url, project.branch)
-                    if summary and summary.local_path and Path(summary.local_path).exists():
-                        workdir_path = Path(summary.local_path)
-                        project.local_path = str(workdir_path)
-                        await project.save()
-                except Exception as clone_err:
-                    logger.warning("reclone_failed_creating_temp_workspace", error=str(clone_err))
-
         if not workdir_path:
-            import tempfile
-            tmp = tempfile.mkdtemp(prefix=f"autotest_patch_{patch_id}_")
-            workdir_path = Path(tmp)
-            if project:
-                project.local_path = str(workdir_path)
-                await project.save()
+            workdir_path = Path.cwd()
 
         workdir_path = workdir_path.resolve()
+        workdir_path.mkdir(parents=True, exist_ok=True)
 
         # 1. Apply patch diff to codebase
         patch_ok, patch_err = _apply_unified_diff(patch.diff, workdir_path, target_file_hint=patch.file_path)
         if not patch_ok:
             logger.warning("approve_patch_apply_warning", patch_id=patch_id, error=patch_err)
-            # Proceed with approval even if exact diff line match failed
 
         # 2. Git Stage, Commit, and Push
         commit_sha = None
         commit_msg = f"fix(autotest): apply patch [{patch.strategy}] for {patch.file_path or 'bug'}"
         try:
             target_dir = workdir_path
-            target_dir_str = str(target_dir)
+            if not target_dir.exists():
+                target_dir.mkdir(parents=True, exist_ok=True)
 
-            # Open existing repo or initialize a fresh one — never blindly re-init
             try:
-                repo = git.Repo(target_dir_str)
-            except git.InvalidGitRepositoryError:
-                logger.info("git_repo_not_found_initializing", patch_id=patch_id, path=target_dir_str)
-                repo = git.Repo.init(target_dir_str)
+                if not (target_dir / ".git").exists():
+                    git.Repo.init(target_dir)
+                repo = git.Repo(target_dir)
             except Exception:
-                repo = git.Repo.init(target_dir_str)
+                target_dir = Path.cwd().resolve()
+                if not (target_dir / ".git").exists():
+                    git.Repo.init(target_dir)
+                repo = git.Repo(target_dir)
+
+            _apply_unified_diff(patch.diff, target_dir, target_file_hint=patch.file_path)
 
             os.environ["GIT_AUTHOR_NAME"] = os.environ.get("GIT_AUTHOR_NAME", "AutoTest AI")
             os.environ["GIT_AUTHOR_EMAIL"] = os.environ.get("GIT_AUTHOR_EMAIL", "autotest-ai@local")
             os.environ["GIT_COMMITTER_NAME"] = os.environ.get("GIT_COMMITTER_NAME", "AutoTest AI")
             os.environ["GIT_COMMITTER_EMAIL"] = os.environ.get("GIT_COMMITTER_EMAIL", "autotest-ai@local")
 
-            # Disable git hooks by deleting them directly from .git/hooks/.
-            # DO NOT use config_writer(core.hooksPath) — Windows paths with backslashes
-            # corrupt .git/config and break every subsequent git operation.
-            try:
-                _hooks_dir = Path(repo.git_dir) / "hooks"
-                if _hooks_dir.exists():
-                    for _hook_file in _hooks_dir.iterdir():
-                        # Leave *.sample files; only remove executable hooks
-                        if _hook_file.is_file() and not _hook_file.name.endswith(".sample"):
-                            _hook_file.unlink(missing_ok=True)
-            except Exception as _hook_disable_err:
-                logger.warning("git_hooks_disable_warning", error=str(_hook_disable_err))
-
             from git import Actor
             bot_author = Actor("AutoTest AI", "autotest-ai@local")
 
-            # Ensure git origin remote is configured
+            try:
+                with repo.config_writer() as config:
+                    if not config.has_option("user", "name"):
+                        config.set_value("user", "name", "AutoTest AI")
+                    if not config.has_option("user", "email"):
+                        config.set_value("user", "email", "autotest-ai@local")
+            except Exception:
+                pass
+
+            # Ensure git origin remote is configured from project.repo_url
             if project and project.repo_url:
                 try:
                     target_url = project.repo_url
+                    # Support GITHUB_TOKEN or GH_TOKEN authentication if present
                     gh_token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
-                    if gh_token and "github.com" in target_url and "@github.com" not in target_url:
+                    if gh_token and "github.com" in target_url and not "@github.com" in target_url:
                         target_url = re.sub(r"https://", f"https://{gh_token}@", target_url)
 
                     if "origin" not in [r.name for r in repo.remotes]:
@@ -196,145 +178,57 @@ async def approve_patch(
                 except Exception as remote_err:
                     logger.warning("git_remote_config_warning", patch_id=patch_id, error=str(remote_err))
 
-            # Stage ONLY the specific file affected by the patch (never -A on whole repo)
-            staged_file = False
-            if patch.file_path:
-                rel_path = patch.file_path.replace("\\", "/").lstrip("/")
-                target_file = (target_dir / rel_path).resolve()
-                if target_file.exists():
-                    repo.git.add(str(target_file))
-                    staged_file = True
-                else:
-                    basename = Path(patch.file_path).name
-                    matches = [m for m in target_dir.glob(f"**/{basename}") if ".git" not in str(m)]
-                    if matches:
-                        repo.git.add(str(matches[0]))
-                        staged_file = True
-            if not staged_file and patch.file_path:
-                try:
-                    repo.git.add(patch.file_path)
-                except Exception:
-                    pass
-
-            # Commit — is_dirty() is safe on empty repos; avoid diff("HEAD") which throws BadName
-            try:
-                has_changes = repo.is_dirty(index=True, working_tree=False)
-            except Exception:
-                has_changes = staged_file
-
-            if has_changes:
-                commit_obj = repo.index.commit(
-                    commit_msg, author=bot_author, committer=bot_author, skip_hooks=True
-                )
+            repo.git.add(A=True)
+            if repo.is_dirty(untracked_files=True):
+                commit_obj = repo.index.commit(commit_msg, author=bot_author, committer=bot_author)
                 commit_sha = commit_obj.hexsha[:8]
                 logger.info("git_commit_successful", patch_id=patch_id, commit_sha=commit_sha)
             else:
                 try:
                     commit_sha = repo.head.commit.hexsha[:8]
                 except Exception:
-                    commit_sha = "local"
-
-            # Push — sync with remote before pushing
-            if repo.remotes and "origin" in [r.name for r in repo.remotes]:
-                try:
-                    import shutil as _shutil
-                    import tempfile as _tempfile
-                    branch_name = project.branch if project and project.branch else "main"
-
-                    # Build authenticated remote URL (same token injection as above)
-                    push_url = project.repo_url if project and project.repo_url else ""
-                    gh_token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
-                    if gh_token and "github.com" in push_url and "@github.com" not in push_url:
-                        push_url = re.sub(r"https://", f"https://{gh_token}@", push_url)
-
-                    # Detect orphan repo (no common ancestor with remote)
-                    has_common_history = False
                     try:
-                        repo.git.fetch("origin", branch_name, "--depth=1")
-                        logger.info("git_fetch_successful", patch_id=patch_id, branch=branch_name)
-                        repo.git.merge_base("HEAD", f"origin/{branch_name}")
-                        has_common_history = True
+                        commit_obj = repo.index.commit(commit_msg + " (patch applied)", author=bot_author, committer=bot_author, skip_hooks=True)
+                        commit_sha = commit_obj.hexsha[:8]
                     except Exception:
-                        pass
+                        commit_sha = "HEAD"
 
-                    if not has_common_history:
-                        # ── Orphan repo path ─────────────────────────────────────────────
-                        # The local dir was `git init`-ed, not cloned. Doing reset/rebase
-                        # would wipe all remote files because the local index has no knowledge
-                        # of them. Instead: clone fresh → copy the patched file → commit → push.
-                        fresh_clone_dir = None
+            # Always attempt Git Push to remote (e.g. GitHub)
+            try:
+                if repo.remotes and "origin" in [r.name for r in repo.remotes]:
+                    branch_name = project.branch if project and project.branch else "main"
+                    origin = repo.remotes.origin
+
+                    # Fetch latest remote state and rebase/push
+                    rebase_ok = False
+                    try:
+                        origin.fetch()
+                        repo.git.rebase(f"origin/{branch_name}")
+                        rebase_ok = True
+                        logger.info("git_rebase_successful", patch_id=patch_id, branch=branch_name)
+                    except Exception as rebase_err:
                         try:
-                            fresh_clone_dir = _tempfile.mkdtemp(prefix="autotest-push-")
-                            logger.info("git_fresh_clone_start", patch_id=patch_id)
-                            fresh_repo = git.Repo.clone_from(
-                                push_url,
-                                fresh_clone_dir,
-                                depth=1,
-                                branch=branch_name,
-                            )
-                            # Copy the already-patched file from the working dir into the clone
-                            if patch.file_path:
-                                rel_path = patch.file_path.replace("\\", "/").lstrip("/")
-                                src_file = (target_dir / rel_path).resolve()
-                                dst_file = Path(fresh_clone_dir) / rel_path
-                                if src_file.exists():
-                                    dst_file.parent.mkdir(parents=True, exist_ok=True)
-                                    _shutil.copy2(str(src_file), str(dst_file))
-                                    fresh_repo.git.add(str(dst_file))
-                            if fresh_repo.is_dirty(index=True, working_tree=False):
-                                # Disable hooks on fresh clone — delete hook files directly
-                                # (never use config_writer with Windows paths; backslashes corrupt .git/config)
-                                try:
-                                    _fresh_hooks = Path(fresh_repo.git_dir) / "hooks"
-                                    if _fresh_hooks.exists():
-                                        for _h in _fresh_hooks.iterdir():
-                                            if _h.is_file() and not _h.name.endswith(".sample"):
-                                                _h.unlink(missing_ok=True)
-                                except Exception:
-                                    pass
-                                commit_obj = fresh_repo.index.commit(
-                                    commit_msg, author=bot_author, committer=bot_author
-                                )
-                                commit_sha = commit_obj.hexsha[:8]
-                                logger.info("git_fresh_clone_commit", patch_id=patch_id, commit_sha=commit_sha)
-                            fresh_repo.git.push("origin", f"HEAD:{branch_name}")
-                            logger.info("git_push_successful", patch_id=patch_id, branch=branch_name)
-                        except Exception as clone_err:
-                            logger.warning("git_fresh_clone_push_failed", patch_id=patch_id, error=str(clone_err))
-                        finally:
-                            if fresh_clone_dir and Path(fresh_clone_dir).exists():
-                                _shutil.rmtree(fresh_clone_dir, ignore_errors=True)
+                            repo.git.rebase("--abort")
+                        except Exception:
+                            pass
+                        logger.warning(
+                            "git_rebase_skipped_using_force_push",
+                            patch_id=patch_id,
+                            error=str(rebase_err),
+                        )
+
+                    if rebase_ok:
+                        repo.git.push("origin", f"HEAD:{branch_name}")
                     else:
-                        # ── Proper clone path ────────────────────────────────────────────
-                        # Try rebase to stay on top of remote history
-                        try:
-                            repo.git.rebase(f"origin/{branch_name}")
-                            logger.info("git_rebase_successful", patch_id=patch_id)
-                        except Exception as rebase_err:
-                            logger.warning("git_rebase_failed", patch_id=patch_id, error=str(rebase_err))
-                            try:
-                                repo.git.rebase("--abort")
-                            except Exception:
-                                pass
+                        repo.git.push("origin", f"HEAD:{branch_name}", "--force-with-lease")
 
-                        # Push — fall back to --force-with-lease if fast-forward is rejected
-                        try:
-                            repo.git.push("origin", f"HEAD:{branch_name}")
-                            logger.info("git_push_successful", patch_id=patch_id, branch=branch_name)
-                        except Exception as push_err:
-                            logger.warning("git_push_fast_forward_failed", patch_id=patch_id, error=str(push_err))
-                            try:
-                                repo.git.push("origin", f"HEAD:{branch_name}", "--force-with-lease")
-                                logger.info("git_push_force_successful", patch_id=patch_id, branch=branch_name)
-                            except Exception as force_err:
-                                logger.warning("git_push_skipped_or_failed", patch_id=patch_id, error=str(force_err))
-                except Exception as push_outer_err:
-                    logger.warning("git_push_skipped_or_failed", patch_id=patch_id, error=str(push_outer_err))
-            else:
-                logger.info("git_push_skipped_no_remote", patch_id=patch_id)
+                    logger.info("git_push_successful", patch_id=patch_id, branch=branch_name)
+            except Exception as push_err:
+                logger.warning("git_push_skipped_or_failed", patch_id=patch_id, error=str(push_err))
         except Exception as git_err:
             logger.warning("git_commit_failed", patch_id=patch_id, error=str(git_err))
             commit_msg = f"Applied diff to file (Git commit note: {git_err})"
+
 
         # 3. Update DB records
         patch.status = PatchStatus.ACCEPTED

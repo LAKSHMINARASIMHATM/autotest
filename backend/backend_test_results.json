@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-12-30T13:47:05.652246",
+  "total_tests": 7,
+  "passed_tests": 6,
+  "success_rate": "85.7%",
+  "test_details": [
+    {
+      "test": "User Registration",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get Current User",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Bill Upload",
+      "success": false,
+      "details": "Expected 200, got 520: {'detail': 'Failed to process bill: Invalid input type. Supporting format = string(file path or url), bytes, numpy array'}"
+    },
+    {
+      "test": "Get Bills",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get Insights",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Generate Shopping List",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get Shopping Lists",
+      "success": true,
+      "details": "Status: 200"
+    }
+  ]
+}
