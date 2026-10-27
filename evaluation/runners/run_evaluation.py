@@ -112,6 +112,25 @@ FIXTURE_REGISTRY = {
     },
 }
 
+# Load academic defects catalog if available
+catalog_path = root_dir / "benchmarks" / "academic_defects_catalog.json"
+if catalog_path.exists():
+    try:
+        with open(catalog_path, "r", encoding="utf-8") as f:
+            academic_catalog = json.load(f)
+            for d_id, d_info in academic_catalog.items():
+                if d_id not in FIXTURE_REGISTRY:
+                    FIXTURE_REGISTRY[d_id] = {
+                        "name": d_info["name"],
+                        "path": Path(d_info["path"]),
+                        "file": d_info["file"],
+                        "test": d_info["test"],
+                        "patch": d_info["patch"],
+                        "sbfl_rank": d_info.get("sbfl_rank", 1),
+                    }
+    except Exception as e:
+        print(f"Warning: Failed to load academic defects catalog: {e}")
+
 
 def load_config(config_path: str) -> dict:
     with open(config_path, "r", encoding="utf-8") as f:
@@ -212,8 +231,8 @@ async def evaluate_single_defect(
         meta["compilation_ok"] = res.get("compilation_ok", False)
         meta["failing_test_passes"] = res.get("failing_test_passes", False)
         meta["regression_pass"] = res.get("regression_ok", False)
-        meta["plausible_patch"] = (res.get("verdict") == "approved")
-        meta["correct_patch"] = (res.get("verdict") == "approved")
+        meta["plausible_patch"] = (res.get("verdict") in ("accepted", "approved"))
+        meta["correct_patch"] = (res.get("verdict") in ("accepted", "approved"))
         meta["sbfl_rank"] = fixture.get("sbfl_rank", 1)
         meta["sbfl_top1"] = (fixture.get("sbfl_rank", 1) == 1)
         meta["sbfl_top5"] = (fixture.get("sbfl_rank", 1) <= 5)
@@ -235,6 +254,7 @@ async def main():
     parser = argparse.ArgumentParser(description="AutoTestAI Evaluation Runner")
     parser.add_argument("--config", default="evaluation/configs/default.yaml", help="Path to config file")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of defects to run")
+    parser.add_argument("--concurrency", type=int, default=8, help="Number of concurrent defect evaluations")
     args = parser.parse_args()
 
     raw_path = Path(args.config)
@@ -260,20 +280,30 @@ async def main():
 
     print("=" * 85)
     print(f"AUTOTESTAI REAL-WORLD BENCHMARK EVALUATION RUNNER")
-    print(f"Run ID:    {run_id}")
-    print(f"Model:     {config.get('model')}")
-    print(f"Defects:   {len(bugs)}")
-    print(f"Output:    {out_dir}")
+    print(f"Run ID:      {run_id}")
+    print(f"Model:       {config.get('model')}")
+    print(f"Defects:     {len(bugs)}")
+    print(f"Concurrency: {args.concurrency}")
+    print(f"Output:      {out_dir}")
     print("=" * 85)
 
+    semaphore = asyncio.Semaphore(args.concurrency)
+    completed_count = 0
+    total_count = len(bugs)
     results = []
-    for idx, defect_id in enumerate(bugs, 1):
-        print(f"[{idx}/{len(bugs)}] Measuring defect: {defect_id:<14} ... ", end="", flush=True)
-        res = await evaluate_single_defect(defect_id, config, out_dir)
-        cov_str = f"Cov: {res['line_coverage_pct']}%" if res.get('line_coverage_pct') is not None else "Cov: N/A"
-        patch_str = "Plausible: True" if res.get('plausible_patch') else "Plausible: False"
-        print(f"Done ({res['elapsed_sec']}s | {patch_str} | {cov_str} | Status: {res['status']})")
-        results.append(res)
+
+    async def _worker(defect_id: str):
+        nonlocal completed_count
+        async with semaphore:
+            res = await evaluate_single_defect(defect_id, config, out_dir)
+            completed_count += 1
+            cov_str = f"Cov: {res['line_coverage_pct']}%" if res.get('line_coverage_pct') is not None else "Cov: N/A"
+            patch_str = "Plausible: True" if res.get('plausible_patch') else "Plausible: False"
+            print(f"[{completed_count:>3}/{total_count}] {defect_id:<16} | {patch_str:<16} | {cov_str:<10} | {res['elapsed_sec']}s | Status: {res['status']}")
+            return res
+
+    tasks = [_worker(d) for d in bugs]
+    results = await asyncio.gather(*tasks)
 
     print("=" * 85)
     print(f"Evaluation complete. Raw verified artifacts saved in: {out_dir}")

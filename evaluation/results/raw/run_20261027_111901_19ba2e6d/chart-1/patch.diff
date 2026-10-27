@@ -1,0 +1,12 @@
+--- a/chart_render_1.py
++++ b/chart_render_1.py
+@@ -1,7 +1,8 @@
+ """Defects4J JFreeChart Axis Scaling #1."""
+ def auto_range(min_val: float, max_val: float, margin: float = 0.05) -> tuple[float, float]:
+     span = max_val - min_val
+-    # Bug: when min_val == max_val span is 0 causing collapsed axis
++    if span <= 0:
++        return (min_val - 1.0, max_val + 1.0)
+     pad = span * margin
+     return (min_val - pad, max_val + pad)
+ 

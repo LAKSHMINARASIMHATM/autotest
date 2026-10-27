@@ -1,0 +1,20 @@
+.F                                                                       [100%]
+================================== FAILURES ===================================
+___________________________ test_parse_boolean_flag ___________________________
+
+    def test_parse_boolean_flag():
+        # Exposes bug where --verbose should return ("verbose", None)
+>       assert parse_flag_argument("--verbose") == ("verbose", None)
+E       AssertionError: assert ('', True) == ('verbose', None)
+E         
+E         At index 0 diff: '' != 'verbose'
+E         Use -v to get more diff
+
+test_commons_cli_4.py:9: AssertionError
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.2-final-0 _______________
+
+Coverage JSON written to file D:\autotest\evaluation\results\raw\run_20261027_111901_19ba2e6d\commons-cli-4\coverage.json
+=========================== short test summary info ===========================
+FAILED test_commons_cli_4.py::test_parse_boolean_flag - AssertionError: asser...
+1 failed, 1 passed in 0.05s

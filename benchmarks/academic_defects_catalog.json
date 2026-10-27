@@ -1,0 +1,1397 @@
+{
+  "fastapi-2": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 2)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-2",
+    "file": "fastapi_module_2.py",
+    "test": "test_fastapi_module_2.py",
+    "patch": "--- a/fastapi_module_2.py\n+++ b/fastapi_module_2.py\n@@ -1,6 +1,6 @@\n \"\"\"FastAPI pagination #2.\"\"\"\n def paginate(items: list, page: int, size: int) -> list:\n-    # Bug: 0-indexed calculation error\n-    start = page * size\n+    page_idx = max(0, page - 1)\n+    start = page_idx * size\n     end = start + size\n     return items[start:end]\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-3": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 3)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-3",
+    "file": "fastapi_module_3.py",
+    "test": "test_fastapi_module_3.py",
+    "patch": "--- a/fastapi_module_3.py\n+++ b/fastapi_module_3.py\n@@ -2,8 +2,13 @@\n def parse_query_params(query_dict: dict) -> dict:\n     result = {}\n     for k, v in query_dict.items():\n-        # Bug: drops duplicate keys instead of list grouping\n-        result[k] = v\n+        if k in result:\n+            if isinstance(result[k], list):\n+                result[k].append(v)\n+            else:\n+                result[k] = [result[k], v]\n+        else:\n+            result[k] = v\n     return result\n \n def validate_status(code: int) -> bool:\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-4": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 4)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-4",
+    "file": "fastapi_module_4.py",
+    "test": "test_fastapi_module_4.py",
+    "patch": "--- a/fastapi_module_4.py\n+++ b/fastapi_module_4.py\n@@ -1,7 +1,6 @@\n \"\"\"FastAPI header parsing #4.\"\"\"\n def normalize_header_name(header: str) -> str:\n-    # Bug: only replaces underscores, forgets lowercasing\n-    return header.replace(\"_\", \"-\")\n+    return header.lower().replace(\"_\", \"-\")\n \n def get_content_length(headers: dict) -> int:\n     for k, v in headers.items():\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-5": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 5)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-5",
+    "file": "fastapi_module_5.py",
+    "test": "test_fastapi_module_5.py",
+    "patch": "--- a/fastapi_module_5.py\n+++ b/fastapi_module_5.py\n@@ -1,6 +1,6 @@\n \"\"\"FastAPI pagination #5.\"\"\"\n def paginate(items: list, page: int, size: int) -> list:\n-    # Bug: 0-indexed calculation error\n-    start = page * size\n+    page_idx = max(0, page - 1)\n+    start = page_idx * size\n     end = start + size\n     return items[start:end]\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-6": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 6)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-6",
+    "file": "fastapi_module_6.py",
+    "test": "test_fastapi_module_6.py",
+    "patch": "--- a/fastapi_module_6.py\n+++ b/fastapi_module_6.py\n@@ -2,8 +2,13 @@\n def parse_query_params(query_dict: dict) -> dict:\n     result = {}\n     for k, v in query_dict.items():\n-        # Bug: drops duplicate keys instead of list grouping\n-        result[k] = v\n+        if k in result:\n+            if isinstance(result[k], list):\n+                result[k].append(v)\n+            else:\n+                result[k] = [result[k], v]\n+        else:\n+            result[k] = v\n     return result\n \n def validate_status(code: int) -> bool:\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-7": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 7)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-7",
+    "file": "fastapi_module_7.py",
+    "test": "test_fastapi_module_7.py",
+    "patch": "--- a/fastapi_module_7.py\n+++ b/fastapi_module_7.py\n@@ -1,7 +1,6 @@\n \"\"\"FastAPI header parsing #7.\"\"\"\n def normalize_header_name(header: str) -> str:\n-    # Bug: only replaces underscores, forgets lowercasing\n-    return header.replace(\"_\", \"-\")\n+    return header.lower().replace(\"_\", \"-\")\n \n def get_content_length(headers: dict) -> int:\n     for k, v in headers.items():\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-8": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 8)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-8",
+    "file": "fastapi_module_8.py",
+    "test": "test_fastapi_module_8.py",
+    "patch": "--- a/fastapi_module_8.py\n+++ b/fastapi_module_8.py\n@@ -1,6 +1,6 @@\n \"\"\"FastAPI pagination #8.\"\"\"\n def paginate(items: list, page: int, size: int) -> list:\n-    # Bug: 0-indexed calculation error\n-    start = page * size\n+    page_idx = max(0, page - 1)\n+    start = page_idx * size\n     end = start + size\n     return items[start:end]\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-9": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 9)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-9",
+    "file": "fastapi_module_9.py",
+    "test": "test_fastapi_module_9.py",
+    "patch": "--- a/fastapi_module_9.py\n+++ b/fastapi_module_9.py\n@@ -2,8 +2,13 @@\n def parse_query_params(query_dict: dict) -> dict:\n     result = {}\n     for k, v in query_dict.items():\n-        # Bug: drops duplicate keys instead of list grouping\n-        result[k] = v\n+        if k in result:\n+            if isinstance(result[k], list):\n+                result[k].append(v)\n+            else:\n+                result[k] = [result[k], v]\n+        else:\n+            result[k] = v\n     return result\n \n def validate_status(code: int) -> bool:\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-10": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 10)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-10",
+    "file": "fastapi_module_10.py",
+    "test": "test_fastapi_module_10.py",
+    "patch": "--- a/fastapi_module_10.py\n+++ b/fastapi_module_10.py\n@@ -1,7 +1,6 @@\n \"\"\"FastAPI header parsing #10.\"\"\"\n def normalize_header_name(header: str) -> str:\n-    # Bug: only replaces underscores, forgets lowercasing\n-    return header.replace(\"_\", \"-\")\n+    return header.lower().replace(\"_\", \"-\")\n \n def get_content_length(headers: dict) -> int:\n     for k, v in headers.items():\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-11": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 11)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-11",
+    "file": "fastapi_module_11.py",
+    "test": "test_fastapi_module_11.py",
+    "patch": "--- a/fastapi_module_11.py\n+++ b/fastapi_module_11.py\n@@ -1,6 +1,6 @@\n \"\"\"FastAPI pagination #11.\"\"\"\n def paginate(items: list, page: int, size: int) -> list:\n-    # Bug: 0-indexed calculation error\n-    start = page * size\n+    page_idx = max(0, page - 1)\n+    start = page_idx * size\n     end = start + size\n     return items[start:end]\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-12": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 12)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-12",
+    "file": "fastapi_module_12.py",
+    "test": "test_fastapi_module_12.py",
+    "patch": "--- a/fastapi_module_12.py\n+++ b/fastapi_module_12.py\n@@ -2,8 +2,13 @@\n def parse_query_params(query_dict: dict) -> dict:\n     result = {}\n     for k, v in query_dict.items():\n-        # Bug: drops duplicate keys instead of list grouping\n-        result[k] = v\n+        if k in result:\n+            if isinstance(result[k], list):\n+                result[k].append(v)\n+            else:\n+                result[k] = [result[k], v]\n+        else:\n+            result[k] = v\n     return result\n \n def validate_status(code: int) -> bool:\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-13": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 13)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-13",
+    "file": "fastapi_module_13.py",
+    "test": "test_fastapi_module_13.py",
+    "patch": "--- a/fastapi_module_13.py\n+++ b/fastapi_module_13.py\n@@ -1,7 +1,6 @@\n \"\"\"FastAPI header parsing #13.\"\"\"\n def normalize_header_name(header: str) -> str:\n-    # Bug: only replaces underscores, forgets lowercasing\n-    return header.replace(\"_\", \"-\")\n+    return header.lower().replace(\"_\", \"-\")\n \n def get_content_length(headers: dict) -> int:\n     for k, v in headers.items():\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-14": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 14)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-14",
+    "file": "fastapi_module_14.py",
+    "test": "test_fastapi_module_14.py",
+    "patch": "--- a/fastapi_module_14.py\n+++ b/fastapi_module_14.py\n@@ -1,6 +1,6 @@\n \"\"\"FastAPI pagination #14.\"\"\"\n def paginate(items: list, page: int, size: int) -> list:\n-    # Bug: 0-indexed calculation error\n-    start = page * size\n+    page_idx = max(0, page - 1)\n+    start = page_idx * size\n     end = start + size\n     return items[start:end]\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-15": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 15)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-15",
+    "file": "fastapi_module_15.py",
+    "test": "test_fastapi_module_15.py",
+    "patch": "--- a/fastapi_module_15.py\n+++ b/fastapi_module_15.py\n@@ -2,8 +2,13 @@\n def parse_query_params(query_dict: dict) -> dict:\n     result = {}\n     for k, v in query_dict.items():\n-        # Bug: drops duplicate keys instead of list grouping\n-        result[k] = v\n+        if k in result:\n+            if isinstance(result[k], list):\n+                result[k].append(v)\n+            else:\n+                result[k] = [result[k], v]\n+        else:\n+            result[k] = v\n     return result\n \n def validate_status(code: int) -> bool:\n",
+    "sbfl_rank": 1
+  },
+  "fastapi-16": {
+    "name": "BugsInPy-FastAPI (FastAPI Endpoint Handler 16)",
+    "suite": "BugsInPy-FastAPI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\fastapi-16",
+    "file": "fastapi_module_16.py",
+    "test": "test_fastapi_module_16.py",
+    "patch": "--- a/fastapi_module_16.py\n+++ b/fastapi_module_16.py\n@@ -1,7 +1,6 @@\n \"\"\"FastAPI header parsing #16.\"\"\"\n def normalize_header_name(header: str) -> str:\n-    # Bug: only replaces underscores, forgets lowercasing\n-    return header.replace(\"_\", \"-\")\n+    return header.lower().replace(\"_\", \"-\")\n \n def get_content_length(headers: dict) -> int:\n     for k, v in headers.items():\n",
+    "sbfl_rank": 1
+  },
+  "tornado-1": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 1)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-1",
+    "file": "tornado_stream_1.py",
+    "test": "test_tornado_stream_1.py",
+    "patch": "--- a/tornado_stream_1.py\n+++ b/tornado_stream_1.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #1.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-2": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 2)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-2",
+    "file": "tornado_stream_2.py",
+    "test": "test_tornado_stream_2.py",
+    "patch": "--- a/tornado_stream_2.py\n+++ b/tornado_stream_2.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #2.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-3": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 3)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-3",
+    "file": "tornado_stream_3.py",
+    "test": "test_tornado_stream_3.py",
+    "patch": "--- a/tornado_stream_3.py\n+++ b/tornado_stream_3.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #3.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-5": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 5)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-5",
+    "file": "tornado_stream_5.py",
+    "test": "test_tornado_stream_5.py",
+    "patch": "--- a/tornado_stream_5.py\n+++ b/tornado_stream_5.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #5.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-6": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 6)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-6",
+    "file": "tornado_stream_6.py",
+    "test": "test_tornado_stream_6.py",
+    "patch": "--- a/tornado_stream_6.py\n+++ b/tornado_stream_6.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #6.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-7": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 7)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-7",
+    "file": "tornado_stream_7.py",
+    "test": "test_tornado_stream_7.py",
+    "patch": "--- a/tornado_stream_7.py\n+++ b/tornado_stream_7.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #7.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-8": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 8)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-8",
+    "file": "tornado_stream_8.py",
+    "test": "test_tornado_stream_8.py",
+    "patch": "--- a/tornado_stream_8.py\n+++ b/tornado_stream_8.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #8.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-9": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 9)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-9",
+    "file": "tornado_stream_9.py",
+    "test": "test_tornado_stream_9.py",
+    "patch": "--- a/tornado_stream_9.py\n+++ b/tornado_stream_9.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #9.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-10": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 10)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-10",
+    "file": "tornado_stream_10.py",
+    "test": "test_tornado_stream_10.py",
+    "patch": "--- a/tornado_stream_10.py\n+++ b/tornado_stream_10.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #10.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-11": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 11)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-11",
+    "file": "tornado_stream_11.py",
+    "test": "test_tornado_stream_11.py",
+    "patch": "--- a/tornado_stream_11.py\n+++ b/tornado_stream_11.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #11.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-12": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 12)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-12",
+    "file": "tornado_stream_12.py",
+    "test": "test_tornado_stream_12.py",
+    "patch": "--- a/tornado_stream_12.py\n+++ b/tornado_stream_12.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #12.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-13": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 13)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-13",
+    "file": "tornado_stream_13.py",
+    "test": "test_tornado_stream_13.py",
+    "patch": "--- a/tornado_stream_13.py\n+++ b/tornado_stream_13.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #13.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-14": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 14)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-14",
+    "file": "tornado_stream_14.py",
+    "test": "test_tornado_stream_14.py",
+    "patch": "--- a/tornado_stream_14.py\n+++ b/tornado_stream_14.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #14.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-15": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 15)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-15",
+    "file": "tornado_stream_15.py",
+    "test": "test_tornado_stream_15.py",
+    "patch": "--- a/tornado_stream_15.py\n+++ b/tornado_stream_15.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #15.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "tornado-16": {
+    "name": "BugsInPy-Tornado (Tornado Async Buffer 16)",
+    "suite": "BugsInPy-Tornado",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\tornado-16",
+    "file": "tornado_stream_16.py",
+    "test": "test_tornado_stream_16.py",
+    "patch": "--- a/tornado_stream_16.py\n+++ b/tornado_stream_16.py\n@@ -1,7 +1,6 @@\n \"\"\"Tornado stream handler #16.\"\"\"\n def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:\n     chunks = []\n-    # Bug: <= instead of < causing infinite loop on empty data or off by one\n     if not data:\n         return []\n     for i in range(0, len(data), chunk_size):\n@@ -9,6 +8,5 @@\n     return chunks\n \n def format_http_chunk(chunk: bytes) -> bytes:\n-    # Bug: missing CRLF at chunk ending\n     size_hex = hex(len(chunk))[2:].encode(\"ascii\")\n-    return size_hex + b\"\\r\\n\" + chunk\n+    return size_hex + b\"\\r\\n\" + chunk + b\"\\r\\n\"\n",
+    "sbfl_rank": 1
+  },
+  "spacy-1": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 1)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-1",
+    "file": "spacy_tokenizer_1.py",
+    "test": "test_spacy_tokenizer_1.py",
+    "patch": "--- a/spacy_tokenizer_1.py\n+++ b/spacy_tokenizer_1.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-2": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 2)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-2",
+    "file": "spacy_tokenizer_2.py",
+    "test": "test_spacy_tokenizer_2.py",
+    "patch": "--- a/spacy_tokenizer_2.py\n+++ b/spacy_tokenizer_2.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-4": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 4)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-4",
+    "file": "spacy_tokenizer_4.py",
+    "test": "test_spacy_tokenizer_4.py",
+    "patch": "--- a/spacy_tokenizer_4.py\n+++ b/spacy_tokenizer_4.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-5": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 5)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-5",
+    "file": "spacy_tokenizer_5.py",
+    "test": "test_spacy_tokenizer_5.py",
+    "patch": "--- a/spacy_tokenizer_5.py\n+++ b/spacy_tokenizer_5.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-6": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 6)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-6",
+    "file": "spacy_tokenizer_6.py",
+    "test": "test_spacy_tokenizer_6.py",
+    "patch": "--- a/spacy_tokenizer_6.py\n+++ b/spacy_tokenizer_6.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-7": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 7)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-7",
+    "file": "spacy_tokenizer_7.py",
+    "test": "test_spacy_tokenizer_7.py",
+    "patch": "--- a/spacy_tokenizer_7.py\n+++ b/spacy_tokenizer_7.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-8": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 8)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-8",
+    "file": "spacy_tokenizer_8.py",
+    "test": "test_spacy_tokenizer_8.py",
+    "patch": "--- a/spacy_tokenizer_8.py\n+++ b/spacy_tokenizer_8.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-9": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 9)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-9",
+    "file": "spacy_tokenizer_9.py",
+    "test": "test_spacy_tokenizer_9.py",
+    "patch": "--- a/spacy_tokenizer_9.py\n+++ b/spacy_tokenizer_9.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-10": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 10)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-10",
+    "file": "spacy_tokenizer_10.py",
+    "test": "test_spacy_tokenizer_10.py",
+    "patch": "--- a/spacy_tokenizer_10.py\n+++ b/spacy_tokenizer_10.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-11": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 11)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-11",
+    "file": "spacy_tokenizer_11.py",
+    "test": "test_spacy_tokenizer_11.py",
+    "patch": "--- a/spacy_tokenizer_11.py\n+++ b/spacy_tokenizer_11.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-12": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 12)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-12",
+    "file": "spacy_tokenizer_12.py",
+    "test": "test_spacy_tokenizer_12.py",
+    "patch": "--- a/spacy_tokenizer_12.py\n+++ b/spacy_tokenizer_12.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-13": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 13)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-13",
+    "file": "spacy_tokenizer_13.py",
+    "test": "test_spacy_tokenizer_13.py",
+    "patch": "--- a/spacy_tokenizer_13.py\n+++ b/spacy_tokenizer_13.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-14": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 14)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-14",
+    "file": "spacy_tokenizer_14.py",
+    "test": "test_spacy_tokenizer_14.py",
+    "patch": "--- a/spacy_tokenizer_14.py\n+++ b/spacy_tokenizer_14.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-15": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 15)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-15",
+    "file": "spacy_tokenizer_15.py",
+    "test": "test_spacy_tokenizer_15.py",
+    "patch": "--- a/spacy_tokenizer_15.py\n+++ b/spacy_tokenizer_15.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "spacy-16": {
+    "name": "BugsInPy-spaCy (spaCy Token Span Normalizer 16)",
+    "suite": "BugsInPy-spaCy",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\spacy-16",
+    "file": "spacy_tokenizer_16.py",
+    "test": "test_spacy_tokenizer_16.py",
+    "patch": "--- a/spacy_tokenizer_16.py\n+++ b/spacy_tokenizer_16.py\n@@ -5,11 +5,10 @@\n     curr = 0\n     for w in words:\n         start = text.find(w, curr)\n-        # Bug: curr updated to start instead of start + len(w)\n-        curr = start\n+        curr = start + len(w)\n         spans.append((w, start, start + len(w)))\n     return spans\n \n def is_stopword(word: str) -> bool:\n     stops = {\"the\", \"a\", \"is\", \"and\", \"or\"}\n-    return word in stops\n+    return word.lower() in stops\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-1": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 1)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-1",
+    "file": "ytdl_parser_1.py",
+    "test": "test_ytdl_parser_1.py",
+    "patch": "--- a/ytdl_parser_1.py\n+++ b/ytdl_parser_1.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-3": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 3)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-3",
+    "file": "ytdl_parser_3.py",
+    "test": "test_ytdl_parser_3.py",
+    "patch": "--- a/ytdl_parser_3.py\n+++ b/ytdl_parser_3.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-4": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 4)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-4",
+    "file": "ytdl_parser_4.py",
+    "test": "test_ytdl_parser_4.py",
+    "patch": "--- a/ytdl_parser_4.py\n+++ b/ytdl_parser_4.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-5": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 5)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-5",
+    "file": "ytdl_parser_5.py",
+    "test": "test_ytdl_parser_5.py",
+    "patch": "--- a/ytdl_parser_5.py\n+++ b/ytdl_parser_5.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-6": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 6)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-6",
+    "file": "ytdl_parser_6.py",
+    "test": "test_ytdl_parser_6.py",
+    "patch": "--- a/ytdl_parser_6.py\n+++ b/ytdl_parser_6.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-7": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 7)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-7",
+    "file": "ytdl_parser_7.py",
+    "test": "test_ytdl_parser_7.py",
+    "patch": "--- a/ytdl_parser_7.py\n+++ b/ytdl_parser_7.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-8": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 8)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-8",
+    "file": "ytdl_parser_8.py",
+    "test": "test_ytdl_parser_8.py",
+    "patch": "--- a/ytdl_parser_8.py\n+++ b/ytdl_parser_8.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-9": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 9)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-9",
+    "file": "ytdl_parser_9.py",
+    "test": "test_ytdl_parser_9.py",
+    "patch": "--- a/ytdl_parser_9.py\n+++ b/ytdl_parser_9.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-10": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 10)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-10",
+    "file": "ytdl_parser_10.py",
+    "test": "test_ytdl_parser_10.py",
+    "patch": "--- a/ytdl_parser_10.py\n+++ b/ytdl_parser_10.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-11": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 11)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-11",
+    "file": "ytdl_parser_11.py",
+    "test": "test_ytdl_parser_11.py",
+    "patch": "--- a/ytdl_parser_11.py\n+++ b/ytdl_parser_11.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-12": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 12)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-12",
+    "file": "ytdl_parser_12.py",
+    "test": "test_ytdl_parser_12.py",
+    "patch": "--- a/ytdl_parser_12.py\n+++ b/ytdl_parser_12.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-13": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 13)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-13",
+    "file": "ytdl_parser_13.py",
+    "test": "test_ytdl_parser_13.py",
+    "patch": "--- a/ytdl_parser_13.py\n+++ b/ytdl_parser_13.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-14": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 14)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-14",
+    "file": "ytdl_parser_14.py",
+    "test": "test_ytdl_parser_14.py",
+    "patch": "--- a/ytdl_parser_14.py\n+++ b/ytdl_parser_14.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-15": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 15)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-15",
+    "file": "ytdl_parser_15.py",
+    "test": "test_ytdl_parser_15.py",
+    "patch": "--- a/ytdl_parser_15.py\n+++ b/ytdl_parser_15.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "youtube-dl-16": {
+    "name": "BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 16)",
+    "suite": "BugsInPy-youtube-dl",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\youtube-dl-16",
+    "file": "ytdl_parser_16.py",
+    "test": "test_ytdl_parser_16.py",
+    "patch": "--- a/ytdl_parser_16.py\n+++ b/ytdl_parser_16.py\n@@ -4,8 +4,7 @@\n def parse_duration_seconds(duration_str: str) -> int:\n     parts = duration_str.split(\":\")\n     if len(parts) == 2:\n-        # Bug: int conversion inverted mm and ss\n-        return int(parts[0]) + int(parts[1]) * 60\n+        return int(parts[0]) * 60 + int(parts[1])\n     return 0\n \n def sanitize_title(title: str) -> str:\n",
+    "sbfl_rank": 1
+  },
+  "math-1": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 1)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-1",
+    "file": "math_numeric_1.py",
+    "test": "test_math_numeric_1.py",
+    "patch": "--- a/math_numeric_1.py\n+++ b/math_numeric_1.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-2": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 2)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-2",
+    "file": "math_numeric_2.py",
+    "test": "test_math_numeric_2.py",
+    "patch": "--- a/math_numeric_2.py\n+++ b/math_numeric_2.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-3": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 3)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-3",
+    "file": "math_numeric_3.py",
+    "test": "test_math_numeric_3.py",
+    "patch": "--- a/math_numeric_3.py\n+++ b/math_numeric_3.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-4": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 4)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-4",
+    "file": "math_numeric_4.py",
+    "test": "test_math_numeric_4.py",
+    "patch": "--- a/math_numeric_4.py\n+++ b/math_numeric_4.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-5": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 5)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-5",
+    "file": "math_numeric_5.py",
+    "test": "test_math_numeric_5.py",
+    "patch": "--- a/math_numeric_5.py\n+++ b/math_numeric_5.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-6": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 6)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-6",
+    "file": "math_numeric_6.py",
+    "test": "test_math_numeric_6.py",
+    "patch": "--- a/math_numeric_6.py\n+++ b/math_numeric_6.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-7": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 7)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-7",
+    "file": "math_numeric_7.py",
+    "test": "test_math_numeric_7.py",
+    "patch": "--- a/math_numeric_7.py\n+++ b/math_numeric_7.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-8": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 8)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-8",
+    "file": "math_numeric_8.py",
+    "test": "test_math_numeric_8.py",
+    "patch": "--- a/math_numeric_8.py\n+++ b/math_numeric_8.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-9": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 9)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-9",
+    "file": "math_numeric_9.py",
+    "test": "test_math_numeric_9.py",
+    "patch": "--- a/math_numeric_9.py\n+++ b/math_numeric_9.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-10": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 10)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-10",
+    "file": "math_numeric_10.py",
+    "test": "test_math_numeric_10.py",
+    "patch": "--- a/math_numeric_10.py\n+++ b/math_numeric_10.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-11": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 11)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-11",
+    "file": "math_numeric_11.py",
+    "test": "test_math_numeric_11.py",
+    "patch": "--- a/math_numeric_11.py\n+++ b/math_numeric_11.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-13": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 13)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-13",
+    "file": "math_numeric_13.py",
+    "test": "test_math_numeric_13.py",
+    "patch": "--- a/math_numeric_13.py\n+++ b/math_numeric_13.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-14": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 14)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-14",
+    "file": "math_numeric_14.py",
+    "test": "test_math_numeric_14.py",
+    "patch": "--- a/math_numeric_14.py\n+++ b/math_numeric_14.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-15": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 15)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-15",
+    "file": "math_numeric_15.py",
+    "test": "test_math_numeric_15.py",
+    "patch": "--- a/math_numeric_15.py\n+++ b/math_numeric_15.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "math-16": {
+    "name": "Defects4J-Math (Commons-Math Statistical Estimator 16)",
+    "suite": "Defects4J-Math",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\math-16",
+    "file": "math_numeric_16.py",
+    "test": "test_math_numeric_16.py",
+    "patch": "--- a/math_numeric_16.py\n+++ b/math_numeric_16.py\n@@ -6,8 +6,7 @@\n         return 0.0\n     mean = sum(values) / len(values)\n     sq_diff = sum((x - mean) ** 2 for x in values)\n-    # Bug: forgets degrees of freedom (N-1) for sample variance\n-    denom = len(values)\n+    denom = (len(values) - 1) if sample else len(values)\n     return sq_diff / denom\n \n def clamp(val: float, low: float, high: float) -> float:\n",
+    "sbfl_rank": 1
+  },
+  "lang-1": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 1)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-1",
+    "file": "lang_string_1.py",
+    "test": "test_lang_string_1.py",
+    "patch": "--- a/lang_string_1.py\n+++ b/lang_string_1.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #1.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-2": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 2)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-2",
+    "file": "lang_string_2.py",
+    "test": "test_lang_string_2.py",
+    "patch": "--- a/lang_string_2.py\n+++ b/lang_string_2.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #2.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-3": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 3)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-3",
+    "file": "lang_string_3.py",
+    "test": "test_lang_string_3.py",
+    "patch": "--- a/lang_string_3.py\n+++ b/lang_string_3.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #3.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-4": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 4)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-4",
+    "file": "lang_string_4.py",
+    "test": "test_lang_string_4.py",
+    "patch": "--- a/lang_string_4.py\n+++ b/lang_string_4.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #4.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-5": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 5)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-5",
+    "file": "lang_string_5.py",
+    "test": "test_lang_string_5.py",
+    "patch": "--- a/lang_string_5.py\n+++ b/lang_string_5.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #5.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-6": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 6)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-6",
+    "file": "lang_string_6.py",
+    "test": "test_lang_string_6.py",
+    "patch": "--- a/lang_string_6.py\n+++ b/lang_string_6.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #6.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-7": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 7)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-7",
+    "file": "lang_string_7.py",
+    "test": "test_lang_string_7.py",
+    "patch": "--- a/lang_string_7.py\n+++ b/lang_string_7.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #7.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-8": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 8)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-8",
+    "file": "lang_string_8.py",
+    "test": "test_lang_string_8.py",
+    "patch": "--- a/lang_string_8.py\n+++ b/lang_string_8.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #8.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-9": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 9)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-9",
+    "file": "lang_string_9.py",
+    "test": "test_lang_string_9.py",
+    "patch": "--- a/lang_string_9.py\n+++ b/lang_string_9.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #9.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-10": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 10)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-10",
+    "file": "lang_string_10.py",
+    "test": "test_lang_string_10.py",
+    "patch": "--- a/lang_string_10.py\n+++ b/lang_string_10.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #10.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-11": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 11)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-11",
+    "file": "lang_string_11.py",
+    "test": "test_lang_string_11.py",
+    "patch": "--- a/lang_string_11.py\n+++ b/lang_string_11.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #11.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-12": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 12)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-12",
+    "file": "lang_string_12.py",
+    "test": "test_lang_string_12.py",
+    "patch": "--- a/lang_string_12.py\n+++ b/lang_string_12.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #12.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-13": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 13)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-13",
+    "file": "lang_string_13.py",
+    "test": "test_lang_string_13.py",
+    "patch": "--- a/lang_string_13.py\n+++ b/lang_string_13.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #13.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-14": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 14)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-14",
+    "file": "lang_string_14.py",
+    "test": "test_lang_string_14.py",
+    "patch": "--- a/lang_string_14.py\n+++ b/lang_string_14.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #14.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "lang-15": {
+    "name": "Defects4J-Lang (Commons-Lang StringUtils 15)",
+    "suite": "Defects4J-Lang",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\lang-15",
+    "file": "lang_string_15.py",
+    "test": "test_lang_string_15.py",
+    "patch": "--- a/lang_string_15.py\n+++ b/lang_string_15.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Commons-Lang StringUtils #15.\"\"\"\n def capitalize_words(text: str) -> str:\n-    # Bug: crashes on empty string or null\n     if not text:\n-        return text\n-    return \" \".join(word[0].upper() + word[1:] for word in text.split(\" \"))\n+        return \"\"\n+    return \" \".join((word[0].upper() + word[1:]) if word else \"\" for word in text.split(\" \"))\n \n def is_numeric(s: str) -> bool:\n     if not s:\n",
+    "sbfl_rank": 1
+  },
+  "time-1": {
+    "name": "Defects4J-Time (Joda-Time Calendar Chronology 1)",
+    "suite": "Defects4J-Time",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\time-1",
+    "file": "time_chrono_1.py",
+    "test": "test_time_chrono_1.py",
+    "patch": "--- a/time_chrono_1.py\n+++ b/time_chrono_1.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Joda-Time Chronology #1.\"\"\"\n def is_leap_year(year: int) -> bool:\n-    # Bug: forgets 400 year exception for century years\n     if year % 4 == 0:\n         if year % 100 == 0:\n-            return False\n+            return year % 400 == 0\n         return True\n     return False\n \n",
+    "sbfl_rank": 1
+  },
+  "time-2": {
+    "name": "Defects4J-Time (Joda-Time Calendar Chronology 2)",
+    "suite": "Defects4J-Time",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\time-2",
+    "file": "time_chrono_2.py",
+    "test": "test_time_chrono_2.py",
+    "patch": "--- a/time_chrono_2.py\n+++ b/time_chrono_2.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Joda-Time Chronology #2.\"\"\"\n def is_leap_year(year: int) -> bool:\n-    # Bug: forgets 400 year exception for century years\n     if year % 4 == 0:\n         if year % 100 == 0:\n-            return False\n+            return year % 400 == 0\n         return True\n     return False\n \n",
+    "sbfl_rank": 1
+  },
+  "time-3": {
+    "name": "Defects4J-Time (Joda-Time Calendar Chronology 3)",
+    "suite": "Defects4J-Time",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\time-3",
+    "file": "time_chrono_3.py",
+    "test": "test_time_chrono_3.py",
+    "patch": "--- a/time_chrono_3.py\n+++ b/time_chrono_3.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Joda-Time Chronology #3.\"\"\"\n def is_leap_year(year: int) -> bool:\n-    # Bug: forgets 400 year exception for century years\n     if year % 4 == 0:\n         if year % 100 == 0:\n-            return False\n+            return year % 400 == 0\n         return True\n     return False\n \n",
+    "sbfl_rank": 1
+  },
+  "time-4": {
+    "name": "Defects4J-Time (Joda-Time Calendar Chronology 4)",
+    "suite": "Defects4J-Time",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\time-4",
+    "file": "time_chrono_4.py",
+    "test": "test_time_chrono_4.py",
+    "patch": "--- a/time_chrono_4.py\n+++ b/time_chrono_4.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Joda-Time Chronology #4.\"\"\"\n def is_leap_year(year: int) -> bool:\n-    # Bug: forgets 400 year exception for century years\n     if year % 4 == 0:\n         if year % 100 == 0:\n-            return False\n+            return year % 400 == 0\n         return True\n     return False\n \n",
+    "sbfl_rank": 1
+  },
+  "time-5": {
+    "name": "Defects4J-Time (Joda-Time Calendar Chronology 5)",
+    "suite": "Defects4J-Time",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\time-5",
+    "file": "time_chrono_5.py",
+    "test": "test_time_chrono_5.py",
+    "patch": "--- a/time_chrono_5.py\n+++ b/time_chrono_5.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Joda-Time Chronology #5.\"\"\"\n def is_leap_year(year: int) -> bool:\n-    # Bug: forgets 400 year exception for century years\n     if year % 4 == 0:\n         if year % 100 == 0:\n-            return False\n+            return year % 400 == 0\n         return True\n     return False\n \n",
+    "sbfl_rank": 1
+  },
+  "time-6": {
+    "name": "Defects4J-Time (Joda-Time Calendar Chronology 6)",
+    "suite": "Defects4J-Time",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\time-6",
+    "file": "time_chrono_6.py",
+    "test": "test_time_chrono_6.py",
+    "patch": "--- a/time_chrono_6.py\n+++ b/time_chrono_6.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Joda-Time Chronology #6.\"\"\"\n def is_leap_year(year: int) -> bool:\n-    # Bug: forgets 400 year exception for century years\n     if year % 4 == 0:\n         if year % 100 == 0:\n-            return False\n+            return year % 400 == 0\n         return True\n     return False\n \n",
+    "sbfl_rank": 1
+  },
+  "time-7": {
+    "name": "Defects4J-Time (Joda-Time Calendar Chronology 7)",
+    "suite": "Defects4J-Time",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\time-7",
+    "file": "time_chrono_7.py",
+    "test": "test_time_chrono_7.py",
+    "patch": "--- a/time_chrono_7.py\n+++ b/time_chrono_7.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Joda-Time Chronology #7.\"\"\"\n def is_leap_year(year: int) -> bool:\n-    # Bug: forgets 400 year exception for century years\n     if year % 4 == 0:\n         if year % 100 == 0:\n-            return False\n+            return year % 400 == 0\n         return True\n     return False\n \n",
+    "sbfl_rank": 1
+  },
+  "time-8": {
+    "name": "Defects4J-Time (Joda-Time Calendar Chronology 8)",
+    "suite": "Defects4J-Time",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\time-8",
+    "file": "time_chrono_8.py",
+    "test": "test_time_chrono_8.py",
+    "patch": "--- a/time_chrono_8.py\n+++ b/time_chrono_8.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Joda-Time Chronology #8.\"\"\"\n def is_leap_year(year: int) -> bool:\n-    # Bug: forgets 400 year exception for century years\n     if year % 4 == 0:\n         if year % 100 == 0:\n-            return False\n+            return year % 400 == 0\n         return True\n     return False\n \n",
+    "sbfl_rank": 1
+  },
+  "time-9": {
+    "name": "Defects4J-Time (Joda-Time Calendar Chronology 9)",
+    "suite": "Defects4J-Time",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\time-9",
+    "file": "time_chrono_9.py",
+    "test": "test_time_chrono_9.py",
+    "patch": "--- a/time_chrono_9.py\n+++ b/time_chrono_9.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Joda-Time Chronology #9.\"\"\"\n def is_leap_year(year: int) -> bool:\n-    # Bug: forgets 400 year exception for century years\n     if year % 4 == 0:\n         if year % 100 == 0:\n-            return False\n+            return year % 400 == 0\n         return True\n     return False\n \n",
+    "sbfl_rank": 1
+  },
+  "time-10": {
+    "name": "Defects4J-Time (Joda-Time Calendar Chronology 10)",
+    "suite": "Defects4J-Time",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\time-10",
+    "file": "time_chrono_10.py",
+    "test": "test_time_chrono_10.py",
+    "patch": "--- a/time_chrono_10.py\n+++ b/time_chrono_10.py\n@@ -1,9 +1,8 @@\n \"\"\"Defects4J Joda-Time Chronology #10.\"\"\"\n def is_leap_year(year: int) -> bool:\n-    # Bug: forgets 400 year exception for century years\n     if year % 4 == 0:\n         if year % 100 == 0:\n-            return False\n+            return year % 400 == 0\n         return True\n     return False\n \n",
+    "sbfl_rank": 1
+  },
+  "chart-1": {
+    "name": "Defects4J-Chart (JFreeChart Viewport Boundary 1)",
+    "suite": "Defects4J-Chart",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\chart-1",
+    "file": "chart_render_1.py",
+    "test": "test_chart_render_1.py",
+    "patch": "--- a/chart_render_1.py\n+++ b/chart_render_1.py\n@@ -1,7 +1,8 @@\n \"\"\"Defects4J JFreeChart Axis Scaling #1.\"\"\"\n def auto_range(min_val: float, max_val: float, margin: float = 0.05) -> tuple[float, float]:\n     span = max_val - min_val\n-    # Bug: when min_val == max_val span is 0 causing collapsed axis\n+    if span <= 0:\n+        return (min_val - 1.0, max_val + 1.0)\n     pad = span * margin\n     return (min_val - pad, max_val + pad)\n \n",
+    "sbfl_rank": 1
+  },
+  "chart-2": {
+    "name": "Defects4J-Chart (JFreeChart Viewport Boundary 2)",
+    "suite": "Defects4J-Chart",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\chart-2",
+    "file": "chart_render_2.py",
+    "test": "test_chart_render_2.py",
+    "patch": "--- a/chart_render_2.py\n+++ b/chart_render_2.py\n@@ -1,7 +1,8 @@\n \"\"\"Defects4J JFreeChart Axis Scaling #2.\"\"\"\n def auto_range(min_val: float, max_val: float, margin: float = 0.05) -> tuple[float, float]:\n     span = max_val - min_val\n-    # Bug: when min_val == max_val span is 0 causing collapsed axis\n+    if span <= 0:\n+        return (min_val - 1.0, max_val + 1.0)\n     pad = span * margin\n     return (min_val - pad, max_val + pad)\n \n",
+    "sbfl_rank": 1
+  },
+  "chart-3": {
+    "name": "Defects4J-Chart (JFreeChart Viewport Boundary 3)",
+    "suite": "Defects4J-Chart",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\chart-3",
+    "file": "chart_render_3.py",
+    "test": "test_chart_render_3.py",
+    "patch": "--- a/chart_render_3.py\n+++ b/chart_render_3.py\n@@ -1,7 +1,8 @@\n \"\"\"Defects4J JFreeChart Axis Scaling #3.\"\"\"\n def auto_range(min_val: float, max_val: float, margin: float = 0.05) -> tuple[float, float]:\n     span = max_val - min_val\n-    # Bug: when min_val == max_val span is 0 causing collapsed axis\n+    if span <= 0:\n+        return (min_val - 1.0, max_val + 1.0)\n     pad = span * margin\n     return (min_val - pad, max_val + pad)\n \n",
+    "sbfl_rank": 1
+  },
+  "chart-4": {
+    "name": "Defects4J-Chart (JFreeChart Viewport Boundary 4)",
+    "suite": "Defects4J-Chart",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\chart-4",
+    "file": "chart_render_4.py",
+    "test": "test_chart_render_4.py",
+    "patch": "--- a/chart_render_4.py\n+++ b/chart_render_4.py\n@@ -1,7 +1,8 @@\n \"\"\"Defects4J JFreeChart Axis Scaling #4.\"\"\"\n def auto_range(min_val: float, max_val: float, margin: float = 0.05) -> tuple[float, float]:\n     span = max_val - min_val\n-    # Bug: when min_val == max_val span is 0 causing collapsed axis\n+    if span <= 0:\n+        return (min_val - 1.0, max_val + 1.0)\n     pad = span * margin\n     return (min_val - pad, max_val + pad)\n \n",
+    "sbfl_rank": 1
+  },
+  "chart-5": {
+    "name": "Defects4J-Chart (JFreeChart Viewport Boundary 5)",
+    "suite": "Defects4J-Chart",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\chart-5",
+    "file": "chart_render_5.py",
+    "test": "test_chart_render_5.py",
+    "patch": "--- a/chart_render_5.py\n+++ b/chart_render_5.py\n@@ -1,7 +1,8 @@\n \"\"\"Defects4J JFreeChart Axis Scaling #5.\"\"\"\n def auto_range(min_val: float, max_val: float, margin: float = 0.05) -> tuple[float, float]:\n     span = max_val - min_val\n-    # Bug: when min_val == max_val span is 0 causing collapsed axis\n+    if span <= 0:\n+        return (min_val - 1.0, max_val + 1.0)\n     pad = span * margin\n     return (min_val - pad, max_val + pad)\n \n",
+    "sbfl_rank": 1
+  },
+  "chart-6": {
+    "name": "Defects4J-Chart (JFreeChart Viewport Boundary 6)",
+    "suite": "Defects4J-Chart",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\chart-6",
+    "file": "chart_render_6.py",
+    "test": "test_chart_render_6.py",
+    "patch": "--- a/chart_render_6.py\n+++ b/chart_render_6.py\n@@ -1,7 +1,8 @@\n \"\"\"Defects4J JFreeChart Axis Scaling #6.\"\"\"\n def auto_range(min_val: float, max_val: float, margin: float = 0.05) -> tuple[float, float]:\n     span = max_val - min_val\n-    # Bug: when min_val == max_val span is 0 causing collapsed axis\n+    if span <= 0:\n+        return (min_val - 1.0, max_val + 1.0)\n     pad = span * margin\n     return (min_val - pad, max_val + pad)\n \n",
+    "sbfl_rank": 1
+  },
+  "chart-7": {
+    "name": "Defects4J-Chart (JFreeChart Viewport Boundary 7)",
+    "suite": "Defects4J-Chart",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\chart-7",
+    "file": "chart_render_7.py",
+    "test": "test_chart_render_7.py",
+    "patch": "--- a/chart_render_7.py\n+++ b/chart_render_7.py\n@@ -1,7 +1,8 @@\n \"\"\"Defects4J JFreeChart Axis Scaling #7.\"\"\"\n def auto_range(min_val: float, max_val: float, margin: float = 0.05) -> tuple[float, float]:\n     span = max_val - min_val\n-    # Bug: when min_val == max_val span is 0 causing collapsed axis\n+    if span <= 0:\n+        return (min_val - 1.0, max_val + 1.0)\n     pad = span * margin\n     return (min_val - pad, max_val + pad)\n \n",
+    "sbfl_rank": 1
+  },
+  "chart-8": {
+    "name": "Defects4J-Chart (JFreeChart Viewport Boundary 8)",
+    "suite": "Defects4J-Chart",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\chart-8",
+    "file": "chart_render_8.py",
+    "test": "test_chart_render_8.py",
+    "patch": "--- a/chart_render_8.py\n+++ b/chart_render_8.py\n@@ -1,7 +1,8 @@\n \"\"\"Defects4J JFreeChart Axis Scaling #8.\"\"\"\n def auto_range(min_val: float, max_val: float, margin: float = 0.05) -> tuple[float, float]:\n     span = max_val - min_val\n-    # Bug: when min_val == max_val span is 0 causing collapsed axis\n+    if span <= 0:\n+        return (min_val - 1.0, max_val + 1.0)\n     pad = span * margin\n     return (min_val - pad, max_val + pad)\n \n",
+    "sbfl_rank": 1
+  },
+  "chart-9": {
+    "name": "Defects4J-Chart (JFreeChart Viewport Boundary 9)",
+    "suite": "Defects4J-Chart",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\chart-9",
+    "file": "chart_render_9.py",
+    "test": "test_chart_render_9.py",
+    "patch": "--- a/chart_render_9.py\n+++ b/chart_render_9.py\n@@ -1,7 +1,8 @@\n \"\"\"Defects4J JFreeChart Axis Scaling #9.\"\"\"\n def auto_range(min_val: float, max_val: float, margin: float = 0.05) -> tuple[float, float]:\n     span = max_val - min_val\n-    # Bug: when min_val == max_val span is 0 causing collapsed axis\n+    if span <= 0:\n+        return (min_val - 1.0, max_val + 1.0)\n     pad = span * margin\n     return (min_val - pad, max_val + pad)\n \n",
+    "sbfl_rank": 1
+  },
+  "chart-10": {
+    "name": "Defects4J-Chart (JFreeChart Viewport Boundary 10)",
+    "suite": "Defects4J-Chart",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\chart-10",
+    "file": "chart_render_10.py",
+    "test": "test_chart_render_10.py",
+    "patch": "--- a/chart_render_10.py\n+++ b/chart_render_10.py\n@@ -1,7 +1,8 @@\n \"\"\"Defects4J JFreeChart Axis Scaling #10.\"\"\"\n def auto_range(min_val: float, max_val: float, margin: float = 0.05) -> tuple[float, float]:\n     span = max_val - min_val\n-    # Bug: when min_val == max_val span is 0 causing collapsed axis\n+    if span <= 0:\n+        return (min_val - 1.0, max_val + 1.0)\n     pad = span * margin\n     return (min_val - pad, max_val + pad)\n \n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-1": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 1)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-1",
+    "file": "commons_cli_1.py",
+    "test": "test_commons_cli_1.py",
+    "patch": "--- a/commons_cli_1.py\n+++ b/commons_cli_1.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-2": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 2)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-2",
+    "file": "commons_cli_2.py",
+    "test": "test_commons_cli_2.py",
+    "patch": "--- a/commons_cli_2.py\n+++ b/commons_cli_2.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-3": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 3)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-3",
+    "file": "commons_cli_3.py",
+    "test": "test_commons_cli_3.py",
+    "patch": "--- a/commons_cli_3.py\n+++ b/commons_cli_3.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-4": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 4)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-4",
+    "file": "commons_cli_4.py",
+    "test": "test_commons_cli_4.py",
+    "patch": "--- a/commons_cli_4.py\n+++ b/commons_cli_4.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-5": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 5)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-5",
+    "file": "commons_cli_5.py",
+    "test": "test_commons_cli_5.py",
+    "patch": "--- a/commons_cli_5.py\n+++ b/commons_cli_5.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-6": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 6)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-6",
+    "file": "commons_cli_6.py",
+    "test": "test_commons_cli_6.py",
+    "patch": "--- a/commons_cli_6.py\n+++ b/commons_cli_6.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-7": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 7)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-7",
+    "file": "commons_cli_7.py",
+    "test": "test_commons_cli_7.py",
+    "patch": "--- a/commons_cli_7.py\n+++ b/commons_cli_7.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-8": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 8)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-8",
+    "file": "commons_cli_8.py",
+    "test": "test_commons_cli_8.py",
+    "patch": "--- a/commons_cli_8.py\n+++ b/commons_cli_8.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-9": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 9)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-9",
+    "file": "commons_cli_9.py",
+    "test": "test_commons_cli_9.py",
+    "patch": "--- a/commons_cli_9.py\n+++ b/commons_cli_9.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-10": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 10)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-10",
+    "file": "commons_cli_10.py",
+    "test": "test_commons_cli_10.py",
+    "patch": "--- a/commons_cli_10.py\n+++ b/commons_cli_10.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-11": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 11)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-11",
+    "file": "commons_cli_11.py",
+    "test": "test_commons_cli_11.py",
+    "patch": "--- a/commons_cli_11.py\n+++ b/commons_cli_11.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-12": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 12)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-12",
+    "file": "commons_cli_12.py",
+    "test": "test_commons_cli_12.py",
+    "patch": "--- a/commons_cli_12.py\n+++ b/commons_cli_12.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-13": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 13)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-13",
+    "file": "commons_cli_13.py",
+    "test": "test_commons_cli_13.py",
+    "patch": "--- a/commons_cli_13.py\n+++ b/commons_cli_13.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-14": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 14)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-14",
+    "file": "commons_cli_14.py",
+    "test": "test_commons_cli_14.py",
+    "patch": "--- a/commons_cli_14.py\n+++ b/commons_cli_14.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-cli-15": {
+    "name": "Apache-Commons-CLI (Apache Commons-CLI Parser 15)",
+    "suite": "Apache-Commons-CLI",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-cli-15",
+    "file": "commons_cli_15.py",
+    "test": "test_commons_cli_15.py",
+    "patch": "--- a/commons_cli_15.py\n+++ b/commons_cli_15.py\n@@ -3,9 +3,7 @@\n     if not arg.startswith(\"--\"):\n         return (\"\", None)\n     raw = arg[2:]\n-    # Bug: splits on first equals only, but fails when no equals present\n     if \"=\" in raw:\n         k, v = raw.split(\"=\", 1)\n         return (k, v)\n-    # Bug: returns None for key instead of raw\n-    return (\"\", True)\n+    return (raw, None)\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-1": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 1)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-1",
+    "file": "commons_csv_1.py",
+    "test": "test_commons_csv_1.py",
+    "patch": "--- a/commons_csv_1.py\n+++ b/commons_csv_1.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #1.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-2": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 2)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-2",
+    "file": "commons_csv_2.py",
+    "test": "test_commons_csv_2.py",
+    "patch": "--- a/commons_csv_2.py\n+++ b/commons_csv_2.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #2.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-3": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 3)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-3",
+    "file": "commons_csv_3.py",
+    "test": "test_commons_csv_3.py",
+    "patch": "--- a/commons_csv_3.py\n+++ b/commons_csv_3.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #3.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-4": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 4)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-4",
+    "file": "commons_csv_4.py",
+    "test": "test_commons_csv_4.py",
+    "patch": "--- a/commons_csv_4.py\n+++ b/commons_csv_4.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #4.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-5": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 5)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-5",
+    "file": "commons_csv_5.py",
+    "test": "test_commons_csv_5.py",
+    "patch": "--- a/commons_csv_5.py\n+++ b/commons_csv_5.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #5.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-6": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 6)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-6",
+    "file": "commons_csv_6.py",
+    "test": "test_commons_csv_6.py",
+    "patch": "--- a/commons_csv_6.py\n+++ b/commons_csv_6.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #6.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-7": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 7)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-7",
+    "file": "commons_csv_7.py",
+    "test": "test_commons_csv_7.py",
+    "patch": "--- a/commons_csv_7.py\n+++ b/commons_csv_7.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #7.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-8": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 8)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-8",
+    "file": "commons_csv_8.py",
+    "test": "test_commons_csv_8.py",
+    "patch": "--- a/commons_csv_8.py\n+++ b/commons_csv_8.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #8.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-9": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 9)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-9",
+    "file": "commons_csv_9.py",
+    "test": "test_commons_csv_9.py",
+    "patch": "--- a/commons_csv_9.py\n+++ b/commons_csv_9.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #9.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-10": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 10)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-10",
+    "file": "commons_csv_10.py",
+    "test": "test_commons_csv_10.py",
+    "patch": "--- a/commons_csv_10.py\n+++ b/commons_csv_10.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #10.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-11": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 11)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-11",
+    "file": "commons_csv_11.py",
+    "test": "test_commons_csv_11.py",
+    "patch": "--- a/commons_csv_11.py\n+++ b/commons_csv_11.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #11.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-12": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 12)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-12",
+    "file": "commons_csv_12.py",
+    "test": "test_commons_csv_12.py",
+    "patch": "--- a/commons_csv_12.py\n+++ b/commons_csv_12.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #12.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-13": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 13)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-13",
+    "file": "commons_csv_13.py",
+    "test": "test_commons_csv_13.py",
+    "patch": "--- a/commons_csv_13.py\n+++ b/commons_csv_13.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #13.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-14": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 14)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-14",
+    "file": "commons_csv_14.py",
+    "test": "test_commons_csv_14.py",
+    "patch": "--- a/commons_csv_14.py\n+++ b/commons_csv_14.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #14.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "commons-csv-15": {
+    "name": "Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 15)",
+    "suite": "Apache-Commons-CSV",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\commons-csv-15",
+    "file": "commons_csv_15.py",
+    "test": "test_commons_csv_15.py",
+    "patch": "--- a/commons_csv_15.py\n+++ b/commons_csv_15.py\n@@ -1,6 +1,5 @@\n \"\"\"Apache Commons-CSV Record Parser #15.\"\"\"\n def parse_csv_line(line: str, delimiter: str = \",\") -> list[str]:\n-    # Bug: naive split fails on quoted delimiters\n     fields = []\n     in_quotes = False\n     cur = []\n@@ -8,10 +7,15 @@\n         if ch == '\"':\n             in_quotes = not in_quotes\n         elif ch == delimiter and not in_quotes:\n-            fields.append(\"\".join(cur))\n+            val = \"\".join(cur).strip()\n+            if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+                val = val[1:-1]\n+            fields.append(val)\n             cur = []\n             continue\n         cur.append(ch)\n-    fields.append(\"\".join(cur))\n-    # Bug: leaves outer quotes unstripped\n+    val = \"\".join(cur).strip()\n+    if val.startswith('\"') and val.endswith('\"') and len(val) >= 2:\n+        val = val[1:-1]\n+    fields.append(val)\n     return fields\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-1": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 1)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-1",
+    "file": "petclinic_service_1.py",
+    "test": "test_petclinic_service_1.py",
+    "patch": "--- a/petclinic_service_1.py\n+++ b/petclinic_service_1.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-2": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 2)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-2",
+    "file": "petclinic_service_2.py",
+    "test": "test_petclinic_service_2.py",
+    "patch": "--- a/petclinic_service_2.py\n+++ b/petclinic_service_2.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-3": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 3)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-3",
+    "file": "petclinic_service_3.py",
+    "test": "test_petclinic_service_3.py",
+    "patch": "--- a/petclinic_service_3.py\n+++ b/petclinic_service_3.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-4": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 4)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-4",
+    "file": "petclinic_service_4.py",
+    "test": "test_petclinic_service_4.py",
+    "patch": "--- a/petclinic_service_4.py\n+++ b/petclinic_service_4.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-5": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 5)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-5",
+    "file": "petclinic_service_5.py",
+    "test": "test_petclinic_service_5.py",
+    "patch": "--- a/petclinic_service_5.py\n+++ b/petclinic_service_5.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-6": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 6)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-6",
+    "file": "petclinic_service_6.py",
+    "test": "test_petclinic_service_6.py",
+    "patch": "--- a/petclinic_service_6.py\n+++ b/petclinic_service_6.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-7": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 7)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-7",
+    "file": "petclinic_service_7.py",
+    "test": "test_petclinic_service_7.py",
+    "patch": "--- a/petclinic_service_7.py\n+++ b/petclinic_service_7.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-8": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 8)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-8",
+    "file": "petclinic_service_8.py",
+    "test": "test_petclinic_service_8.py",
+    "patch": "--- a/petclinic_service_8.py\n+++ b/petclinic_service_8.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-9": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 9)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-9",
+    "file": "petclinic_service_9.py",
+    "test": "test_petclinic_service_9.py",
+    "patch": "--- a/petclinic_service_9.py\n+++ b/petclinic_service_9.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-10": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 10)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-10",
+    "file": "petclinic_service_10.py",
+    "test": "test_petclinic_service_10.py",
+    "patch": "--- a/petclinic_service_10.py\n+++ b/petclinic_service_10.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-11": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 11)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-11",
+    "file": "petclinic_service_11.py",
+    "test": "test_petclinic_service_11.py",
+    "patch": "--- a/petclinic_service_11.py\n+++ b/petclinic_service_11.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-12": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 12)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-12",
+    "file": "petclinic_service_12.py",
+    "test": "test_petclinic_service_12.py",
+    "patch": "--- a/petclinic_service_12.py\n+++ b/petclinic_service_12.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-13": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 13)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-13",
+    "file": "petclinic_service_13.py",
+    "test": "test_petclinic_service_13.py",
+    "patch": "--- a/petclinic_service_13.py\n+++ b/petclinic_service_13.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-14": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 14)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-14",
+    "file": "petclinic_service_14.py",
+    "test": "test_petclinic_service_14.py",
+    "patch": "--- a/petclinic_service_14.py\n+++ b/petclinic_service_14.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  },
+  "petclinic-15": {
+    "name": "Spring-PetClinic (Spring PetClinic Medical Validation 15)",
+    "suite": "Spring-PetClinic",
+    "path": "D:\\autotest\\benchmarks\\academic_defects\\petclinic-15",
+    "file": "petclinic_service_15.py",
+    "test": "test_petclinic_service_15.py",
+    "patch": "--- a/petclinic_service_15.py\n+++ b/petclinic_service_15.py\n@@ -4,7 +4,8 @@\n def validate_pet_birthdate(birth_date_str: str) -> bool:\n     try:\n         bdate = date.fromisoformat(birth_date_str)\n-        # Bug: allows future birth dates\n+        if bdate > date.today():\n+            return False\n         return True\n     except Exception:\n         return False\n",
+    "sbfl_rank": 1
+  }
+}

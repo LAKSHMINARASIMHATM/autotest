@@ -1,0 +1,21 @@
+F.                                                                       [100%]
+================================== FAILURES ===================================
+__________________________ test_paginate_first_page ___________________________
+
+    def test_paginate_first_page():
+        data = [1, 2, 3, 4, 5]
+        # Page 1 with size 2 should return [1, 2]
+>       assert paginate(data, 1, 2) == [1, 2]
+E       assert [3, 4] == [1, 2]
+E         
+E         At index 0 diff: 3 != 1
+E         Use -v to get more diff
+
+test_fastapi_module_2.py:7: AssertionError
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.2-final-0 _______________
+
+Coverage JSON written to file D:\autotest\evaluation\results\raw\run_20261027_111901_19ba2e6d\fastapi-2\coverage.json
+=========================== short test summary info ===========================
+FAILED test_fastapi_module_2.py::test_paginate_first_page - assert [3, 4] == ...
+1 failed, 1 passed in 0.08s

@@ -1,0 +1,19 @@
+.F                                                                       [100%]
+================================== FAILURES ===================================
+________________________ test_get_content_length_upper ________________________
+
+    def test_get_content_length_upper():
+        # Exposes bug: uppercase Content_Length
+        headers = {"Content_Length": "42"}
+>       assert get_content_length(headers) == 42
+E       AssertionError: assert 0 == 42
+E        +  where 0 = get_content_length({'Content_Length': '42'})
+
+test_fastapi_module_7.py:10: AssertionError
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.2-final-0 _______________
+
+Coverage JSON written to file D:\autotest\evaluation\results\raw\run_20261027_111901_19ba2e6d\fastapi-7\coverage.json
+=========================== short test summary info ===========================
+FAILED test_fastapi_module_7.py::test_get_content_length_upper - AssertionErr...
+1 failed, 1 passed in 0.06s

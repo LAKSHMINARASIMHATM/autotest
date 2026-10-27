@@ -1,0 +1,13 @@
+--- a/commons_cli_9.py
++++ b/commons_cli_9.py
+@@ -3,9 +3,7 @@
+     if not arg.startswith("--"):
+         return ("", None)
+     raw = arg[2:]
+-    # Bug: splits on first equals only, but fails when no equals present
+     if "=" in raw:
+         k, v = raw.split("=", 1)
+         return (k, v)
+-    # Bug: returns None for key instead of raw
+-    return ("", True)
++    return (raw, None)

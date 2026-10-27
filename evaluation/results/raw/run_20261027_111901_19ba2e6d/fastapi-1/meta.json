@@ -1,0 +1,19 @@
+{
+  "defect_id": "fastapi-1",
+  "name": "BugsInPy-FastAPI (RFC-7230 Auth Extraction)",
+  "model": "llama-3.3-70b-versatile",
+  "provider": "groq",
+  "temperature": 0.2,
+  "timestamp": "2026-10-27T11:19:01.563522+00:00",
+  "status": "evaluated",
+  "sbfl_rank": 1,
+  "sbfl_top1": true,
+  "sbfl_top5": true,
+  "plausible_patch": true,
+  "correct_patch": true,
+  "regression_pass": true,
+  "line_coverage_pct": 92.5,
+  "elapsed_sec": 49.457,
+  "compilation_ok": true,
+  "failing_test_passes": true
+}

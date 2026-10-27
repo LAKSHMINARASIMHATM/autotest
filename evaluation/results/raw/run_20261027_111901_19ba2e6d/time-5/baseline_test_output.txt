@@ -1,0 +1,18 @@
+.F                                                                       [100%]
+================================== FAILURES ===================================
+_________________________ test_leap_year_century_400 __________________________
+
+    def test_leap_year_century_400():
+        # Year 2000 is a leap year!
+>       assert is_leap_year(2000) is True
+E       assert False is True
+E        +  where False = is_leap_year(2000)
+
+test_time_chrono_5.py:10: AssertionError
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.2-final-0 _______________
+
+Coverage JSON written to file D:\autotest\evaluation\results\raw\run_20261027_111901_19ba2e6d\time-5\coverage.json
+=========================== short test summary info ===========================
+FAILED test_time_chrono_5.py::test_leap_year_century_400 - assert False is True
+1 failed, 1 passed in 0.15s

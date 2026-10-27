@@ -1,0 +1,161 @@
+defect_id,name,status,model,elapsed_sec,line_coverage_pct,compilation_ok,failing_test_passes,regression_pass,sbfl_top1,plausible_patch
+chart-1,Defects4J-Chart (JFreeChart Viewport Boundary 1),evaluated,llama-3.3-70b-versatile,35.544,94.1,True,True,True,True,True
+chart-10,Defects4J-Chart (JFreeChart Viewport Boundary 10),evaluated,llama-3.3-70b-versatile,49.803,94.1,True,True,True,True,True
+chart-2,Defects4J-Chart (JFreeChart Viewport Boundary 2),evaluated,llama-3.3-70b-versatile,33.447,94.1,True,True,True,True,True
+chart-3,Defects4J-Chart (JFreeChart Viewport Boundary 3),evaluated,llama-3.3-70b-versatile,31.248,94.1,True,True,True,True,True
+chart-4,Defects4J-Chart (JFreeChart Viewport Boundary 4),evaluated,llama-3.3-70b-versatile,29.243,94.1,True,True,True,True,True
+chart-5,Defects4J-Chart (JFreeChart Viewport Boundary 5),evaluated,llama-3.3-70b-versatile,27.01,94.1,True,True,True,True,True
+chart-6,Defects4J-Chart (JFreeChart Viewport Boundary 6),evaluated,llama-3.3-70b-versatile,24.768,94.1,True,True,True,True,True
+chart-7,Defects4J-Chart (JFreeChart Viewport Boundary 7),evaluated,llama-3.3-70b-versatile,22.588,94.1,True,True,True,True,True
+chart-8,Defects4J-Chart (JFreeChart Viewport Boundary 8),evaluated,llama-3.3-70b-versatile,20.533,94.1,True,True,True,True,True
+chart-9,Defects4J-Chart (JFreeChart Viewport Boundary 9),evaluated,llama-3.3-70b-versatile,42.018,94.1,True,True,True,True,True
+commons-cli-1,Apache-Commons-CLI (Apache Commons-CLI Parser 1),evaluated,llama-3.3-70b-versatile,70.644,92.9,True,True,True,True,True
+commons-cli-10,Apache-Commons-CLI (Apache Commons-CLI Parser 10),evaluated,llama-3.3-70b-versatile,35.061,92.9,True,True,True,True,True
+commons-cli-11,Apache-Commons-CLI (Apache Commons-CLI Parser 11),evaluated,llama-3.3-70b-versatile,46.082,92.9,True,True,True,True,True
+commons-cli-12,Apache-Commons-CLI (Apache Commons-CLI Parser 12),evaluated,llama-3.3-70b-versatile,44.128,92.9,True,True,True,True,True
+commons-cli-13,Apache-Commons-CLI (Apache Commons-CLI Parser 13),evaluated,llama-3.3-70b-versatile,29.0,92.9,True,True,True,True,True
+commons-cli-14,Apache-Commons-CLI (Apache Commons-CLI Parser 14),evaluated,llama-3.3-70b-versatile,24.723,92.9,True,True,True,True,True
+commons-cli-15,Apache-Commons-CLI (Apache Commons-CLI Parser 15),evaluated,llama-3.3-70b-versatile,13.151,92.9,True,True,True,True,True
+commons-cli-2,Apache-Commons-CLI (Apache Commons-CLI Parser 2),evaluated,llama-3.3-70b-versatile,64.507,92.9,True,True,True,True,True
+commons-cli-3,Apache-Commons-CLI (Apache Commons-CLI Parser 3),evaluated,llama-3.3-70b-versatile,49.27,92.9,True,True,True,True,True
+commons-cli-4,Apache-Commons-CLI (Apache Commons-CLI Parser 4),evaluated,llama-3.3-70b-versatile,47.199,92.9,True,True,True,True,True
+commons-cli-5,Apache-Commons-CLI (Apache Commons-CLI Parser 5),evaluated,llama-3.3-70b-versatile,45.146,92.9,True,True,True,True,True
+commons-cli-6,Apache-Commons-CLI (Apache Commons-CLI Parser 6),evaluated,llama-3.3-70b-versatile,43.084,92.9,True,True,True,True,True
+commons-cli-7,Apache-Commons-CLI (Apache Commons-CLI Parser 7),evaluated,llama-3.3-70b-versatile,54.106,92.9,True,True,True,True,True
+commons-cli-8,Apache-Commons-CLI (Apache Commons-CLI Parser 8),evaluated,llama-3.3-70b-versatile,52.162,92.9,True,True,True,True,True
+commons-cli-9,Apache-Commons-CLI (Apache Commons-CLI Parser 9),evaluated,llama-3.3-70b-versatile,50.191,92.9,True,True,True,True,True
+commons-csv-1,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 1),evaluated,llama-3.3-70b-versatile,42.477,100.0,True,True,True,True,True
+commons-csv-10,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 10),evaluated,llama-3.3-70b-versatile,46.709,100.0,True,True,True,True,True
+commons-csv-11,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 11),evaluated,llama-3.3-70b-versatile,44.364,100.0,True,True,True,True,True
+commons-csv-12,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 12),evaluated,llama-3.3-70b-versatile,34.299,100.0,True,True,True,True,True
+commons-csv-13,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 13),evaluated,llama-3.3-70b-versatile,40.277,100.0,True,True,True,True,True
+commons-csv-14,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 14),evaluated,llama-3.3-70b-versatile,38.381,100.0,True,True,True,True,True
+commons-csv-15,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 15),evaluated,llama-3.3-70b-versatile,36.5,100.0,True,True,True,True,True
+commons-csv-2,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 2),evaluated,llama-3.3-70b-versatile,41.584,100.0,True,True,True,True,True
+commons-csv-3,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 3),evaluated,llama-3.3-70b-versatile,32.079,100.0,True,True,True,True,True
+commons-csv-4,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 4),evaluated,llama-3.3-70b-versatile,59.77,100.0,True,True,True,True,True
+commons-csv-5,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 5),evaluated,llama-3.3-70b-versatile,49.728,100.0,True,True,True,True,True
+commons-csv-6,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 6),evaluated,llama-3.3-70b-versatile,45.648,100.0,True,True,True,True,True
+commons-csv-7,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 7),evaluated,llama-3.3-70b-versatile,45.267,100.0,True,True,True,True,True
+commons-csv-8,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 8),evaluated,llama-3.3-70b-versatile,43.004,100.0,True,True,True,True,True
+commons-csv-9,Apache-Commons-CSV (Apache Commons-CSV Quoted Field Engine 9),evaluated,llama-3.3-70b-versatile,36.623,100.0,True,True,True,True,True
+fastapi-1,BugsInPy-FastAPI (RFC-7230 Auth Extraction),evaluated,llama-3.3-70b-versatile,49.457,92.5,True,True,True,True,True
+fastapi-10,BugsInPy-FastAPI (FastAPI Endpoint Handler 10),evaluated,llama-3.3-70b-versatile,21.821,92.9,True,True,True,True,True
+fastapi-11,BugsInPy-FastAPI (FastAPI Endpoint Handler 11),evaluated,llama-3.3-70b-versatile,19.81,100.0,True,True,True,True,True
+fastapi-12,BugsInPy-FastAPI (FastAPI Endpoint Handler 12),evaluated,llama-3.3-70b-versatile,17.837,100.0,True,True,True,True,True
+fastapi-13,BugsInPy-FastAPI (FastAPI Endpoint Handler 13),evaluated,llama-3.3-70b-versatile,42.461,92.9,True,True,True,True,True
+fastapi-14,BugsInPy-FastAPI (FastAPI Endpoint Handler 14),evaluated,llama-3.3-70b-versatile,71.246,100.0,True,True,True,True,True
+fastapi-15,BugsInPy-FastAPI (FastAPI Endpoint Handler 15),evaluated,llama-3.3-70b-versatile,45.231,100.0,True,True,True,True,True
+fastapi-16,BugsInPy-FastAPI (FastAPI Endpoint Handler 16),evaluated,llama-3.3-70b-versatile,43.417,92.9,True,True,True,True,True
+fastapi-2,BugsInPy-FastAPI (FastAPI Endpoint Handler 2),evaluated,llama-3.3-70b-versatile,38.534,100.0,True,True,True,True,True
+fastapi-3,BugsInPy-FastAPI (FastAPI Endpoint Handler 3),evaluated,llama-3.3-70b-versatile,36.36,100.0,True,True,True,True,True
+fastapi-4,BugsInPy-FastAPI (FastAPI Endpoint Handler 4),evaluated,llama-3.3-70b-versatile,29.549,92.9,True,True,True,True,True
+fastapi-5,BugsInPy-FastAPI (FastAPI Endpoint Handler 5),evaluated,llama-3.3-70b-versatile,32.024,100.0,True,True,True,True,True
+fastapi-6,BugsInPy-FastAPI (FastAPI Endpoint Handler 6),evaluated,llama-3.3-70b-versatile,29.87,100.0,True,True,True,True,True
+fastapi-7,BugsInPy-FastAPI (FastAPI Endpoint Handler 7),evaluated,llama-3.3-70b-versatile,27.918,92.9,True,True,True,True,True
+fastapi-8,BugsInPy-FastAPI (FastAPI Endpoint Handler 8),evaluated,llama-3.3-70b-versatile,25.751,100.0,True,True,True,True,True
+fastapi-9,BugsInPy-FastAPI (FastAPI Endpoint Handler 9),evaluated,llama-3.3-70b-versatile,23.664,100.0,True,True,True,True,True
+lang-1,Defects4J-Lang (Commons-Lang StringUtils 1),evaluated,llama-3.3-70b-versatile,43.957,86.7,True,True,True,True,True
+lang-10,Defects4J-Lang (Commons-Lang StringUtils 10),evaluated,llama-3.3-70b-versatile,41.511,86.7,True,True,True,True,True
+lang-11,Defects4J-Lang (Commons-Lang StringUtils 11),evaluated,llama-3.3-70b-versatile,39.422,86.7,True,True,True,True,True
+lang-12,Defects4J-Lang (Commons-Lang StringUtils 12),evaluated,llama-3.3-70b-versatile,37.196,86.7,True,True,True,True,True
+lang-13,Defects4J-Lang (Commons-Lang StringUtils 13),evaluated,llama-3.3-70b-versatile,35.077,86.7,True,True,True,True,True
+lang-14,Defects4J-Lang (Commons-Lang StringUtils 14),evaluated,llama-3.3-70b-versatile,27.488,86.7,True,True,True,True,True
+lang-15,Defects4J-Lang (Commons-Lang StringUtils 15),evaluated,llama-3.3-70b-versatile,31.063,86.7,True,True,True,True,True
+lang-2,Defects4J-Lang (Commons-Lang StringUtils 2),evaluated,llama-3.3-70b-versatile,43.93,86.7,True,True,True,True,True
+lang-3,Defects4J-Lang (Commons-Lang StringUtils 3),evaluated,llama-3.3-70b-versatile,39.44,86.7,True,True,True,True,True
+lang-4,Defects4J-Lang (Commons-Lang StringUtils 4),evaluated,llama-3.3-70b-versatile,45.908,86.7,True,True,True,True,True
+lang-5,Defects4J-Lang (Commons-Lang StringUtils 5),evaluated,llama-3.3-70b-versatile,46.37,86.7,True,True,True,True,True
+lang-6,Defects4J-Lang (Commons-Lang StringUtils 6),evaluated,llama-3.3-70b-versatile,44.207,86.7,True,True,True,True,True
+lang-7,Defects4J-Lang (Commons-Lang StringUtils 7),evaluated,llama-3.3-70b-versatile,47.667,86.7,True,True,True,True,True
+lang-8,Defects4J-Lang (Commons-Lang StringUtils 8),evaluated,llama-3.3-70b-versatile,45.552,86.7,True,True,True,True,True
+lang-9,Defects4J-Lang (Commons-Lang StringUtils 9),evaluated,llama-3.3-70b-versatile,43.514,86.7,True,True,True,True,True
+math-1,Defects4J-Math (Commons-Math Statistical Estimator 1),evaluated,llama-3.3-70b-versatile,43.953,94.1,True,True,True,True,True
+math-10,Defects4J-Math (Commons-Math Statistical Estimator 10),evaluated,llama-3.3-70b-versatile,34.626,94.1,True,True,True,True,True
+math-11,Defects4J-Math (Commons-Math Statistical Estimator 11),evaluated,llama-3.3-70b-versatile,32.812,94.1,True,True,True,True,True
+math-12,Defects4J-Math (Pre-Tax Tiered Calculation & Rounding),evaluated,llama-3.3-70b-versatile,40.75,90.7,True,True,True,True,True
+math-13,Defects4J-Math (Commons-Math Statistical Estimator 13),evaluated,llama-3.3-70b-versatile,31.09,94.1,True,True,True,True,True
+math-14,Defects4J-Math (Commons-Math Statistical Estimator 14),evaluated,llama-3.3-70b-versatile,29.228,94.1,True,True,True,True,True
+math-15,Defects4J-Math (Commons-Math Statistical Estimator 15),evaluated,llama-3.3-70b-versatile,23.03,94.1,True,True,True,True,True
+math-16,Defects4J-Math (Commons-Math Statistical Estimator 16),evaluated,llama-3.3-70b-versatile,25.592,94.1,True,True,True,True,True
+math-2,Defects4J-Math (Commons-Math Statistical Estimator 2),evaluated,llama-3.3-70b-versatile,32.122,94.1,True,True,True,True,True
+math-3,Defects4J-Math (Commons-Math Statistical Estimator 3),evaluated,llama-3.3-70b-versatile,35.744,94.1,True,True,True,True,True
+math-4,Defects4J-Math (Commons-Math Statistical Estimator 4),evaluated,llama-3.3-70b-versatile,45.764,94.1,True,True,True,True,True
+math-5,Defects4J-Math (Commons-Math Statistical Estimator 5),evaluated,llama-3.3-70b-versatile,39.623,94.1,True,True,True,True,True
+math-6,Defects4J-Math (Commons-Math Statistical Estimator 6),evaluated,llama-3.3-70b-versatile,41.926,94.1,True,True,True,True,True
+math-7,Defects4J-Math (Commons-Math Statistical Estimator 7),evaluated,llama-3.3-70b-versatile,40.126,94.1,True,True,True,True,True
+math-8,Defects4J-Math (Commons-Math Statistical Estimator 8),evaluated,llama-3.3-70b-versatile,38.368,94.1,True,True,True,True,True
+math-9,Defects4J-Math (Commons-Math Statistical Estimator 9),evaluated,llama-3.3-70b-versatile,36.523,94.1,True,True,True,True,True
+petclinic-1,Spring-PetClinic (Spring PetClinic Medical Validation 1),evaluated,llama-3.3-70b-versatile,34.429,85.0,True,True,True,True,True
+petclinic-10,Spring-PetClinic (Spring PetClinic Medical Validation 10),evaluated,llama-3.3-70b-versatile,20.017,85.0,True,True,True,True,True
+petclinic-11,Spring-PetClinic (Spring PetClinic Medical Validation 11),evaluated,llama-3.3-70b-versatile,18.544,85.0,True,True,True,True,True
+petclinic-12,Spring-PetClinic (Spring PetClinic Medical Validation 12),evaluated,llama-3.3-70b-versatile,16.196,85.0,True,True,True,True,True
+petclinic-13,Spring-PetClinic (Spring PetClinic Medical Validation 13),evaluated,llama-3.3-70b-versatile,14.307,85.0,True,True,True,True,True
+petclinic-14,Spring-PetClinic (Spring PetClinic Medical Validation 14),evaluated,llama-3.3-70b-versatile,11.964,85.0,True,True,True,True,True
+petclinic-15,Spring-PetClinic (Spring PetClinic Medical Validation 15),evaluated,llama-3.3-70b-versatile,10.481,85.0,True,True,True,True,True
+petclinic-2,Spring-PetClinic (Spring PetClinic Medical Validation 2),evaluated,llama-3.3-70b-versatile,42.255,85.0,True,True,True,True,True
+petclinic-3,Spring-PetClinic (Spring PetClinic Medical Validation 3),evaluated,llama-3.3-70b-versatile,30.05,85.0,True,True,True,True,True
+petclinic-4,Spring-PetClinic (Spring PetClinic Medical Validation 4),evaluated,llama-3.3-70b-versatile,22.013,85.0,True,True,True,True,True
+petclinic-5,Spring-PetClinic (Spring PetClinic Medical Validation 5),evaluated,llama-3.3-70b-versatile,30.021,85.0,True,True,True,True,True
+petclinic-6,Spring-PetClinic (Spring PetClinic Medical Validation 6),evaluated,llama-3.3-70b-versatile,27.6,85.0,True,True,True,True,True
+petclinic-7,Spring-PetClinic (Spring PetClinic Medical Validation 7),evaluated,llama-3.3-70b-versatile,26.368,85.0,True,True,True,True,True
+petclinic-8,Spring-PetClinic (Spring PetClinic Medical Validation 8),evaluated,llama-3.3-70b-versatile,24.524,85.0,True,True,True,True,True
+petclinic-9,Spring-PetClinic (Spring PetClinic Medical Validation 9),evaluated,llama-3.3-70b-versatile,21.908,85.0,True,True,True,True,True
+spacy-1,BugsInPy-spaCy (spaCy Token Span Normalizer 1),evaluated,llama-3.3-70b-versatile,46.007,100.0,True,True,True,True,True
+spacy-10,BugsInPy-spaCy (spaCy Token Span Normalizer 10),evaluated,llama-3.3-70b-versatile,31.049,100.0,True,True,True,True,True
+spacy-11,BugsInPy-spaCy (spaCy Token Span Normalizer 11),evaluated,llama-3.3-70b-versatile,29.215,100.0,True,True,True,True,True
+spacy-12,BugsInPy-spaCy (spaCy Token Span Normalizer 12),evaluated,llama-3.3-70b-versatile,27.378,100.0,True,True,True,True,True
+spacy-13,BugsInPy-spaCy (spaCy Token Span Normalizer 13),evaluated,llama-3.3-70b-versatile,25.543,100.0,True,True,True,True,True
+spacy-14,BugsInPy-spaCy (spaCy Token Span Normalizer 14),evaluated,llama-3.3-70b-versatile,23.679,100.0,True,True,True,True,True
+spacy-15,BugsInPy-spaCy (spaCy Token Span Normalizer 15),evaluated,llama-3.3-70b-versatile,36.041,100.0,True,True,True,True,True
+spacy-16,BugsInPy-spaCy (spaCy Token Span Normalizer 16),evaluated,llama-3.3-70b-versatile,40.613,100.0,True,True,True,True,True
+spacy-2,BugsInPy-spaCy (spaCy Token Span Normalizer 2),evaluated,llama-3.3-70b-versatile,44.208,100.0,True,True,True,True,True
+spacy-3,BugsInPy-spaCy (Token Span Offset Normalizer),evaluated,llama-3.3-70b-versatile,45.59,95.6,True,True,True,True,True
+spacy-4,BugsInPy-spaCy (spaCy Token Span Normalizer 4),evaluated,llama-3.3-70b-versatile,42.305,100.0,True,True,True,True,True
+spacy-5,BugsInPy-spaCy (spaCy Token Span Normalizer 5),evaluated,llama-3.3-70b-versatile,40.387,100.0,True,True,True,True,True
+spacy-6,BugsInPy-spaCy (spaCy Token Span Normalizer 6),evaluated,llama-3.3-70b-versatile,33.898,100.0,True,True,True,True,True
+spacy-7,BugsInPy-spaCy (spaCy Token Span Normalizer 7),evaluated,llama-3.3-70b-versatile,32.032,100.0,True,True,True,True,True
+spacy-8,BugsInPy-spaCy (spaCy Token Span Normalizer 8),evaluated,llama-3.3-70b-versatile,53.338,100.0,True,True,True,True,True
+spacy-9,BugsInPy-spaCy (spaCy Token Span Normalizer 9),evaluated,llama-3.3-70b-versatile,51.574,100.0,True,True,True,True,True
+time-1,Defects4J-Time (Joda-Time Calendar Chronology 1),evaluated,llama-3.3-70b-versatile,29.076,85.0,True,True,True,True,True
+time-10,Defects4J-Time (Joda-Time Calendar Chronology 10),evaluated,llama-3.3-70b-versatile,37.323,85.0,True,True,True,True,True
+time-2,Defects4J-Time (Joda-Time Calendar Chronology 2),evaluated,llama-3.3-70b-versatile,45.842,85.0,True,True,True,True,True
+time-3,Defects4J-Time (Joda-Time Calendar Chronology 3),evaluated,llama-3.3-70b-versatile,46.305,85.0,True,True,True,True,True
+time-4,Defects4J-Time (Joda-Time Calendar Chronology 4),evaluated,llama-3.3-70b-versatile,46.099,85.0,True,True,True,True,True
+time-5,Defects4J-Time (Joda-Time Calendar Chronology 5),evaluated,llama-3.3-70b-versatile,44.503,85.0,True,True,True,True,True
+time-6,Defects4J-Time (Joda-Time Calendar Chronology 6),evaluated,llama-3.3-70b-versatile,42.739,85.0,True,True,True,True,True
+time-7,Defects4J-Time (Joda-Time Calendar Chronology 7),evaluated,llama-3.3-70b-versatile,42.908,85.0,True,True,True,True,True
+time-8,Defects4J-Time (Joda-Time Calendar Chronology 8),evaluated,llama-3.3-70b-versatile,41.117,85.0,True,True,True,True,True
+time-9,Defects4J-Time (Joda-Time Calendar Chronology 9),evaluated,llama-3.3-70b-versatile,39.255,85.0,True,True,True,True,True
+tornado-1,BugsInPy-Tornado (Tornado Async Buffer 1),evaluated,llama-3.3-70b-versatile,39.195,95.2,True,True,True,True,True
+tornado-10,BugsInPy-Tornado (Tornado Async Buffer 10),evaluated,llama-3.3-70b-versatile,26.803,95.2,True,True,True,True,True
+tornado-11,BugsInPy-Tornado (Tornado Async Buffer 11),evaluated,llama-3.3-70b-versatile,24.852,95.2,True,True,True,True,True
+tornado-12,BugsInPy-Tornado (Tornado Async Buffer 12),evaluated,llama-3.3-70b-versatile,22.711,95.2,True,True,True,True,True
+tornado-13,BugsInPy-Tornado (Tornado Async Buffer 13),evaluated,llama-3.3-70b-versatile,20.645,95.2,True,True,True,True,True
+tornado-14,BugsInPy-Tornado (Tornado Async Buffer 14),evaluated,llama-3.3-70b-versatile,42.387,95.2,True,True,True,True,True
+tornado-15,BugsInPy-Tornado (Tornado Async Buffer 15),evaluated,llama-3.3-70b-versatile,40.12,95.2,True,True,True,True,True
+tornado-16,BugsInPy-Tornado (Tornado Async Buffer 16),evaluated,llama-3.3-70b-versatile,47.926,95.2,True,True,True,True,True
+tornado-2,BugsInPy-Tornado (Tornado Async Buffer 2),evaluated,llama-3.3-70b-versatile,39.836,95.2,True,True,True,True,True
+tornado-3,BugsInPy-Tornado (Tornado Async Buffer 3),evaluated,llama-3.3-70b-versatile,37.901,95.2,True,True,True,True,True
+tornado-4,BugsInPy-Tornado (Query String Multi-Param Parser),evaluated,llama-3.3-70b-versatile,48.162,97.4,True,True,True,True,True
+tornado-5,BugsInPy-Tornado (Tornado Async Buffer 5),evaluated,llama-3.3-70b-versatile,36.119,95.2,True,True,True,True,True
+tornado-6,BugsInPy-Tornado (Tornado Async Buffer 6),evaluated,llama-3.3-70b-versatile,34.4,95.2,True,True,True,True,True
+tornado-7,BugsInPy-Tornado (Tornado Async Buffer 7),evaluated,llama-3.3-70b-versatile,32.419,95.2,True,True,True,True,True
+tornado-8,BugsInPy-Tornado (Tornado Async Buffer 8),evaluated,llama-3.3-70b-versatile,30.557,95.2,True,True,True,True,True
+tornado-9,BugsInPy-Tornado (Tornado Async Buffer 9),evaluated,llama-3.3-70b-versatile,28.589,95.2,True,True,True,True,True
+youtube-dl-1,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 1),evaluated,llama-3.3-70b-versatile,29.959,92.9,True,True,True,True,True
+youtube-dl-10,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 10),evaluated,llama-3.3-70b-versatile,29.743,92.9,True,True,True,True,True
+youtube-dl-11,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 11),evaluated,llama-3.3-70b-versatile,27.949,92.9,True,True,True,True,True
+youtube-dl-12,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 12),evaluated,llama-3.3-70b-versatile,26.3,92.9,True,True,True,True,True
+youtube-dl-13,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 13),evaluated,llama-3.3-70b-versatile,24.623,92.9,True,True,True,True,True
+youtube-dl-14,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 14),evaluated,llama-3.3-70b-versatile,22.83,92.9,True,True,True,True,True
+youtube-dl-15,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 15),evaluated,llama-3.3-70b-versatile,20.875,92.9,True,True,True,True,True
+youtube-dl-16,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 16),evaluated,llama-3.3-70b-versatile,36.996,92.9,True,True,True,True,True
+youtube-dl-2,BugsInPy-youtube-dl (Preceding Query Param URL Extractor),evaluated,llama-3.3-70b-versatile,43.019,93.8,True,True,True,True,True
+youtube-dl-3,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 3),evaluated,llama-3.3-70b-versatile,32.468,92.9,True,True,True,True,True
+youtube-dl-4,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 4),evaluated,llama-3.3-70b-versatile,41.481,92.9,True,True,True,True,True
+youtube-dl-5,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 5),evaluated,llama-3.3-70b-versatile,39.523,92.9,True,True,True,True,True
+youtube-dl-6,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 6),evaluated,llama-3.3-70b-versatile,37.342,92.9,True,True,True,True,True
+youtube-dl-7,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 7),evaluated,llama-3.3-70b-versatile,35.292,92.9,True,True,True,True,True
+youtube-dl-8,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 8),evaluated,llama-3.3-70b-versatile,29.594,92.9,True,True,True,True,True
+youtube-dl-9,BugsInPy-youtube-dl (youtube-dl Duration & Media Parser 9),evaluated,llama-3.3-70b-versatile,27.783,92.9,True,True,True,True,True

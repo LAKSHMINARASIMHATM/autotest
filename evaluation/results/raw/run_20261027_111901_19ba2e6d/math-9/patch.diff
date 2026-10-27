@@ -1,0 +1,12 @@
+--- a/math_numeric_9.py
++++ b/math_numeric_9.py
+@@ -6,8 +6,7 @@
+         return 0.0
+     mean = sum(values) / len(values)
+     sq_diff = sum((x - mean) ** 2 for x in values)
+-    # Bug: forgets degrees of freedom (N-1) for sample variance
+-    denom = len(values)
++    denom = (len(values) - 1) if sample else len(values)
+     return sq_diff / denom
+ 
+ def clamp(val: float, low: float, high: float) -> float:

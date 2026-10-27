@@ -1,0 +1,18 @@
+--- a/tornado_stream_13.py
++++ b/tornado_stream_13.py
+@@ -1,7 +1,6 @@
+ """Tornado stream handler #13."""
+ def chunk_data(data: bytes, chunk_size: int = 1024) -> list[bytes]:
+     chunks = []
+-    # Bug: <= instead of < causing infinite loop on empty data or off by one
+     if not data:
+         return []
+     for i in range(0, len(data), chunk_size):
+@@ -9,6 +8,5 @@
+     return chunks
+ 
+ def format_http_chunk(chunk: bytes) -> bytes:
+-    # Bug: missing CRLF at chunk ending
+     size_hex = hex(len(chunk))[2:].encode("ascii")
+-    return size_hex + b"\r\n" + chunk
++    return size_hex + b"\r\n" + chunk + b"\r\n"

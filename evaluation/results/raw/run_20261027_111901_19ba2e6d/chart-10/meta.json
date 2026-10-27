@@ -1,0 +1,19 @@
+{
+  "defect_id": "chart-10",
+  "name": "Defects4J-Chart (JFreeChart Viewport Boundary 10)",
+  "model": "llama-3.3-70b-versatile",
+  "provider": "groq",
+  "temperature": 0.2,
+  "timestamp": "2026-10-27T11:24:00.953768+00:00",
+  "status": "evaluated",
+  "sbfl_rank": 1,
+  "sbfl_top1": true,
+  "sbfl_top5": true,
+  "plausible_patch": true,
+  "correct_patch": true,
+  "regression_pass": true,
+  "line_coverage_pct": 94.1,
+  "elapsed_sec": 49.803,
+  "compilation_ok": true,
+  "failing_test_passes": true
+}

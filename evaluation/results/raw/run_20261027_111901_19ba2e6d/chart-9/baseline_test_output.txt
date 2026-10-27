@@ -1,0 +1,18 @@
+.F                                                                       [100%]
+================================== FAILURES ===================================
+__________________________ test_auto_range_flat_line __________________________
+
+    def test_auto_range_flat_line():
+        # Identical min and max must expand rather than collapse
+        low, high = auto_range(10.0, 10.0)
+>       assert low < 10.0
+E       assert 10.0 < 10.0
+
+test_chart_render_9.py:11: AssertionError
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.2-final-0 _______________
+
+Coverage JSON written to file D:\autotest\evaluation\results\raw\run_20261027_111901_19ba2e6d\chart-9\coverage.json
+=========================== short test summary info ===========================
+FAILED test_chart_render_9.py::test_auto_range_flat_line - assert 10.0 < 10.0
+1 failed, 1 passed in 0.06s

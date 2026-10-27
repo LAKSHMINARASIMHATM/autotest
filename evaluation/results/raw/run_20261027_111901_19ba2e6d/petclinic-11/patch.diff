@@ -1,0 +1,12 @@
+--- a/petclinic_service_11.py
++++ b/petclinic_service_11.py
+@@ -4,7 +4,8 @@
+ def validate_pet_birthdate(birth_date_str: str) -> bool:
+     try:
+         bdate = date.fromisoformat(birth_date_str)
+-        # Bug: allows future birth dates
++        if bdate > date.today():
++            return False
+         return True
+     except Exception:
+         return False

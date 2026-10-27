@@ -1,0 +1,21 @@
+..F                                                                      [100%]
+================================== FAILURES ===================================
+_________________________ test_format_http_chunk_crlf _________________________
+
+    def test_format_http_chunk_crlf():
+        # RFC requires trailing CRLF
+        chunk = b"hello"
+        formatted = format_http_chunk(chunk)
+>       assert formatted.endswith(b"\r\n")
+E       AssertionError: assert False
+E        +  where False = <built-in method endswith of bytes object at 0x0000022FBC1CC780>(b'\r\n')
+E        +    where <built-in method endswith of bytes object at 0x0000022FBC1CC780> = b'5\r\nhello'.endswith
+
+test_tornado_stream_16.py:14: AssertionError
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.2-final-0 _______________
+
+Coverage JSON written to file D:\autotest\evaluation\results\raw\run_20261027_111901_19ba2e6d\tornado-16\coverage.json
+=========================== short test summary info ===========================
+FAILED test_tornado_stream_16.py::test_format_http_chunk_crlf - AssertionErro...
+1 failed, 2 passed in 0.05s

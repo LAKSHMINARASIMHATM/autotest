@@ -1,0 +1,18 @@
+--- a/fastapi_module_9.py
++++ b/fastapi_module_9.py
+@@ -2,8 +2,13 @@
+ def parse_query_params(query_dict: dict) -> dict:
+     result = {}
+     for k, v in query_dict.items():
+-        # Bug: drops duplicate keys instead of list grouping
+-        result[k] = v
++        if k in result:
++            if isinstance(result[k], list):
++                result[k].append(v)
++            else:
++                result[k] = [result[k], v]
++        else:
++            result[k] = v
+     return result
+ 
+ def validate_status(code: int) -> bool:

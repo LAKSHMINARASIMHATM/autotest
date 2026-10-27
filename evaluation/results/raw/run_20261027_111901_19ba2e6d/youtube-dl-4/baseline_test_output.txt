@@ -1,0 +1,18 @@
+.F                                                                       [100%]
+================================== FAILURES ===================================
+____________________________ test_duration_seconds ____________________________
+
+    def test_duration_seconds():
+        # 03:20 = 3*60 + 20 = 200 seconds
+>       assert parse_duration_seconds("03:20") == 200
+E       AssertionError: assert 1203 == 200
+E        +  where 1203 = parse_duration_seconds('03:20')
+
+test_ytdl_parser_4.py:9: AssertionError
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.2-final-0 _______________
+
+Coverage JSON written to file D:\autotest\evaluation\results\raw\run_20261027_111901_19ba2e6d\youtube-dl-4\coverage.json
+=========================== short test summary info ===========================
+FAILED test_ytdl_parser_4.py::test_duration_seconds - AssertionError: assert ...
+1 failed, 1 passed in 0.06s

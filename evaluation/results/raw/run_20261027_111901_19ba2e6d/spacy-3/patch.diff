@@ -1,0 +1,7 @@
+--- a/text_span_cleaner.py
++++ b/text_span_cleaner.py
+@@ -42,2 +42,3 @@
+-                # When punctuation is stripped, end_char must reflect the actual cleaned length
+-                spans.append(TokenSpan(cleaned, start, end))
++                actual_end = start + len(cleaned)
++                spans.append(TokenSpan(cleaned, start, actual_end))

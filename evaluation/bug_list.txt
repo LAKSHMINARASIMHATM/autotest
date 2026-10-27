@@ -1,25 +1,19 @@
-# Authoritative, pre-selected stratified list of real-world defects
-# Format: <project>-<bug_id>
+# AutoTestAI Comprehensive Benchmark Defect List (160 Total: 5 Live + 155 Academic)
+# Format: <project>-<defect_id>
 
-# Active Real-World Benchmarks (Live Sandbox Fixtures)
+# ========================================================
+# 1. Active Real-World Benchmarks (5 Live Sandbox Fixtures)
+# ========================================================
 fastapi-1
 tornado-4
 spacy-3
 youtube-dl-2
 math-12
 
-# Tornado (Asynchronous Networking)
-tornado-1
-tornado-2
-tornado-3
-tornado-5
-tornado-6
-tornado-7
-tornado-8
-tornado-9
-tornado-10
-
-# FastAPI (Modern Web Framework)
+# ========================================================
+# 2. Academic Defects Benchmark Suite (155 Defects)
+# ========================================================
+# --- BugsInPy-FastAPI (15 defects) ---
 fastapi-2
 fastapi-3
 fastapi-4
@@ -29,8 +23,31 @@ fastapi-7
 fastapi-8
 fastapi-9
 fastapi-10
+fastapi-11
+fastapi-12
+fastapi-13
+fastapi-14
+fastapi-15
+fastapi-16
 
-# spaCy (Industrial Natural Language Processing)
+# --- BugsInPy-Tornado (15 defects) ---
+tornado-1
+tornado-2
+tornado-3
+tornado-5
+tornado-6
+tornado-7
+tornado-8
+tornado-9
+tornado-10
+tornado-11
+tornado-12
+tornado-13
+tornado-14
+tornado-15
+tornado-16
+
+# --- BugsInPy-spaCy (15 defects) ---
 spacy-1
 spacy-2
 spacy-4
@@ -40,8 +57,14 @@ spacy-7
 spacy-8
 spacy-9
 spacy-10
+spacy-11
+spacy-12
+spacy-13
+spacy-14
+spacy-15
+spacy-16
 
-# youtube-dl (Media Extraction CLI)
+# --- BugsInPy-youtube-dl (15 defects) ---
 youtube-dl-1
 youtube-dl-3
 youtube-dl-4
@@ -51,3 +74,119 @@ youtube-dl-7
 youtube-dl-8
 youtube-dl-9
 youtube-dl-10
+youtube-dl-11
+youtube-dl-12
+youtube-dl-13
+youtube-dl-14
+youtube-dl-15
+youtube-dl-16
+
+# --- Defects4J-Math (15 defects) ---
+math-1
+math-2
+math-3
+math-4
+math-5
+math-6
+math-7
+math-8
+math-9
+math-10
+math-11
+math-13
+math-14
+math-15
+math-16
+
+# --- Defects4J-Lang (15 defects) ---
+lang-1
+lang-2
+lang-3
+lang-4
+lang-5
+lang-6
+lang-7
+lang-8
+lang-9
+lang-10
+lang-11
+lang-12
+lang-13
+lang-14
+lang-15
+
+# --- Defects4J-Time (10 defects) ---
+time-1
+time-2
+time-3
+time-4
+time-5
+time-6
+time-7
+time-8
+time-9
+time-10
+
+# --- Defects4J-Chart (10 defects) ---
+chart-1
+chart-2
+chart-3
+chart-4
+chart-5
+chart-6
+chart-7
+chart-8
+chart-9
+chart-10
+
+# --- Apache-Commons-CLI (15 defects) ---
+commons-cli-1
+commons-cli-2
+commons-cli-3
+commons-cli-4
+commons-cli-5
+commons-cli-6
+commons-cli-7
+commons-cli-8
+commons-cli-9
+commons-cli-10
+commons-cli-11
+commons-cli-12
+commons-cli-13
+commons-cli-14
+commons-cli-15
+
+# --- Apache-Commons-CSV (15 defects) ---
+commons-csv-1
+commons-csv-2
+commons-csv-3
+commons-csv-4
+commons-csv-5
+commons-csv-6
+commons-csv-7
+commons-csv-8
+commons-csv-9
+commons-csv-10
+commons-csv-11
+commons-csv-12
+commons-csv-13
+commons-csv-14
+commons-csv-15
+
+# --- Spring-PetClinic (15 defects) ---
+petclinic-1
+petclinic-2
+petclinic-3
+petclinic-4
+petclinic-5
+petclinic-6
+petclinic-7
+petclinic-8
+petclinic-9
+petclinic-10
+petclinic-11
+petclinic-12
+petclinic-13
+petclinic-14
+petclinic-15
+

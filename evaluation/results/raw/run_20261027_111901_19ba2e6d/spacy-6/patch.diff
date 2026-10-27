@@ -1,0 +1,16 @@
+--- a/spacy_tokenizer_6.py
++++ b/spacy_tokenizer_6.py
+@@ -5,11 +5,10 @@
+     curr = 0
+     for w in words:
+         start = text.find(w, curr)
+-        # Bug: curr updated to start instead of start + len(w)
+-        curr = start
++        curr = start + len(w)
+         spans.append((w, start, start + len(w)))
+     return spans
+ 
+ def is_stopword(word: str) -> bool:
+     stops = {"the", "a", "is", "and", "or"}
+-    return word in stops
++    return word.lower() in stops

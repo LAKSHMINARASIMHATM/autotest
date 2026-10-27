@@ -1,0 +1,21 @@
+.F                                                                       [100%]
+================================== FAILURES ===================================
+___________________________ test_parse_quoted_field ___________________________
+
+    def test_parse_quoted_field():
+        # Exposes bug: quotes must be unwrapped
+        res = parse_csv_line('"hello, world",42')
+>       assert res == ["hello, world", "42"]
+E       assert ['"hello, world"', '42'] == ['hello, world', '42']
+E         
+E         At index 0 diff: '"hello, world"' != 'hello, world'
+E         Use -v to get more diff
+
+test_commons_csv_2.py:10: AssertionError
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.2-final-0 _______________
+
+Coverage JSON written to file D:\autotest\evaluation\results\raw\run_20261027_111901_19ba2e6d\commons-csv-2\coverage.json
+=========================== short test summary info ===========================
+FAILED test_commons_csv_2.py::test_parse_quoted_field - assert ['"hello, worl...
+1 failed, 1 passed in 0.17s

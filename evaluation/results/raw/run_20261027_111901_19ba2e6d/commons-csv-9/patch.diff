@@ -1,0 +1,28 @@
+--- a/commons_csv_9.py
++++ b/commons_csv_9.py
+@@ -1,6 +1,5 @@
+ """Apache Commons-CSV Record Parser #9."""
+ def parse_csv_line(line: str, delimiter: str = ",") -> list[str]:
+-    # Bug: naive split fails on quoted delimiters
+     fields = []
+     in_quotes = False
+     cur = []
+@@ -8,10 +7,15 @@
+         if ch == '"':
+             in_quotes = not in_quotes
+         elif ch == delimiter and not in_quotes:
+-            fields.append("".join(cur))
++            val = "".join(cur).strip()
++            if val.startswith('"') and val.endswith('"') and len(val) >= 2:
++                val = val[1:-1]
++            fields.append(val)
+             cur = []
+             continue
+         cur.append(ch)
+-    fields.append("".join(cur))
+-    # Bug: leaves outer quotes unstripped
++    val = "".join(cur).strip()
++    if val.startswith('"') and val.endswith('"') and len(val) >= 2:
++        val = val[1:-1]
++    fields.append(val)
+     return fields

@@ -1,0 +1,11 @@
+--- a/fastapi_module_8.py
++++ b/fastapi_module_8.py
+@@ -1,6 +1,6 @@
+ """FastAPI pagination #8."""
+ def paginate(items: list, page: int, size: int) -> list:
+-    # Bug: 0-indexed calculation error
+-    start = page * size
++    page_idx = max(0, page - 1)
++    start = page_idx * size
+     end = start + size
+     return items[start:end]
