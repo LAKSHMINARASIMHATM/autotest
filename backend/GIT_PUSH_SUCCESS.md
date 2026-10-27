@@ -5,7 +5,7 @@
 Your shopping assistant app has been successfully pushed to GitHub!
 
 ### Repository Information
-- **Repository**: https://github.com/LAKSHMINARASIMHATM/shopping-app
+- **Repository**: https://github.com/LAKSHMINARASIMHATM/AutoTestAI_IEEE_Report
 - **Branch**: `main`
 - **Latest Commit**: `ea066d7` - Merge remote changes and update README
 - **Files Pushed**: 111 files (278.92 KiB)
@@ -88,7 +88,7 @@ npm start
 ### Backend `.env` file
 Create `backend/.env` with:
 ```env
-MONGO_URL=mongodb+srv://simha:narasimha@cluster0.nmaqxhm.mongodb.net/?appName=Cluster0
+MONGO_URL=mongodb+srv://<username>:<password>@cluster0.nmaqxhm.mongodb.net/?appName=Cluster0
 DB_NAME=shop_assistant
 JWT_SECRET=your-secret-key-here
 GEMINI_API_KEY=your-gemini-api-key

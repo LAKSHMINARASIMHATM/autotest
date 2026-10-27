@@ -519,15 +519,15 @@ In this paper, we presented **AutoTestAI**, an autonomous agentic software testi
 
 ## REFERENCES
 
-1. G. J. Myers, C. Sandler, and T. Badgett, *The Art of Software Testing*, 3rd ed. John Wiley & Sons, 2011.
-2. G. Fraser and A. Arcuri, "EvoSuite: automatic test suite generation for Java," in *Proc. ESEC/FSE*, 2011, pp. 416–419.
-3. C. Pacheco et al., "Randoop: feedback-directed random testing for Java," in *Proc. OOPSLA*, 2007, pp. 815–816.
-4. M. Chen et al., "Evaluating Large Language Models Trained on Code," *arXiv preprint arXiv:2107.03374*, 2021.
-5. MAGISTER Authors, "MAGISTER: LLM-Based Test Generation with Role-Specialized Agents," in *Proc. IEEE Trans. Softw. Eng.*, 2024.
-6. Z. Yuan et al., "ChatTester: Large Language Models for Unit Test Generation," in *Proc. ICSE*, 2023, pp. 112–124.
-7. LIBERO Authors, "Automated Program Repair via LLM Prompting," *IEEE Trans. Reliab.*, vol. 72, no. 4, 2023.
-8. Q. Wu et al., "AutoCodeRover: Autonomous Software Engineering Agents," in *Proc. ISSTA*, 2024.
-9. Q. Wu et al., "MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework," in *Proc. ICLR*, 2024.
-10. C. Le Goues et al., "GenProg: A generic method for automatic software repair," *IEEE Trans. Softw. Eng.*, vol. 38, no. 1, 2012.
-11. J. Xuan et al., "Nopol: Automatic repair of conditional statement bugs in Java programs," *IEEE Trans. Softw. Eng.*, vol. 43, no. 1, 2016.
-12. C. Qian et al., "Communicative Agents for Software Development," in *Proc. ACL*, 2024.
+1. G. J. Myers, C. Sandler, and T. Badgett, *The Art of Software Testing*, 3rd ed. Hoboken, NJ, USA: John Wiley & Sons, 2011.
+2. G. Fraser and A. Arcuri, "EvoSuite: Automatic test suite generation for Java," in *Proc. 19th ACM SIGSOFT Symp. and 13th Eur. Conf. Found. Softw. Eng. (ESEC/FSE)*, 2011, pp. 416–419.
+3. C. Pacheco and M. D. Ernst, "Randoop: Feedback-directed random testing for Java," in *Proc. 22nd ACM SIGPLAN Conf. Object-Oriented Program. Syst. Lang. Appl. (OOPSLA)*, 2007, pp. 815–816.
+4. M. Chen et al., "Evaluating large language models trained on code," *arXiv preprint arXiv:2107.03374*, 2021.
+5. A. Ahammad, M. El Bajta, and M. Radgui, "MAGISTER: LLM-Based Test Generation with Role-Specialized Agents," in *2025 International Conference on Intelligent Systems: Theories and Applications (SITA)*, Rabat, Morocco, 2025, pp. 1–7.
+6. Z. Yuan, J. Lou, M. Liu, S. Ding, K. Wang, Y. Chen, and P. Xie, "ChatTester: Large Language Models for Unit Test Generation," in *Proc. 46th IEEE/ACM Int. Conf. Softw. Eng. (ICSE)*, 2024, pp. 1–13.
+7. C. S. Xia, Y. Wei, and L. Zhang, "Automated program repair in the era of large language models," in *Proc. 45th IEEE/ACM Int. Conf. Softw. Eng. (ICSE)*, 2023, pp. 1482–1494.
+8. Y. Zhang, H. Ruan, F. Fan, and A. Roychoudhury, "AutoCodeRover: Autonomous program improvement," in *Proc. 33rd ACM SIGSOFT Int. Symp. Softw. Test. Anal. (ISSTA)*, 2024, pp. 1592–1604.
+9. S. Hong et al., "MetaGPT: Meta programming for a multi-agent collaborative framework," in *Proc. 12th Int. Conf. Learn. Represent. (ICLR)*, 2024.
+10. C. Le Goues, T. Nguyen, S. Forrest, and W. Weimer, "GenProg: A generic method for automatic software repair," *IEEE Trans. Softw. Eng.*, vol. 38, no. 1, pp. 54–72, Jan. 2012.
+11. J. Xuan, M. Martinez, F. DeMarco, M. Clement, S. L. Marcote, T. Durieux, D. Le Berre, and M. Monperrus, "Nopol: Automatic repair of conditional statement bugs in Java programs," *IEEE Trans. Softw. Eng.*, vol. 43, no. 1, pp. 34–55, Jan. 2017.
+12. C. Qian et al., "Communicative agents for software development," in *Proc. 62nd Annu. Meet. Assoc. Comput. Linguist. (ACL)*, 2024, pp. 14726–14742.

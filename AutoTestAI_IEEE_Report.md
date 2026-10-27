@@ -142,7 +142,7 @@ The authors thank the Claude AI team for providing the Opus‑5.5 model and th
 
 ### References
 
-[1] J. Doe, A. Smith, and B. Lee, “MAGISTER: Multi‑Agent Guided Intelligent Software Repair,” *Proceedings of the International Conference on Software Engineering (ICSE)*, 2023, pp. 123‑134.
+[1] A. Ahammad, M. El Bajta, and M. Radgui, "MAGISTER: LLM-Based Test Generation with Role-Specialized Agents," in *2025 International Conference on Intelligent Systems: Theories and Applications (SITA)*, Rabat, Morocco, 2025, pp. 1–7.
 
 [2] J. R. Levine et al., “BugsInPy: A Dataset of Real‑World Python Bugs for Automated Program Repair,” *Empirical Software Engineering*, vol. 27, no. 5, 2022.
 

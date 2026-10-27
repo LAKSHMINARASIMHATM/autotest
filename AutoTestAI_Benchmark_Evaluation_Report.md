@@ -81,4 +81,4 @@ A brief snapshot of the top‑3 most challenging academic defects (lowest line c
 
 ---
 
-*Generated on $(date) using the `DATADRT` dataset and the `llama‑3.3‑70b‑versatile` model.*
+*Generated on 18 October 2026 using the `DATADRT` dataset and the Groq llama-3.3-70b-versatile model.*

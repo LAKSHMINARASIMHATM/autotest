@@ -97,7 +97,7 @@ This project proposes **AutoTestAI**: An Agentic AI-Based Autonomous Software Te
 
 | S.No | Paper Title | Authors | Year | Key Contribution | Limitation |
 |------|-------------|---------|------|-----------------|------------|
-| 1 | **MAGISTER: LLM-Based Test Generation with Role-Specialized Agents** *(Base Paper)* | A. Abdellatif, M. El Bajta, M. Radgui | 2025 | Role-specialized multi-agent framework for test case generation using LLMs | Focused only on test generation; no repair or full lifecycle coverage |
+| 1 | **MAGISTER: LLM-Based Test Generation with Role-Specialized Agents** *(Base Paper)* | A. Ahammad, M. El Bajta, M. Radgui | 2025 | Role-specialized multi-agent framework for test case generation using LLMs | Focused only on test generation; no repair or full lifecycle coverage |
 | 2 | **ChatUniTest: A Framework for LLM-Based Test Generation** | Chen et al. | 2024 | LLM-driven unit test generation with prompt engineering | Limited to unit tests; lacks bug localization and repair |
 | 3 | **AgentCoder: Multi-Agent Code Generation** | Huang et al. | 2024 | Uses multiple agents for collaborative code generation and refinement | Not targeted at software testing; no coverage or regression support |
 | 4 | **An Empirical Evaluation of Using LLMs for Automated Unit Test Generation** | Schafer et al. | 2024 | Benchmarked LLM capabilities for unit test generation | No adaptive orchestration or self-reflection mechanism |
@@ -270,7 +270,7 @@ To design and develop **AutoTestAI** — a multi-agent, LLM-powered autonomous s
 
 | S.No | Reference |
 |------|-----------|
-| 1 | A. Abdellatif, M. El Bajta, and M. Radgui, **"MAGISTER: LLM-Based Test Generation with Role-Specialized Agents,"** *2025 International Conference on Intelligent Systems: Theories and Applications (SITA 2025)*, IEEE, 2025. |
+| 1 | A. Ahammad, M. El Bajta, and M. Radgui, **"MAGISTER: LLM-Based Test Generation with Role-Specialized Agents,"** *2025 International Conference on Intelligent Systems: Theories and Applications (SITA 2025)*, IEEE, 2025. |
 | 2 | M. Schafer et al., **"An Empirical Evaluation of Using Large Language Models for Automated Unit Test Generation,"** *IEEE Transactions on Software Engineering*, 2024. |
 | 3 | Y. Huang et al., **"AgentCoder: Multi-Agent Code Generation with Iterative Testing and Optimisation,"** *arXiv:2312.13010*, 2024. |
 | 4 | Z. Chen et al., **"ChatUniTest: A Framework for LLM-Based Test Generation,"** *arXiv:2305.04764*, 2024. |
