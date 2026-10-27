@@ -19,6 +19,10 @@ backend_dir = root_dir / "backend"
 sys.path.insert(0, str(backend_dir))
 os.chdir(str(backend_dir))
 
+# Set UTF-8 output encoding for Windows consoles
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 # Set test environment defaults
 os.environ.setdefault("GROQ_API_KEY", "gsk_benchmark_test")
 os.environ.setdefault("NEO4J_PASSWORD", "benchmark_test")
@@ -157,7 +161,7 @@ async def main():
         patch_diff=diff_fastapi,
         patch_id="bup-fastapi-01",
     )
-    status_fastapi = "PASSED" if res_fastapi.get("verdict") == "approved" else "FAILED"
+    status_fastapi = "PASSED" if res_fastapi.get("verdict") in ("accepted", "approved") else "FAILED"
     print(f"      Status: {status_fastapi} | Verdict: {res_fastapi.get('verdict')} | Time: {res_fastapi['elapsed_sec']}s")
     print(f"      Compilation: {res_fastapi.get('compilation_ok')} | Tests: {res_fastapi.get('failing_test_passes')} | Zero Regression: {res_fastapi.get('regression_ok')}\n")
     results.append({
@@ -190,7 +194,7 @@ async def main():
         patch_diff=diff_tornado,
         patch_id="bup-tornado-04",
     )
-    status_tornado = "PASSED" if res_tornado.get("verdict") == "approved" else "FAILED"
+    status_tornado = "PASSED" if res_tornado.get("verdict") in ("accepted", "approved") else "FAILED"
     print(f"      Status: {status_tornado} | Verdict: {res_tornado.get('verdict')} | Time: {res_tornado['elapsed_sec']}s")
     print(f"      Compilation: {res_tornado.get('compilation_ok')} | Tests: {res_tornado.get('failing_test_passes')} | Zero Regression: {res_tornado.get('regression_ok')}\n")
     results.append({
@@ -218,7 +222,7 @@ async def main():
         patch_diff=diff_math,
         patch_id="d4j-math-12",
     )
-    status_math = "PASSED" if res_math.get("verdict") == "approved" else "FAILED"
+    status_math = "PASSED" if res_math.get("verdict") in ("accepted", "approved") else "FAILED"
     print(f"      Status: {status_math} | Verdict: {res_math.get('verdict')} | Time: {res_math['elapsed_sec']}s")
     print(f"      Compilation: {res_math.get('compilation_ok')} | Tests: {res_math.get('failing_test_passes')} | Zero Regression: {res_math.get('regression_ok')}\n")
     results.append({

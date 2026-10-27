@@ -115,6 +115,17 @@ def _heuristic_verdict(patch_diff: str, file_path: str, confidence: float = 0.75
             "reason": "Empty diff — no changes to apply.",
         }
 
+    # Anti-tampering safety gate: reject file deletion or /dev/null targets
+    if "/dev/null" in patch_diff:
+        return {
+            "compilation_ok": False,
+            "failing_test_passes": False,
+            "regression_ok": False,
+            "coverage_maintained": False,
+            "verdict": "rejected",
+            "reason": "Anti-tampering guardrail triggered: destructive file deletion /dev/null target.",
+        }
+
     added_lines = [l[1:] for l in patch_diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
     is_valid_python = True
     if file_path.endswith(".py") and added_lines:
